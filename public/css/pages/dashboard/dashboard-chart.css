@@ -1,0 +1,353 @@
+/* ==================================================
+   DASHBOARD CHARTS
+================================================== */
+
+.dashboard-charts {
+
+    display: grid;
+
+    grid-template-columns: 2fr 1fr;
+
+    gap: var(--space-lg);
+
+}
+
+/* ==================================================
+   CHART CARD
+================================================== */
+
+.chart-card {
+
+    display: flex;
+
+    flex-direction: column;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: var(--radius-xl);
+
+    box-shadow: var(--shadow-sm);
+
+    overflow: hidden;
+
+}
+
+/* ==================================================
+   HEADER
+================================================== */
+
+.chart-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: var(--space-md);
+
+    padding: 1.25rem 1.5rem;
+
+    border-bottom: 1px solid var(--border);
+
+}
+
+.chart-title {
+
+    margin: 0;
+
+    font-size: var(--fs-lg);
+
+    font-weight: 600;
+
+    color: var(--text);
+
+}
+
+.chart-subtitle {
+
+    margin-top: .25rem;
+
+    font-size: var(--fs-sm);
+
+    color: var(--text-light);
+
+}
+
+/* ==================================================
+   ACTIONS
+================================================== */
+
+.chart-actions {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: var(--space-sm);
+
+}
+
+/* ==================================================
+   BODY
+================================================== */
+
+.chart-body {
+
+    position: relative;
+
+    flex: 1;
+
+    min-height: 360px;
+
+    padding: 1.5rem;
+
+}
+
+/* ==================================================
+   CHART AREA
+================================================== */
+
+.chart-container {
+
+    position: relative;
+
+    width: 100%;
+
+    height: 100%;
+
+    min-height: 320px;
+
+}
+
+.chart-container canvas,
+
+.chart-container svg {
+
+    width: 100% !important;
+
+    height: 100% !important;
+
+}
+
+/* ==================================================
+   FOOTER
+================================================== */
+
+.chart-footer {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: var(--space-md);
+
+    padding: 1rem 1.5rem;
+
+    border-top: 1px solid var(--border);
+
+}
+
+/* ==================================================
+   LEGENDA
+================================================== */
+
+.chart-legend {
+
+    display: flex;
+
+    align-items: center;
+
+    flex-wrap: wrap;
+
+    gap: var(--space-md);
+
+}
+
+.chart-legend-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: .5rem;
+
+    font-size: var(--fs-sm);
+
+    color: var(--text-light);
+
+}
+
+.chart-legend-color {
+
+    width: 12px;
+
+    height: 12px;
+
+    border-radius: 50%;
+
+}
+
+/* ==================================================
+   FILTROS
+================================================== */
+
+.chart-filters {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: .75rem;
+
+    flex-wrap: wrap;
+
+}
+
+/* ==================================================
+   GRÁFICO PEQUENO
+================================================== */
+
+.chart-card-sm .chart-body {
+
+    min-height: 220px;
+
+}
+
+.chart-card-sm .chart-container {
+
+    min-height: 180px;
+
+}
+
+/* ==================================================
+   GRÁFICO GRANDE
+================================================== */
+
+.chart-card-lg .chart-body {
+
+    min-height: 500px;
+
+}
+
+.chart-card-lg .chart-container {
+
+    min-height: 460px;
+
+}
+
+/* ==================================================
+   ESTADO VAZIO
+================================================== */
+
+.chart-empty {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: var(--space-md);
+
+    width: 100%;
+
+    height: 100%;
+
+    color: var(--text-light);
+
+    text-align: center;
+
+}
+
+.chart-empty i {
+
+    font-size: 3rem;
+
+    opacity: .35;
+
+}
+
+.chart-empty svg {
+
+    width: 64px;
+
+    height: 64px;
+
+    opacity: .35;
+
+}
+
+/* ==================================================
+   HOVER
+================================================== */
+
+.chart-card {
+
+    transition:
+        transform .25s ease,
+        box-shadow .25s ease;
+
+}
+
+.chart-card:hover {
+
+    transform: translateY(-4px);
+
+    box-shadow: var(--shadow-md);
+
+}
+
+/* ==================================================
+   RESPONSIVIDADE
+================================================== */
+
+@media (max-width: 1200px) {
+
+    .dashboard-charts {
+
+        grid-template-columns: 1fr;
+
+    }
+
+}
+
+@media (max-width: 768px) {
+
+    .chart-header {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+    }
+
+    .chart-footer {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+    }
+
+    .chart-body {
+
+        min-height: 260px;
+
+        padding: var(--space-md);
+
+    }
+
+    .chart-container {
+
+        min-height: 220px;
+
+    }
+
+}

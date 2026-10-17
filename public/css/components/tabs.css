@@ -1,0 +1,232 @@
+/* ==================================================
+   PETFLOW
+   TABS.CSS
+================================================== */
+
+
+/* ==================================================
+   TABS
+================================================== */
+
+.tabs{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:1.5rem;
+
+}
+
+
+/* ==================================================
+   HEADER
+================================================== */
+
+.tabs-header{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:.75rem;
+
+    border-bottom:1px solid #e5e7eb;
+
+    overflow-x:auto;
+
+    scrollbar-width:none;
+
+}
+
+.tabs-header::-webkit-scrollbar{
+
+    display:none;
+
+}
+
+
+/* ==================================================
+   BUTTON
+================================================== */
+
+.tab-button{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:.6rem;
+
+    padding:1rem 1.2rem;
+
+    border:none;
+
+    background:transparent;
+
+    border-bottom:3px solid transparent;
+
+    color:#6b7280;
+
+    font-size:.95rem;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    white-space:nowrap;
+
+    transition:.25s;
+
+}
+
+.tab-button:hover{
+
+    color:#2563eb;
+
+    background:#eff6ff;
+
+}
+
+
+/* ==================================================
+   ACTIVE
+================================================== */
+
+.tab-button.active{
+
+    color:#2563eb;
+
+    border-color:#2563eb;
+
+}
+
+
+/* ==================================================
+   ICON
+================================================== */
+
+.tab-button i{
+
+    font-size:1rem;
+
+}
+
+
+/* ==================================================
+   CONTENT
+================================================== */
+
+.tabs-content{
+
+    width:100%;
+
+}
+
+
+/* ==================================================
+   PANEL
+================================================== */
+
+.tab-panel{
+
+    display:none;
+
+    animation:tabFade .25s ease;
+
+}
+
+.tab-panel.active{
+
+    display:block;
+
+}
+
+
+/* ==================================================
+   CARD
+================================================== */
+
+.tab-card{
+
+    background:#ffffff;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:18px;
+
+    padding:2rem;
+
+}
+
+
+/* ==================================================
+   TITLE
+================================================== */
+
+.tab-title{
+
+    font-size:1.2rem;
+
+    font-weight:700;
+
+    margin-bottom:1rem;
+
+    color:#111827;
+
+}
+
+
+/* ==================================================
+   DESCRIPTION
+================================================== */
+
+.tab-description{
+
+    color:#6b7280;
+
+    margin-bottom:2rem;
+
+    line-height:1.6;
+
+}
+
+
+/* ==================================================
+   ANIMATION
+================================================== */
+
+@keyframes tabFade{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(12px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+
+    }
+
+}
+
+
+/* ==================================================
+   RESPONSIVO
+================================================== */
+
+@media(max-width:768px){
+
+    .tab-card{
+
+        padding:1.25rem;
+
+    }
+
+}

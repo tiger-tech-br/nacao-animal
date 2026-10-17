@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>PetFlow | Rastrear pedido</title><link rel="stylesheet" href="/css/pages/delivery.css"><link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
+</head>
+<body class="tracking-page"><main class="delivery-card tracking-card"><header class="tracking-header"><a id="trackingBack" href="/meus-pedidos">← Meus pedidos</a><span id="trackingLive" class="tracking-live" hidden><i aria-hidden="true"></i> Acompanhamento ao vivo</span><h1 id="trackingTitle">Rastrear pedido</h1><p id="trackingDescription">Acompanhe a van do entregador, a linha azul da rota e o destino no mapa. Atualizamos a posição a cada 5 segundos enquanto esta página estiver visível.</p></header>
+<p id="trackingStatus" class="tracking-status" role="status">Carregando entrega...</p><a id="trackingLogin" href="/login" hidden>Entrar para rastrear pedido</a>
+<section id="trackingStage" class="tracking-stage" hidden>
+<div id="deliveryMap" aria-label="Mapa com a van do entregador, a rota azul e o destino da entrega" hidden></div>
+<div class="tracking-map-actions" aria-label="Controles do mapa"><button id="centerTrackingMap" type="button" title="Centralizar van e destino">⌾ <span>Centralizar</span></button><button id="expandTrackingMap" type="button" aria-pressed="false" title="Expandir mapa">⛶ <span id="expandTrackingLabel">Expandir</span></button></div>
+<section class="tracking-summary" aria-label="Resumo da entrega"><div class="tracking-summary-heading"><span class="tracking-package" aria-hidden="true">▣</span><div><small>Status da entrega</small><strong id="trackingHeadline">Entregador a caminho</strong></div></div><div class="tracking-metrics"><div><strong id="trackingDistance">—</strong><span>Distância estimada</span></div><div><strong id="trackingDuration">—</strong><span>Tempo estimado</span></div><div><strong id="trackingArrival">—</strong><span>Previsão de chegada</span></div></div><p id="trackingUpdated"></p></section>
+</section>
+<section class="tracking-address"><span aria-hidden="true">⌂</span><div><small>Destino da entrega</small><p id="destinationAddress"></p><p id="originAddress"></p></div></section><p id="mapStatus" role="status"></p>
+<p class="tracking-note"><small>A localização depende da precisão do GPS e da conexão do entregador.</small></p>
+<footer><a href="/politica-de-privacidade">Privacidade</a> · <a href="/termos-de-uso">Termos de uso</a></footer></main><script src="/js/pages/delivery/map.js"></script><script src="/js/pages/delivery/tracking.js"></script><script src="/js/layout/notifications.js?v=20261002"></script>
+</body></html>

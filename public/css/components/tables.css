@@ -1,0 +1,274 @@
+/* ==================================================
+   PETFLOW
+   TABLES.CSS
+================================================== */
+
+
+/* ==================================================
+   TABLE CONTAINER
+================================================== */
+
+.table-container {
+
+    width: 100%;
+
+    overflow-x: auto;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 18px;
+
+}
+
+
+/* ==================================================
+   TABLE
+================================================== */
+
+.table {
+
+    width: 100%;
+
+    border-collapse: collapse;
+
+    min-width: 900px;
+
+}
+
+
+/* ==================================================
+   HEADER
+================================================== */
+
+.table thead {
+
+    background: #f9fafb;
+
+}
+
+
+/* ==================================================
+   HEADER CELL
+================================================== */
+
+.table th {
+
+    padding: 1rem 1.25rem;
+
+    text-align: left;
+
+    font-size: .85rem;
+
+    font-weight: 700;
+
+    color: #374151;
+
+    text-transform: uppercase;
+
+    letter-spacing: .05em;
+
+    border-bottom: 1px solid #e5e7eb;
+
+}
+
+
+/* ==================================================
+   BODY CELL
+================================================== */
+
+.table td {
+
+    padding: 1rem 1.25rem;
+
+    border-bottom: 1px solid #f3f4f6;
+
+    font-size: .95rem;
+
+    color: #374151;
+
+    vertical-align: middle;
+
+}
+
+
+/* ==================================================
+   ROW
+================================================== */
+
+.table tbody tr {
+
+    transition: background .25s ease;
+
+}
+
+.table tbody tr:hover {
+
+    background: #f8fafc;
+
+}
+
+
+/* ==================================================
+   IMAGE
+================================================== */
+
+.table-image {
+
+    width: 46px;
+
+    height: 46px;
+
+    border-radius: 12px;
+
+    object-fit: cover;
+
+}
+
+
+/* ==================================================
+   USER
+================================================== */
+
+.table-user {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 1rem;
+
+}
+
+
+/* ==================================================
+   INFO
+================================================== */
+
+.table-info {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: .25rem;
+
+}
+
+.table-title {
+
+    font-weight: 600;
+
+    color: #111827;
+
+}
+
+.table-subtitle {
+
+    font-size: .85rem;
+
+    color: #6b7280;
+
+}
+
+
+/* ==================================================
+   ACTIONS
+================================================== */
+
+.table-actions {
+
+    display: flex;
+
+    gap: .5rem;
+
+}
+
+
+/* ==================================================
+   ACTION BUTTON
+================================================== */
+
+.table-action {
+
+    width: 38px;
+
+    height: 38px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    border: none;
+
+    border-radius: 10px;
+
+    cursor: pointer;
+
+    background: #f3f4f6;
+
+    transition: .25s;
+
+}
+
+.table-action:hover {
+
+    background: #2563eb;
+
+    color: #ffffff;
+
+}
+
+
+/* ==================================================
+   EMPTY
+================================================== */
+
+.table-empty {
+
+    padding: 3rem;
+
+    text-align: center;
+
+    color: #9ca3af;
+
+}
+
+
+/* ==================================================
+   FOOTER
+================================================== */
+
+.table-footer {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    padding: 1rem 1.5rem;
+
+    border-top: 1px solid #e5e7eb;
+
+    background: #ffffff;
+
+}
+
+
+/* ==================================================
+   RESPONSIVO
+================================================== */
+
+@media (max-width:768px){
+
+    .table{
+
+        min-width:700px;
+
+    }
+
+}

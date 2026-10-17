@@ -1,0 +1,247 @@
+/* ==================================================
+   PETFLOW
+   BUTTONS.CSS
+================================================== */
+
+
+/* ==================================================
+   BOTÃO BASE
+================================================== */
+
+.btn {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: .75rem;
+
+    padding: .85rem 1.4rem;
+
+    border: none;
+
+    border-radius: 12px;
+
+    cursor: pointer;
+
+    font-size: .95rem;
+
+    font-weight: 600;
+
+    text-decoration: none;
+
+    transition: all .25s ease;
+
+    user-select: none;
+
+    white-space: nowrap;
+
+}
+
+
+/* ==================================================
+   TAMANHOS
+================================================== */
+
+.btn-sm {
+
+    padding: .55rem 1rem;
+
+    font-size: .85rem;
+
+}
+
+.btn-lg {
+
+    padding: 1rem 1.8rem;
+
+    font-size: 1rem;
+
+}
+
+
+/* ==================================================
+   LARGURA TOTAL
+================================================== */
+
+.btn-block {
+
+    width: 100%;
+
+}
+
+
+/* ==================================================
+   PRIMÁRIO
+================================================== */
+
+.btn-primary {
+
+    background: #2563eb;
+
+    color: #ffffff;
+
+}
+
+.btn-primary:hover {
+
+    background: #1d4ed8;
+
+}
+
+
+/* ==================================================
+   SECUNDÁRIO
+================================================== */
+
+.btn-secondary {
+
+    background: #6b7280;
+
+    color: #ffffff;
+
+}
+
+.btn-secondary:hover {
+
+    background: #4b5563;
+
+}
+
+
+/* ==================================================
+   SUCESSO
+================================================== */
+
+.btn-success {
+
+    background: #16a34a;
+
+    color: #ffffff;
+
+}
+
+.btn-success:hover {
+
+    background: #15803d;
+
+}
+
+
+/* ==================================================
+   AVISO
+================================================== */
+
+.btn-warning {
+
+    background: #f59e0b;
+
+    color: #ffffff;
+
+}
+
+.btn-warning:hover {
+
+    background: #d97706;
+
+}
+
+
+/* ==================================================
+   PERIGO
+================================================== */
+
+.btn-danger {
+
+    background: #dc2626;
+
+    color: #ffffff;
+
+}
+
+.btn-danger:hover {
+
+    background: #b91c1c;
+
+}
+
+
+/* ==================================================
+   CLARO
+================================================== */
+
+.btn-light {
+
+    background: #f3f4f6;
+
+    color: #374151;
+
+}
+
+.btn-light:hover {
+
+    background: #e5e7eb;
+
+}
+
+
+/* ==================================================
+   OUTLINE
+================================================== */
+
+.btn-outline {
+
+    background: transparent;
+
+    border: 1px solid #d1d5db;
+
+    color: #374151;
+
+}
+
+.btn-outline:hover {
+
+    background: #f9fafb;
+
+}
+
+
+/* ==================================================
+   ÍCONES
+================================================== */
+
+.btn i {
+
+    font-size: 1rem;
+
+}
+
+
+/* ==================================================
+   DESABILITADO
+================================================== */
+
+.btn:disabled {
+
+    opacity: .6;
+
+    cursor: not-allowed;
+
+}
+
+
+/* ==================================================
+   RESPONSIVO
+================================================== */
+
+@media (max-width:768px){
+
+    .btn{
+
+        width:100%;
+
+    }
+
+}

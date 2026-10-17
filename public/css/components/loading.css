@@ -1,0 +1,346 @@
+/* ==================================================
+   PETFLOW
+   LOADING.CSS
+================================================== */
+
+
+/* ==================================================
+   OVERLAY
+================================================== */
+
+.loading-overlay{
+
+    position:fixed;
+
+    inset:0;
+
+    display:none;
+
+    justify-content:center;
+
+    align-items:center;
+
+    flex-direction:column;
+
+    gap:1.5rem;
+
+    background:rgba(255,255,255,.85);
+
+    backdrop-filter:blur(4px);
+
+    z-index:9999;
+
+}
+
+.loading-overlay.show{
+
+    display:flex;
+
+}
+
+
+/* ==================================================
+   SPINNER
+================================================== */
+
+.spinner{
+
+    width:64px;
+
+    height:64px;
+
+    border:6px solid #e5e7eb;
+
+    border-top:6px solid #2563eb;
+
+    border-radius:50%;
+
+    animation:spinnerRotate .8s linear infinite;
+
+}
+
+@keyframes spinnerRotate{
+
+    to{
+
+        transform:rotate(360deg);
+
+    }
+
+}
+
+
+/* ==================================================
+   LOADING TEXT
+================================================== */
+
+.loading-text{
+
+    font-size:1rem;
+
+    font-weight:600;
+
+    color:#374151;
+
+}
+
+
+/* ==================================================
+   DOTS
+================================================== */
+
+.loading-dots{
+
+    display:flex;
+
+    gap:.5rem;
+
+}
+
+.loading-dots span{
+
+    width:10px;
+
+    height:10px;
+
+    border-radius:50%;
+
+    background:#2563eb;
+
+    animation:dotBounce 1s infinite ease-in-out;
+
+}
+
+.loading-dots span:nth-child(2){
+
+    animation-delay:.2s;
+
+}
+
+.loading-dots span:nth-child(3){
+
+    animation-delay:.4s;
+
+}
+
+@keyframes dotBounce{
+
+    0%,80%,100%{
+
+        transform:scale(.5);
+
+        opacity:.5;
+
+    }
+
+    40%{
+
+        transform:scale(1);
+
+        opacity:1;
+
+    }
+
+}
+
+
+/* ==================================================
+   PROGRESS BAR
+================================================== */
+
+.progress{
+
+    width:100%;
+
+    height:8px;
+
+    background:#e5e7eb;
+
+    border-radius:999px;
+
+    overflow:hidden;
+
+}
+
+.progress-bar{
+
+    width:0;
+
+    height:100%;
+
+    background:#2563eb;
+
+    transition:width .3s ease;
+
+}
+
+
+/* ==================================================
+   SKELETON
+================================================== */
+
+.skeleton{
+
+    position:relative;
+
+    overflow:hidden;
+
+    background:#e5e7eb;
+
+    border-radius:10px;
+
+}
+
+.skeleton::after{
+
+    content:"";
+
+    position:absolute;
+
+    inset:0;
+
+    transform:translateX(-100%);
+
+    background:linear-gradient(
+
+        90deg,
+
+        transparent,
+
+        rgba(255,255,255,.6),
+
+        transparent
+
+    );
+
+    animation:skeletonLoading 1.2s infinite;
+
+}
+
+@keyframes skeletonLoading{
+
+    to{
+
+        transform:translateX(100%);
+
+    }
+
+}
+
+
+/* ==================================================
+   SKELETON SIZES
+================================================== */
+
+.skeleton-title{
+
+    height:22px;
+
+    width:50%;
+
+    margin-bottom:1rem;
+
+}
+
+.skeleton-text{
+
+    height:14px;
+
+    margin-bottom:.75rem;
+
+}
+
+.skeleton-button{
+
+    width:130px;
+
+    height:42px;
+
+}
+
+.skeleton-avatar{
+
+    width:70px;
+
+    height:70px;
+
+    border-radius:50%;
+
+}
+
+.skeleton-card{
+
+    width:100%;
+
+    height:220px;
+
+}
+
+
+/* ==================================================
+   INLINE SPINNER
+================================================== */
+
+.spinner-sm{
+
+    width:22px;
+
+    height:22px;
+
+    border-width:3px;
+
+}
+
+.spinner-lg{
+
+    width:80px;
+
+    height:80px;
+
+    border-width:8px;
+
+}
+
+
+/* ==================================================
+   BUTTON LOADING
+================================================== */
+
+.btn-loading{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:.75rem;
+
+}
+
+.btn-loading .spinner{
+
+    width:18px;
+
+    height:18px;
+
+    border-width:3px;
+
+}
+
+
+/* ==================================================
+   RESPONSIVO
+================================================== */
+
+@media(max-width:768px){
+
+    .loading-text{
+
+        text-align:center;
+
+        padding:0 1rem;
+
+    }
+
+}

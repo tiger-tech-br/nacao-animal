@@ -1,0 +1,277 @@
+/* ==================================================
+   PETFLOW
+   CHARTS.CSS
+================================================== */
+
+
+/* ==================================================
+   CHART GRID
+================================================== */
+
+.charts-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(auto-fit,minmax(380px,1fr));
+
+    gap:1.5rem;
+
+}
+
+
+/* ==================================================
+   CHART CARD
+================================================== */
+
+.chart-card{
+
+    display:flex;
+
+    flex-direction:column;
+
+    background:#ffffff;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:20px;
+
+    overflow:hidden;
+
+    transition:.25s;
+
+}
+
+.chart-card:hover{
+
+    box-shadow:0 10px 25px rgba(0,0,0,.06);
+
+}
+
+
+/* ==================================================
+   HEADER
+================================================== */
+
+.chart-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:1.5rem;
+
+    border-bottom:1px solid #f1f5f9;
+
+}
+
+
+/* ==================================================
+   TITLE
+================================================== */
+
+.chart-title{
+
+    font-size:1rem;
+
+    font-weight:700;
+
+    color:#111827;
+
+}
+
+
+/* ==================================================
+   ACTIONS
+================================================== */
+
+.chart-actions{
+
+    display:flex;
+
+    gap:.5rem;
+
+}
+
+
+/* ==================================================
+   BODY
+================================================== */
+
+.chart-body{
+
+    position:relative;
+
+    height:350px;
+
+    padding:1.5rem;
+
+}
+
+
+/* ==================================================
+   FOOTER
+================================================== */
+
+.chart-footer{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:1rem 1.5rem;
+
+    border-top:1px solid #f1f5f9;
+
+    background:#fafafa;
+
+}
+
+
+/* ==================================================
+   LEGEND
+================================================== */
+
+.chart-legend{
+
+    display:flex;
+
+    gap:1rem;
+
+    flex-wrap:wrap;
+
+}
+
+.chart-legend-item{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:.5rem;
+
+    font-size:.85rem;
+
+    color:#6b7280;
+
+}
+
+.chart-color{
+
+    width:12px;
+
+    height:12px;
+
+    border-radius:50%;
+
+}
+
+
+/* ==================================================
+   COLORS
+================================================== */
+
+.chart-blue{
+
+    background:#2563eb;
+
+}
+
+.chart-green{
+
+    background:#22c55e;
+
+}
+
+.chart-red{
+
+    background:#ef4444;
+
+}
+
+.chart-yellow{
+
+    background:#f59e0b;
+
+}
+
+.chart-purple{
+
+    background:#7c3aed;
+
+}
+
+.chart-cyan{
+
+    background:#06b6d4;
+
+}
+
+
+/* ==================================================
+   EMPTY CHART
+================================================== */
+
+.chart-empty{
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    height:100%;
+
+    color:#9ca3af;
+
+    font-size:.95rem;
+
+}
+
+
+/* ==================================================
+   RESPONSIVO
+================================================== */
+
+@media(max-width:992px){
+
+    .charts-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+}
+
+@media(max-width:768px){
+
+    .chart-header{
+
+        flex-direction:column;
+
+        align-items:flex-start;
+
+        gap:1rem;
+
+    }
+
+    .chart-body{
+
+        height:280px;
+
+    }
+
+    .chart-footer{
+
+        flex-direction:column;
+
+        align-items:flex-start;
+
+        gap:1rem;
+
+    }
+
+}

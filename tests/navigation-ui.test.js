@@ -1,0 +1,14 @@
+"use strict";
+const {test}=require("node:test"),assert=require("node:assert/strict"),vm=require("node:vm"),fs=require("node:fs");
+const source=fs.readFileSync("public/js/pages/delivery/navigation.js","utf8");
+function element(){const classes=new Set(),children={};return{hidden:true,disabled:false,textContent:"",events:{},classList:{add:v=>classes.add(v),remove:v=>classes.delete(v),contains:v=>classes.has(v)},addEventListener(name,fn){this.events[name]=fn;},setAttribute(name,value){this[name]=value;},querySelector(selector){return children[selector]||(children[selector]=element());}};}
+test("interface do entregador mostra manobra, próxima instrução e resumo da viagem",()=>{
+    const ids=["navigationPanel","navigationInstruction","navigationDistance","navigationManeuver","navigationNext","navigationSummary","navigationTime","navigationRemaining","navigationArrival","navigationSpeed","toggleVoice"];
+    const elements=Object.fromEntries(ids.map(id=>[id,element()]));let interval,followed=0,recalculations=0;
+    const result={state:"navigating",index:0,current:{instrucao:"Siga em frente",manobra:"STRAIGHT"},next:{instrucao:"Vire à direita",manobra:"TURN_RIGHT"},afterNext:{instrucao:"Siga em frente",manobra:"STRAIGHT"},toNextMeters:80,remainingMeters:900,remainingSeconds:180,speedKmh:32};
+    const ctx={Date,document:{hidden:false,body:element(),getElementById:id=>elements[id],addEventListener(){}},setInterval(fn,delay){assert.equal(delay,5000);interval=fn;},PetFlowNavigationEngine:{create:()=>({update:()=>result})},SpeechSynthesisUtterance:class{},speechSynthesis:{cancel(){},speak(){}},console};ctx.window=ctx;
+    vm.runInNewContext(source,ctx);const navigation=ctx.PetFlowDeliveryNavigation({map:{follow(){followed++;return true;}},recalculate(){recalculations++;}});
+    navigation.start();navigation.update({latitude:-23.66,longitude:-46.55,precisao_m:5,velocidade_mps:10,atualizado_em:new Date().toISOString(),rota:{tipoOrigem:"GPS_ENTREGADOR",polyline:"route",calculadaEm:"now",etapas:[{}]}});
+    assert.equal(elements.navigationPanel.hidden,false);assert.equal(elements.navigationSummary.hidden,false);assert.equal(elements.navigationInstruction.textContent,"Vire à direita");assert.equal(elements.navigationDistance.textContent,"Em 80 m");assert.equal(elements.navigationNext.textContent,"Depois: Siga em frente");assert.equal(elements.navigationManeuver.textContent,"↱");assert.equal(elements.navigationTime.textContent,"3 min");assert.equal(elements.navigationRemaining.textContent,"900 m");assert.equal(elements.navigationSpeed.textContent,"32");assert.equal(followed,1);assert.equal(recalculations,0);
+    interval();assert.equal(followed,1,"Não recentraliza à força a cada atualização da tela");navigation.stop();assert.equal(elements.navigationPanel.hidden,true);
+});

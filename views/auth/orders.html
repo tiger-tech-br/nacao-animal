@@ -1,0 +1,56 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex,nofollow">
+    <title>PetFlow | Meus pedidos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/layout/public-header.css?v=20260811-1">
+    <link rel="stylesheet" href="/css/pages/public-login.css?v=20260808-1">
+    <link rel="stylesheet" href="/css/layout/cart-sidebar.css?v=20261001">
+<link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
+</head>
+<body>
+    <main class="login-container account-container orders-container">
+        <section class="login-card" aria-labelledby="ordersTitle">
+            <header class="login-header">
+                <a class="login-logo" href="/" aria-label="Voltar para a página inicial">
+                    <img src="/images/logo/fred-petflow-logo-transparent.png" alt="Logo PetFlow" width="88" height="88">
+                </a>
+                <span class="login-eyebrow">Área do cliente</span>
+                <h1 id="ordersTitle">Meus pedidos</h1>
+                <p>Acompanhe os pedidos feitos pela loja pública da PetFlow.</p>
+            </header>
+
+            <nav class="account-links" aria-label="Área do cliente">
+                <a href="/conta"><i class="fa-solid fa-user-pen"></i> Minha conta</a>
+
+                <a class="active" href="/meus-pedidos"><i class="fa-solid fa-bag-shopping"></i> Meus pedidos</a>
+            </nav>
+
+            <div class="orders-list" id="publicOrdersList">
+                <div class="orders-empty">Carregando seus pedidos...</div>
+            </div>
+
+            <p class="login-note" id="ordersStatus"></p>
+        </section>
+        <dialog class="support-dialog" id="orderRequestDialog" aria-labelledby="orderRequestTitle">
+            <form class="auth-form" id="orderRequestForm">
+                <header><div><span class="login-eyebrow">Atendimento eletrônico</span><h2 id="orderRequestTitle">Solicitar atendimento</h2></div><button type="button" class="support-dialog-close" data-close-request aria-label="Fechar">×</button></header>
+                <input type="hidden" name="pedidoId">
+                <div class="form-group"><label for="orderRequestType">Tipo de solicitação</label><select class="form-control" id="orderRequestType" name="tipo" required></select></div>
+                <div class="form-group"><label for="orderRequestReason">Explique o que aconteceu</label><textarea class="form-control" id="orderRequestReason" name="motivo" minlength="5" maxlength="1000" required></textarea></div>
+                <p class="login-note" id="orderRequestRule">Você receberá um protocolo imediatamente e poderá acompanhar a resposta neste pedido.</p>
+                <button class="btn" type="submit">Enviar solicitação</button>
+                <p class="login-note" id="orderRequestStatus" role="status"></p>
+            </form>
+        </dialog>
+    </main>
+
+    <script src="/js/layout/public-header.js?v=20261012-1"></script>
+    <script src="/js/pages/auth/public-auth.js?v=20261003-3"></script>
+    <script src="/js/layout/cart-sidebar.js?v=20261001"></script>
+<script src="/js/layout/notifications.js?v=20261002"></script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+/* ==================================================
+   HEADER
+================================================== */
+
+.header {
+    width: 100%;
+    background-color: var(--white);
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: var(--z-fixed);
+}
+
+.header .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 80px;
+}
+
+/* ==================================================
+   LOGO
+================================================== */
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.logo img {
+    width: 50px;
+}
+
+.logo h1 {
+    font-size: var(--fs-xl);
+    color: var(--primary);
+}
+
+/* ==================================================
+   RESPONSIVIDADE
+================================================== */
+
+@media (max-width: 768px) {
+
+    .header .container {
+        min-height: 70px;
+    }
+
+    .logo img {
+        width: 42px;
+    }
+
+    .logo h1 {
+        font-size: var(--fs-lg);
+    }
+
+}

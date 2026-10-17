@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="strict-origin-when-cross-origin"><title>PetFlow | Viagem do entregador</title><link rel="stylesheet" href="/css/pages/delivery.css"></head>
+<body class="driver-page"><main class="delivery-card"><header class="driver-intro"><span class="eyebrow">PetFlow · Entrega</span><h1>Viagem do entregador</h1>
+<p>Inicie a viagem para ver a linha azul da rota, a partida em verde e o destino em laranja. A seta azul acompanha sua posição e permanece visível, mantendo a última direção conhecida quando o GPS não informar uma nova. Seu GPS será compartilhado com o cliente a cada 5 segundos.</p>
+<p>Permita a localização e mantenha esta página aberta e a tela ativa. O celular pode suspender o GPS em segundo plano. Ao encerrar a entrega no painel, a loja também encerra o rastreamento.</p></header>
+<button id="startGps" type="button">Iniciar viagem</button>
+<section class="navigation-stage" aria-label="Navegação da entrega">
+<div id="deliveryMap" aria-label="Mapa e rota da posição GPS do entregador até o cliente" hidden></div>
+<div id="navigationPanel" class="navigation-guidance" role="status" hidden><span id="navigationManeuver" class="navigation-maneuver" aria-hidden="true">↑</span><div><span id="navigationDistance"></span><strong id="navigationInstruction">Aguardando rota...</strong><span id="navigationNext"></span></div></div>
+</section>
+<div id="navigationSummary" class="navigation-summary" hidden><div class="navigation-speed"><strong id="navigationSpeed">—</strong><span>km/h</span></div><div><strong id="navigationTime">—</strong><div><span id="navigationRemaining">—</span> · <span id="navigationArrival">—</span></div><small>Tempo estimado, sem trânsito em tempo real</small></div></div>
+<div class="navigation-controls">
+<button id="showFullRoute" type="button" aria-label="Ver rota completa" title="Ver rota completa" hidden><span class="control-icon" aria-hidden="true">⌖</span><span class="sr-only">Ver rota completa</span></button>
+<button id="recenterMap" type="button" aria-label="Centralizar em mim" title="Centralizar em mim" hidden><span class="control-icon" aria-hidden="true">➤</span><span class="sr-only">Centralizar em mim</span></button>
+<button id="toggleVoice" type="button" aria-label="Ligar orientação por voz" title="Ligar orientação por voz" aria-pressed="false"><span class="control-icon" aria-hidden="true">🔇</span><span class="sr-only">Voz desligada</span></button>
+<button id="refreshRoute" type="button" aria-label="Atualizar rota" title="Atualizar rota" hidden disabled><span class="control-icon" aria-hidden="true">↻</span><span class="sr-only">Atualizar rota</span></button>
+<button id="stopGps" type="button" aria-label="Encerrar navegação e compartilhamento" title="Encerrar navegação" disabled><span class="control-icon" aria-hidden="true">×</span><span class="sr-only">Parar e encerrar compartilhamento</span></button>
+</div>
+<p id="gpsStatus" role="status">Pronto para iniciar. O link é exclusivo para esta entrega.</p><p id="routeStatus" role="status"></p>
+<details class="navigation-details"><summary>Endereço e informações da viagem</summary><p id="originAddress"></p><p id="destinationAddress"></p><p id="mapStatus" role="status"></p><p>A orientação depende do GPS e da conexão. Confira a sinalização e o endereço ao chegar.</p></details>
+<footer><a href="/politica-de-privacidade">Privacidade</a> · <a href="/termos-de-uso">Termos de uso</a></footer>
+</main><script src="/js/pages/delivery/map.js"></script><script src="/js/pages/delivery/navigation-engine.js"></script><script src="/js/pages/delivery/navigation.js"></script><script src="/js/pages/delivery/driver.js"></script></body></html>

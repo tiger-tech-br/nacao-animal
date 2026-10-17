@@ -1,0 +1,11 @@
+"use strict";
+const router = require("express").Router();
+const { param } = require("express-validator");
+const auth = require("../middlewares/authMiddleware");
+const role = require("../middlewares/roleMiddleware");
+const validate = require("../middlewares/validationMiddleware");
+const controller = require("../controllers/lgpdAdminController");
+router.use(auth, role("ADMIN"));
+router.get("/", controller.listar);
+router.put("/:id", param("id").isUUID(), validate, controller.atualizar);
+module.exports = router;

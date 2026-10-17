@@ -1,0 +1,604 @@
+/* ==================================================
+   CADASTRAR CLIENTE
+================================================== */
+
+/* ==================================================
+   CONTAINER
+================================================== */
+
+.page-container {
+
+    width: 100%;
+
+    max-width: 1500px;
+
+    margin: 0 auto;
+
+    padding: var(--space-2xl);
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 2rem;
+
+}
+
+/* ==================================================
+   CABEÇALHO
+================================================== */
+
+.page-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 2rem;
+
+    margin-bottom: 1rem;
+
+}
+
+.page-title {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: .75rem;
+
+}
+
+.page-title-header {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 1rem;
+
+}
+
+.page-title-header i {
+
+    font-size: 2.2rem;
+
+    color: var(--primary);
+
+}
+
+.page-title h1 {
+
+    margin: 0;
+
+    font-size: clamp(2rem, 2vw + 1rem, 2.7rem);
+
+    font-weight: 700;
+
+    color: var(--text);
+
+}
+
+.page-title p {
+
+    margin: 0;
+
+    max-width: 720px;
+
+    font-size: 1rem;
+
+    line-height: 1.7;
+
+    color: var(--text-light);
+
+}
+
+.page-actions {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 1rem;
+
+}
+
+/* ==================================================
+   FORMULÁRIO
+================================================== */
+
+#formCliente {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 2rem;
+
+}
+
+/* ==================================================
+   CARDS
+================================================== */
+
+.cliente-card {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 2rem;
+
+    padding: 2rem;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: var(--radius-xl);
+
+    box-shadow: var(--shadow-sm);
+
+    transition: var(--transition);
+
+}
+
+.cliente-card:hover {
+
+    box-shadow: var(--shadow-md);
+
+}
+
+/* ==================================================
+   TÍTULO DOS CARDS
+================================================== */
+
+.cliente-card h2 {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: .75rem;
+
+    margin: 0;
+
+    padding-bottom: 1rem;
+
+    border-bottom: 1px solid var(--border);
+
+    font-size: 1.35rem;
+
+    font-weight: 700;
+
+    color: var(--text);
+
+}
+
+.cliente-card h2 i {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 42px;
+
+    height: 42px;
+
+    border-radius: 50%;
+
+    background: rgba(59, 130, 246, .08);
+
+    color: var(--primary);
+
+    font-size: 1.1rem;
+
+}
+
+/* ==================================================
+   GRID
+================================================== */
+
+.cliente-form-grid {
+
+    display: grid;
+
+    grid-template-columns: repeat(4, 1fr);
+
+    gap: 1.5rem 2rem;
+
+}
+
+/* ==================================================
+   TAMANHOS DOS CAMPOS
+================================================== */
+
+.form-group.full {
+
+    grid-column: 1 / -1;
+
+}
+
+.form-group.half {
+
+    grid-column: span 2;
+
+}
+
+.form-group.third {
+
+    grid-column: span 3;
+
+}
+
+.form-group.small {
+
+    grid-column: span 1;
+
+}
+
+/* ==================================================
+   FORM GROUP
+================================================== */
+
+.form-group {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: .55rem;
+
+}
+
+.form-group label {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: .35rem;
+
+    font-size: .95rem;
+
+    font-weight: 600;
+
+    color: var(--text);
+
+}
+
+.form-group label span {
+
+    color: var(--danger);
+
+    font-weight: 700;
+
+}
+
+/* ==================================================
+   CAMPOS
+================================================== */
+
+.form-control {
+
+    width: 100%;
+
+    height: 50px;
+
+    padding: 0 1rem;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: var(--radius-md);
+
+    color: var(--text);
+
+    font-size: .95rem;
+
+    transition: var(--transition);
+
+}
+
+.form-control::placeholder {
+
+    color: var(--text-light);
+
+}
+
+.form-control:hover {
+
+    border-color: var(--gray-400);
+
+}
+
+.form-control:focus {
+
+    outline: none;
+
+    border-color: var(--primary);
+
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, .12);
+
+}
+
+/* ==================================================
+   SELECT
+================================================== */
+
+select.form-control {
+
+    cursor: pointer;
+
+}
+
+/* ==================================================
+   TEXTAREA
+================================================== */
+
+textarea.form-control {
+
+    min-height: 160px;
+
+    height: auto;
+
+    padding: 1rem;
+
+    resize: vertical;
+
+    font-family: inherit;
+
+    line-height: 1.6;
+
+}
+
+/* ==================================================
+   INPUT DATE
+================================================== */
+
+input[type="date"].form-control {
+
+    cursor: pointer;
+
+}
+
+/* ==================================================
+   INPUT NUMBER
+================================================== */
+
+input[type="number"].form-control {
+
+    text-align: left;
+
+}
+
+/* ==================================================
+   STATUS
+================================================== */
+
+#status {
+
+    max-width: 260px;
+
+}
+
+/* ==================================================
+   BOTÕES
+================================================== */
+
+.cliente-form-actions {
+
+    display: flex;
+
+    justify-content: flex-end;
+
+    align-items: center;
+
+    gap: 1rem;
+
+    margin-top: .5rem;
+
+    padding-top: 2rem;
+
+    border-top: 1px solid var(--border);
+
+}
+
+.cliente-form-actions .btn {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: .6rem;
+
+    min-width: 170px;
+
+    height: 48px;
+
+    padding: 0 1.5rem;
+
+    margin-bottom: 20px;
+
+}
+
+.cliente-form-actions .btn i {
+
+    font-size: .95rem;
+
+}
+
+.cliente-form-actions .btn-outline:hover,
+
+.cliente-form-actions .btn-secondary:hover,
+
+.cliente-form-actions .btn-primary:hover {
+
+    transform: translateY(-2px);
+
+}
+
+/* ==================================================
+   RESPONSIVIDADE
+================================================== */
+
+/* ---------- Notebook ---------- */
+
+@media (max-width: 1200px) {
+
+    .cliente-form-grid {
+
+        grid-template-columns: repeat(2, 1fr);
+
+    }
+
+    .form-group.full,
+    .form-group.half,
+    .form-group.third,
+    .form-group.small {
+
+        grid-column: auto;
+
+    }
+
+}
+
+/* ---------- Tablet ---------- */
+
+@media (max-width: 768px) {
+
+    .page-container {
+
+        padding: 1.5rem;
+
+        gap: 1.5rem;
+
+    }
+
+    .page-header {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+    }
+
+    .page-actions {
+
+        width: 100%;
+
+    }
+
+    .page-actions .btn {
+
+        width: 100%;
+
+        justify-content: center;
+
+    }
+
+    .cliente-card {
+
+        padding: 1.5rem;
+
+    }
+
+    .cliente-form-grid {
+
+        grid-template-columns: 1fr;
+
+        gap: 1.25rem;
+
+    }
+
+    .cliente-form-actions {
+
+        flex-direction: column-reverse;
+
+        align-items: stretch;
+
+    }
+
+    .cliente-form-actions .btn {
+
+        width: 100%;
+
+        min-width: 100%;
+
+    }
+
+    #status {
+
+        max-width: 100%;
+
+    }
+
+}
+
+/* ---------- Celular ---------- */
+
+@media (max-width: 480px) {
+
+    .page-container {
+
+        padding: 1rem;
+
+    }
+
+    .page-title-header {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: .75rem;
+
+    }
+
+    .page-title-header i {
+
+        font-size: 1.8rem;
+
+    }
+
+    .page-title h1 {
+
+        font-size: 1.7rem;
+
+    }
+
+    .page-title p {
+
+        font-size: .9rem;
+
+    }
+
+    .cliente-card {
+
+        padding: 1.25rem;
+
+        gap: 1.5rem;
+
+    }
+
+    .cliente-card h2 {
+
+        font-size: 1.1rem;
+
+    }
+
+    .form-control {
+
+        font-size: .9rem;
+
+    }
+
+}

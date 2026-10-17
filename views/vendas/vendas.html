@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+
+<head>
+
+    <!-- ==================================================
+         META TAGS
+    =================================================== -->
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>PetFlow • Vendas</title>
+
+    <!-- ==================================================
+         CSS
+    =================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="../../public/css/main.css">
+
+    <link
+        rel="stylesheet"
+        href="../../public/css/components.css">
+
+    <link
+        rel="stylesheet"
+        href="../../public/css/pages/dashboard.css">
+
+    <link
+        rel="stylesheet"
+        href="../../public/css/pages/vendas.css">
+
+</head>
+
+<body>
+
+    <!-- ==================================================
+         CONTAINER PRINCIPAL
+    =================================================== -->
+
+    <div class="dashboard-container">
+
+        <!-- =============================================
+             SIDEBAR
+        ============================================== -->
+
+        <aside class="sidebar">
+
+            <div class="sidebar-logo">
+
+                <img
+                    src="../../public/images/logo.png"
+                    alt="PetFlow Logo">
+
+            </div>
+
+            <nav class="sidebar-menu">
+
+                <a href="../dashboard/dashboard.html">
+
+                    Dashboard
+
+                </a>
+
+                <a href="../clientes/clientes.html">
+
+                    Clientes
+
+                </a>
+
+                <a href="../pets/pets.html">
+
+                    Pets
+
+                </a>
+
+                <a href="../produtos/produtos.html">
+
+                    Produtos
+
+                </a>
+
+                <a href="../estoque/estoque.html">
+
+                    Estoque
+
+                </a>
+
+                <a
+                    href="../vendas/vendas.html"
+                    class="active">
+
+                    Vendas
+
+                </a>
+
+                <a href="../financeiro/financeiro.html">
+
+                    Financeiro
+
+                </a>
+
+            </nav>
+
+        </aside>
+
+        <!-- =============================================
+             CONTEÚDO PRINCIPAL
+        ============================================== -->
+
+        <main class="dashboard-content">
+
+            <!-- =========================================
+                 CABEÇALHO
+            ========================================== -->
+
+            <header class="page-header">
+
+                <div class="page-title">
+
+                    <h1>
+
+                        Vendas
+
+                    </h1>
+
+                    <p>
+
+                        Gerencie todas as vendas realizadas no PetFlow.
+
+                    </p>
+
+                </div>
+
+                <div class="page-actions">
+
+                    <button
+                        type="button"
+                        id="btnNovaVenda"
+                        class="btn-primary">
+
+                        Nova Venda
+
+                    </button>
+
+                </div>
+
+            </header>
+
+            <!-- =========================================
+                 PDV
+            ========================================== -->
+
+            <section class="pdv-container">
+
+                <!-- =====================================
+                     CLIENTE
+                ====================================== -->
+
+                <section class="card cliente-card">
+
+                    <h2>
+
+                        Cliente
+
+                    </h2>
+
+                    <div class="form-group">
+
+                        <label for="buscarCliente">
+
+                            Buscar Cliente
+
+                        </label>
+
+                        <input
+                            type="search"
+                            id="buscarCliente"
+                            name="buscarCliente"
+                            class="form-control"
+                            placeholder="Digite o nome do cliente"
+                            autocomplete="off"
+                            spellcheck="false"
+                            maxlength="100">
+
+                    </div>
+
+                    <div
+                        id="clienteSelecionado"
+                        class="cliente-selecionado">
+
+                        Nenhum cliente selecionado.
+
+                    </div>
+
+                </section>
+
+                <!-- =====================================
+                     PRODUTOS
+                ====================================== -->
+
+                <section class="card produtos-card">
+
+                    <h2>
+
+                        Produtos
+
+                    </h2>
+
+                    <div class="form-group">
+
+                        <label for="buscarProduto">
+
+                            Buscar Produto
+
+                        </label>
+
+                        <input
+                            type="search"
+                            id="buscarProduto"
+                            name="buscarProduto"
+                            class="form-control"
+                            placeholder="Digite o nome do produto"
+                            autocomplete="off"
+                            spellcheck="false"
+                            maxlength="150">
+
+                    </div>
+
+                    <div
+                        id="listaProdutos"
+                        class="lista-produtos">
+
+                        <!-- Produtos carregados via JavaScript -->
+
+                    </div>
+
+                </section>
+
+                                <!-- =====================================
+                     CARRINHO
+                ====================================== -->
+
+                <section class="card carrinho-card">
+
+                    <div class="card-header">
+
+                        <h2>
+
+                            Carrinho
+
+                        </h2>
+
+                        <span
+                            id="totalItens"
+                            class="badge">
+
+                            0 Itens
+
+                        </span>
+
+                    </div>
+
+                    <div class="table-responsive">
+
+                        <table class="table">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>Produto</th>
+
+                                    <th>Quantidade</th>
+
+                                    <th>Valor Unitário</th>
+
+                                    <th>Total</th>
+
+                                    <th>Ações</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="carrinhoItens">
+
+                                <!-- JavaScript -->
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </section>
+
+                <!-- =====================================
+                     RESUMO DA VENDA
+                ====================================== -->
+
+                <section class="card resumo-card">
+
+                    <h2>
+
+                        Resumo da Venda
+
+                    </h2>
+
+                    <div class="form-group">
+
+                        <label for="subtotal">
+
+                            Subtotal
+
+                        </label>
+
+                        <input
+                            type="text"
+                            id="subtotal"
+                            name="subtotal"
+                            class="form-control"
+                            value="R$ 0,00"
+                            readonly>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="desconto">
+
+                            Desconto (R$)
+
+                        </label>
+
+                        <input
+                            type="number"
+                            id="desconto"
+                            name="desconto"
+                            class="form-control"
+                            min="0"
+                            step="0.01"
+                            value="0"
+                            autocomplete="off">
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="acrescimo">
+
+                            Acréscimo (R$)
+
+                        </label>
+
+                        <input
+                            type="number"
+                            id="acrescimo"
+                            name="acrescimo"
+                            class="form-control"
+                            min="0"
+                            step="0.01"
+                            value="0"
+                            autocomplete="off">
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="valorTotal">
+
+                            Total da Venda
+
+                        </label>
+
+                        <input
+                            type="text"
+                            id="valorTotal"
+                            name="valorTotal"
+                            class="form-control"
+                            value="R$ 0,00"
+                            readonly>
+
+                    </div>
+
+                </section>
+
+                <!-- =====================================
+                     PAGAMENTO
+                ====================================== -->
+
+                <section class="card pagamento-card">
+
+                    <h2>
+
+                        Pagamento
+
+                    </h2>
+
+                    <div class="form-group">
+
+                        <label for="formaPagamento">
+
+                            Forma de Pagamento
+
+                        </label>
+
+                        <select
+                            id="formaPagamento"
+                            name="formaPagamento"
+                            class="form-control"
+                            required
+                            autocomplete="off">
+
+                            <option value="">
+
+                                Selecione
+
+                            </option>
+
+                            <option value="PIX">
+
+                                PIX
+
+                            </option>
+
+                            <option value="DINHEIRO">
+
+                                Dinheiro
+
+                            </option>
+
+                            <option value="DEBITO">
+
+                                Cartão de Débito
+
+                            </option>
+
+                            <option value="CREDITO">
+
+                                Cartão de Crédito
+
+                            </option>
+
+                            <option value="TRANSFERENCIA">
+
+                                Transferência
+
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="observacoes">
+
+                            Observações
+
+                        </label>
+
+                        <textarea
+                            id="observacoes"
+                            name="observacoes"
+                            class="form-control"
+                            rows="4"
+                            maxlength="500"
+                            placeholder="Observações da venda..."
+                            autocomplete="off"></textarea>
+
+                    </div>
+
+                </section>
+
+                <!-- =====================================
+                     AÇÕES
+                ====================================== -->
+
+                <section class="card acoes-card">
+
+                    <button
+                        type="button"
+                        id="btnCancelarVenda"
+                        class="btn-secondary">
+
+                        Cancelar Venda
+
+                    </button>
+
+                    <button
+                        type="button"
+                        id="btnImprimir"
+                        class="btn-warning">
+
+                        Imprimir Comprovante
+
+                    </button>
+
+                    <button
+                        type="submit"
+                        id="btnFinalizarVenda"
+                        class="btn-success">
+
+                        Finalizar Venda
+
+                    </button>
+
+                </section>
+
+            </section>
+
+            <!-- =========================================
+                 HISTÓRICO DE VENDAS
+            ========================================== -->
+
+            <section class="card historico-card">
+
+                <div class="card-header">
+
+                    <h2>
+
+                        Histórico de Vendas
+
+                    </h2>
+
+                    <input
+                        type="search"
+                        id="pesquisarVenda"
+                        name="pesquisarVenda"
+                        class="form-control"
+                        placeholder="Pesquisar venda..."
+                        autocomplete="off"
+                        spellcheck="false"
+                        maxlength="100">
+
+                </div>
+
+                <div class="table-responsive">
+
+                    <table class="table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>ID</th>
+
+                                <th>Cliente</th>
+
+                                <th>Pagamento</th>
+
+                                <th>Total</th>
+
+                                <th>Status</th>
+
+                                <th>Data</th>
+
+                                <th>Ações</th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="tabelaVendas">
+
+                            <!-- JavaScript -->
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+                        <!-- =========================================
+                 MODAL NOVA VENDA
+            ========================================== -->
+
+            <dialog id="modalVenda" class="modal">
+
+                <form
+                    id="formVenda"
+                    class="modal-content"
+                    autocomplete="off"
+                    novalidate>
+
+                    <header class="modal-header">
+
+                        <h2>
+
+                            Nova Venda
+
+                        </h2>
+
+                    </header>
+
+                    <div class="modal-body">
+
+                        <div class="form-group">
+
+                            <label for="modalCliente">
+
+                                Cliente
+
+                            </label>
+
+                            <input
+                                type="search"
+                                id="modalCliente"
+                                name="modalCliente"
+                                class="form-control"
+                                placeholder="Pesquisar cliente..."
+                                autocomplete="off"
+                                spellcheck="false"
+                                maxlength="100">
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="modalProduto">
+
+                                Produto
+
+                            </label>
+
+                            <input
+                                type="search"
+                                id="modalProduto"
+                                name="modalProduto"
+                                class="form-control"
+                                placeholder="Pesquisar produto..."
+                                autocomplete="off"
+                                spellcheck="false"
+                                maxlength="150">
+
+                        </div>
+
+                    </div>
+
+                    <footer class="modal-footer">
+
+                        <button
+                            type="button"
+                            id="btnFecharModal"
+                            class="btn-secondary">
+
+                            Fechar
+
+                        </button>
+
+                        <button
+                            type="submit"
+                            id="btnSalvarVenda"
+                            class="btn-primary">
+
+                            Salvar Venda
+
+                        </button>
+
+                    </footer>
+
+                </form>
+
+            </dialog>
+
+            <!-- =========================================
+                 MODAL CONFIRMAÇÃO
+            ========================================== -->
+
+            <dialog
+                id="modalConfirmacao"
+                class="modal">
+
+                <div class="modal-content">
+
+                    <header class="modal-header">
+
+                        <h2>
+
+                            Confirmar
+
+                        </h2>
+
+                    </header>
+
+                    <div class="modal-body">
+
+                        <p id="mensagemConfirmacao">
+
+                            Deseja realmente continuar?
+
+                        </p>
+
+                    </div>
+
+                    <footer class="modal-footer">
+
+                        <button
+                            type="button"
+                            id="btnNao"
+                            class="btn-secondary">
+
+                            Não
+
+                        </button>
+
+                        <button
+                            type="button"
+                            id="btnSim"
+                            class="btn-danger">
+
+                            Sim
+
+                        </button>
+
+                    </footer>
+
+                </div>
+
+            </dialog>
+
+        </main>
+
+    </div>
+
+    <!-- ==================================================
+         JAVASCRIPT
+    =================================================== -->
+
+    <script src="../../public/js/api/api.js"></script>
+
+    <script src="../../public/js/utils/constants.js"></script>
+
+    <script src="../../public/js/utils/helpers.js"></script>
+
+    <script src="../../public/js/utils/storage.js"></script>
+
+    <script src="../../public/js/utils/validator.js"></script>
+
+    <script src="../../public/js/utils/mask.js"></script>
+
+    <script src="../../public/js/pages/auth/authGuard.js"></script>
+
+    <script src="../../public/js/pages/auth/session.js"></script>
+
+    <script src="../../public/js/pages/auth/permission.js"></script>
+
+    <script src="../../public/js/services/vendaService.js"></script>
+
+    <script src="../../public/js/pages/vendas/vendas.js"></script>
+
+</body>
+
+</html>

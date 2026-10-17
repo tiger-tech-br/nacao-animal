@@ -1,0 +1,129 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex,nofollow">
+    <title>PetFlow | Minha conta</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/layout/public-header.css?v=20260811-1">
+    <link rel="stylesheet" href="/css/pages/public-login.css?v=20260808-1">
+    <link rel="stylesheet" href="/css/layout/cart-sidebar.css?v=20261001">
+<link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
+</head>
+<body>
+    <main class="login-container account-container">
+        <section class="login-card" aria-labelledby="accountTitle">
+            <header class="login-header">
+                <a class="login-logo" href="/" aria-label="Voltar para a página inicial">
+                    <img src="/images/logo/fred-petflow-logo-transparent.png" alt="Logo PetFlow" width="88" height="88">
+                </a>
+                <span class="login-eyebrow">Área do cliente</span>
+                <h1 id="accountTitle">Minha conta</h1>
+                <p>Atualize seus dados e endereço de entrega salvos na PetFlow.</p>
+            </header>
+
+            <nav class="account-links" aria-label="Área do cliente">
+                <a class="active" href="/conta"><i class="fa-solid fa-user-pen"></i> Minha conta</a>
+
+                <a href="/meus-pedidos"><i class="fa-solid fa-bag-shopping"></i> Meus pedidos</a>
+            </nav>
+
+            <form id="publicAccountForm" class="login-form" autocomplete="on">
+                <div class="form-group">
+                    <label for="nome">Nome</label>
+                    <input class="form-control" id="nome" name="nome" required placeholder="Nome completo" minlength="3" maxlength="120" pattern="^[A-Za-zÀ-ÿ\s']{3,120}$">
+                </div>
+                <div class="form-group">
+                    <label for="telefone">Celular (WhatsApp)</label>
+                    <div class="input-with-icon">
+                        <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+                        <input class="form-control" id="telefone" name="telefone" required placeholder="(00) 00000-0000" pattern="^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="data_nascimento">Data de nascimento</label>
+                    <input class="form-control" id="data_nascimento" name="data_nascimento" type="date">
+                </div>
+                <div class="form-group">
+                    <label for="cpf">CPF</label>
+                    <input class="form-control" id="cpf" name="cpf" inputmode="numeric" placeholder="000.000.000-00" pattern="^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$" title="Informe um CPF válido, com ou sem pontuação." required>
+                </div>
+                <div class="form-group">
+                    <label for="email">E-mail</label>
+                    <input class="form-control" id="email" name="email" type="email" disabled>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="cep">CEP</label>
+                        <input class="form-control" id="cep" name="cep" placeholder="00000-000" pattern="^\d{5}-?\d{3}$" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="numero">N°</label>
+                        <input class="form-control" id="numero" name="numero" placeholder="123" maxlength="12" pattern="^[0-9A-Za-zÀ-ÿ\s/-]{1,12}$" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="endereco">Endereço</label>
+                    <input class="form-control" id="endereco" name="endereco" placeholder="Rua, avenida ou travessa" minlength="3" maxlength="160" required>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="complemento">Complemento</label>
+                        <input class="form-control" id="complemento" name="complemento" placeholder="Opcional" maxlength="80">
+                    </div>
+                    <div class="form-group">
+                        <label for="bairro">Bairro</label>
+                        <input class="form-control" id="bairro" name="bairro" minlength="2" maxlength="80" required>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="cidade">Cidade</label>
+                        <input class="form-control" id="cidade" name="cidade" minlength="2" maxlength="80" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="estado">Estado</label>
+                        <input class="form-control" id="estado" name="estado" maxlength="2" pattern="^[A-Za-z]{2}$" placeholder="SP" required>
+                    </div>
+                </div>
+                <button class="btn btn-primary" type="submit">Salvar dados</button>
+                <button class="btn btn-secondary" id="publicLogout" type="button">Sair da conta</button>
+                <button class="btn btn-secondary" id="publicExportData" type="button">Baixar meus dados (LGPD)</button>
+                <button class="btn btn-danger" id="publicDeleteAccount" type="button">Excluir cadastro</button>
+                <p class="login-note" id="accountStatus"></p>
+            </form>
+
+            <form class="auth-form lgpd-request-form" id="publicLgpdForm">
+                <h2>Privacidade e seus direitos</h2>
+                <p>Solicite correção, informação, portabilidade, anonimização ou revogação de consentimento. Você receberá um número de protocolo.</p>
+                <div class="form-group">
+                    <label for="lgpdType">Tipo de solicitação</label>
+                    <select class="form-control" id="lgpdType" name="tipo" required>
+                        <option value="INFORMACAO">Informações sobre o tratamento</option>
+                        <option value="CORRECAO">Correção de dados</option>
+                        <option value="PORTABILIDADE">Portabilidade</option>
+                        <option value="ANONIMIZACAO">Anonimização</option>
+                        <option value="REVOGACAO">Revogar marketing/newsletter</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="lgpdDetails">Detalhes</label>
+                    <textarea class="form-control" id="lgpdDetails" name="detalhes" minlength="5" maxlength="1000" required></textarea>
+                </div>
+                <button class="btn btn-primary" type="submit">Registrar solicitação</button>
+                <p class="login-note" id="lgpdStatus"></p>
+            </form>
+            <section class="lgpd-history" aria-labelledby="lgpdHistoryTitle">
+                <h2 id="lgpdHistoryTitle">Minhas solicitações</h2>
+                <div id="lgpdRequestList"><p>Carregando protocolos...</p></div>
+            </section>
+        </section>
+    </main>
+
+    <script src="/js/layout/public-header.js?v=20261012-1"></script>
+    <script src="/js/pages/auth/public-auth.js?v=20261003-3"></script>
+    <script src="/js/layout/cart-sidebar.js?v=20261001"></script>
+<script src="/js/layout/notifications.js?v=20261002"></script>
+</body>
+</html>

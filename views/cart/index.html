@@ -1,0 +1,128 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Revise sua sacola PetFlow e finalize seu pedido.">
+    <title>PetFlow | Sacola</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/layout/public-header.css?v=20260811-1">
+    <link rel="stylesheet" href="/css/pages/public-cart.css?v=20261001-cupons">
+    <link rel="stylesheet" href="/css/layout/cart-sidebar.css?v=20261001">
+<link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
+</head>
+<body>
+    <header class="cart-topbar">
+        <a class="brand" href="/" aria-label="Voltar para a PetFlow">
+            <img src="/images/logo/fred-petflow-logo-transparent.png" alt="Logo PetFlow">
+            <strong>PetFlow</strong>
+        </a>
+        <nav aria-label="Navegação">
+            <a href="/#products">Produtos</a>
+            <a href="/meus-pedidos">Meus pedidos</a>
+            <a href="/login">Entrar</a>
+        </nav>
+    </header>
+
+    <main class="cart-page">
+        <section class="cart-header" aria-labelledby="cartTitle">
+            <span class="eyebrow">Sacola PetFlow</span>
+            <h1 id="cartTitle">Revise seu pedido</h1>
+            <p>Confira os produtos, ajuste quantidades e finalize usando seus dados salvos.</p>
+        </section>
+
+        <section class="cart-layout">
+            <div class="cart-items" id="cartItems"></div>
+
+            <aside class="cart-summary" aria-labelledby="summaryTitle">
+                <h2 id="summaryTitle">Seu pedido</h2>
+                <div class="customer-card" id="cartCustomer"></div>
+                <section class="shipping-box" aria-label="Frete de entrega">
+                    <strong>Endereço de entrega</strong>
+                    <p>Consulte a entrega pelo CEP, mesmo sem cadastro.</p>
+                    <form id="shippingForm" class="shipping-form">
+                        <label for="deliveryCep">CEP</label>
+                        <div class="coupon-input-row">
+                            <input class="form-control" id="deliveryCep" name="cep" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000" required>
+                            <button class="btn-secondary" id="lookupCep" type="button">Buscar CEP</button>
+                        </div>
+                        <p id="cepStatus" class="cart-status" role="status"></p>
+                        <label for="deliveryStreet">Rua</label>
+                        <input class="form-control" id="deliveryStreet" name="endereco" autocomplete="address-line1" maxlength="200" required>
+                        <div class="address-pair">
+                            <label>Número<input class="form-control" id="deliveryNumber" name="numero" maxlength="20" required></label>
+                            <label>Complemento<input class="form-control" id="deliveryComplement" name="complemento" autocomplete="address-line2" maxlength="100" placeholder="Opcional"></label>
+                        </div>
+                        <label for="deliveryDistrict">Bairro</label>
+                        <input class="form-control" id="deliveryDistrict" name="bairro" maxlength="100" required>
+                        <div class="address-pair">
+                            <label>Cidade<input class="form-control" id="deliveryCity" name="cidade" autocomplete="address-level2" maxlength="100" required></label>
+                            <label>UF<input class="form-control" id="deliveryState" name="estado" autocomplete="address-level1" maxlength="2" pattern="[A-Za-z]{2}" required></label>
+                        </div>
+                        <button class="btn-secondary" id="calculateShipping" type="submit">Calcular entrega</button>
+                    </form>
+                    <p>Até 1 km grátis. Depois, R$ 3 por km adicional ou fração.</p>
+                    <p id="shippingStatus" role="status">Informe o CEP e o número para consultar a entrega.</p>
+                </section>
+                <section class="coupon-box" aria-labelledby="couponTitle">
+                    <div class="coupon-heading">
+                        <div><strong id="couponTitle">Cupons <span id="couponCount">0</span></strong>
+                            <p id="couponAvailability">Entre para consultar seus cupons.</p></div>
+                        <button class="btn-secondary" id="toggleCoupons" type="button" aria-expanded="false" aria-controls="couponPanel">Adicionar</button>
+                    </div>
+                    <div id="couponPanel" hidden>
+                        <form id="couponForm" class="coupon-form">
+                            <label for="couponCode">Código do cupom</label>
+                            <div class="coupon-input-row">
+                                <input class="form-control" id="couponCode" name="codigo" maxlength="40" autocomplete="off" autocapitalize="characters" placeholder="Digite seu cupom" required>
+                                <button class="btn-secondary" id="applyCoupon" type="submit">Aplicar</button>
+                            </div>
+                        </form>
+                        <div id="availableCoupons" class="available-coupons"></div>
+                    </div>
+                    <div class="applied-coupon" id="appliedCoupon" hidden>
+                        <strong id="appliedCouponCode"></strong>
+                        <button class="btn-secondary" id="removeCoupon" type="button">Remover</button>
+                    </div>
+                    <p id="couponStatus" class="cart-status" role="status"></p>
+                </section>
+                <form class="cart-form" id="cartForm">
+                    <label>
+                        Observações
+                        <textarea class="form-control" name="observacoes" placeholder="Ex: entregar à tarde"></textarea>
+                    </label>
+                    <h3>Resumo do pedido</h3>
+                    <div class="cart-total">
+                        <span>Produtos (<span id="cartItemCount">0</span>)</span><strong id="cartProductsTotal">R$ 0,00</strong>
+                    </div>
+                    <div class="cart-total">
+                        <span>Descontos</span><strong id="cartDiscount">R$ 0,00</strong>
+                    </div>
+                    <div class="cart-total">
+                        <span>Subtotal</span><strong id="cartSubtotal">R$ 0,00</strong>
+                    </div>
+                    <div class="cart-total" id="cartShippingRow" hidden>
+                        <span>Frete</span><strong id="cartShipping"></strong>
+                    </div>
+                    <div class="cart-total" id="cartTotalRow" hidden>
+                        <span>Total</span>
+                        <strong id="cartTotal">R$ 0,00</strong>
+                    </div>
+                    <p class="cart-status" id="cartDeliveryPrompt">Informe seu endereço acima para ver o total com entrega.</p>
+                    <p class="cart-status cart-stock-status" id="cartStockStatus" role="alert" hidden></p>
+                    <p class="cart-savings" id="cartSavings" hidden></p>
+                    <button class="btn btn-primary" type="submit" disabled>Comprar</button>
+                    <a class="btn-secondary" href="/#products" id="continueShopping">Escolher mais produtos</a>
+                    <p class="cart-status" id="cartStatus" role="status"></p>
+                </form>
+            </aside>
+        </section>
+    </main>
+
+    <script src="/js/layout/public-header.js?v=20261012-1"></script>
+    <script src="/js/pages/cart/cart.js?v=20261004-cep"></script>
+    <script src="/js/layout/cart-sidebar.js?v=20261001"></script>
+<script src="/js/layout/notifications.js?v=20261002"></script>
+</body>
+</html>

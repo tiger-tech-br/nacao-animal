@@ -1,0 +1,25 @@
+.cart-sidebar {
+    position: fixed;
+    inset: 0 0 0 auto;
+    width: min(560px, 100vw);
+    height: 100dvh;
+    max-width: 100vw;
+    max-height: 100dvh;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: #f7fbfa;
+    color: #10212b;
+    box-shadow: -12px 0 50px #10212b33;
+    overflow: hidden;
+}
+.cart-sidebar[open] { display: flex; flex-direction: column; animation: cart-slide-in .2s ease-out; }
+.cart-sidebar::backdrop { background: #10212b80; }
+.cart-sidebar-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 22px; background: white; border-bottom: 1px solid #dbe7ea; }
+.cart-sidebar-heading h2 { margin: 0; font: 700 22px/1.3 Arial, sans-serif; }
+.cart-sidebar-heading button { width: 44px; height: 44px; border: 1px solid #dbe7ea; border-radius: 8px; background: white; color: #10212b; font: 28px Arial, sans-serif; cursor: pointer; }
+.cart-sidebar-heading button:disabled { opacity: .4; cursor: wait; }
+.cart-sidebar iframe { width: 100%; flex: 1; min-height: 0; border: 0; }
+.cart-sidebar-open { overflow: hidden; }
+@keyframes cart-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .cart-sidebar[open] { animation: none; } }

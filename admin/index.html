@@ -1,0 +1,201 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <!-- ==================================================
+         META TAGS
+    ================================================== -->
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="robots"
+        content="noindex, nofollow">
+
+    <meta
+        name="description"
+        content="Área da loja PetFlow">
+
+    <title>PetFlow • Área da loja</title>
+
+    <!-- ==================================================
+         FAVICON
+    ================================================== -->
+
+    <link
+        rel="icon"
+        href="../favicon.ico"
+        type="image/x-icon">
+
+    <!-- ==================================================
+         CSS
+    ================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="/css/pages/admin-login.css?v=20260804-1">
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+</head>
+
+<body>
+
+    <!-- ==================================================
+         MAIN
+    ================================================== -->
+
+    <main class="login-container">
+
+        <!-- ==========================================
+             LOGIN
+        =========================================== -->
+
+        <section
+            class="login-card"
+            aria-labelledby="login-title">
+
+            <!-- ======================================
+                 HEADER
+            ======================================= -->
+
+            <header class="login-header">
+
+                <img
+                    src="/images/logo/fred-petflow-logo-transparent.png"
+                    alt="Logo PetFlow"
+                    width="90"
+                    height="90">
+
+                <h1 id="login-title">
+
+                    Área da loja
+
+                </h1>
+
+                <p>
+
+                    Acesso exclusivo para a equipe PetFlow.
+
+                </p>
+
+            </header>
+
+            <!-- ======================================
+                 FORMULÁRIO
+            ======================================= -->
+
+            <form
+                id="loginForm"
+                class="login-form"
+                autocomplete="on"
+                novalidate>
+
+                <!-- Email -->
+
+                <div class="form-group">
+
+                    <label for="email">
+
+                        E-mail
+
+                    </label>
+
+                    <input
+                        class="form-control"
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="Digite seu e-mail"
+                        maxlength="150"
+                        autocomplete="email"
+                        required>
+
+                </div>
+
+                <!-- Senha -->
+
+                <div class="form-group">
+
+                    <label for="senha">
+
+                        Senha
+
+                    </label>
+
+                    <input
+                        class="form-control"
+                        type="password"
+                        id="senha"
+                        name="senha"
+                        placeholder="Digite sua senha"
+                        maxlength="100"
+                        autocomplete="current-password"
+                        required>
+
+                </div>
+
+                <!-- Lembrar -->
+
+                <div class="form-check">
+
+                    <input
+                        type="checkbox"
+                        id="remember">
+
+                    <label for="remember">
+
+                        Permanecer conectado
+
+                    </label>
+
+                </div>
+
+                <!-- Botão -->
+
+                <button
+                    class="btn btn-primary"
+                    type="submit">
+
+                    Entrar
+
+                </button>
+
+                <div class="login-links">
+
+                    <a
+                        href="#"
+                        data-admin-forgot-password>
+
+                        Esqueci minha senha
+
+                    </a>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </main>
+
+    <!-- ==================================================
+         JAVASCRIPT
+    ================================================== -->
+
+    <script src="/js/utils/storage.js?v=20260928-1"></script>
+    <script src="/js/utils/validation.js"></script>
+    <script src="/js/services/api.js"></script>
+    <script src="/js/services/authService.js"></script>
+    <script src="/js/pages/auth/login.js?v=20260928-1"></script>
+
+</body>
+
+</html>

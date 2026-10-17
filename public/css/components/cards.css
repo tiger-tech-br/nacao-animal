@@ -1,0 +1,224 @@
+/* ==================================================
+   PETFLOW
+   CARDS.CSS
+================================================== */
+
+
+/* ==================================================
+   GRID DOS CARDS
+================================================== */
+
+.cards-grid {
+
+    display: grid;
+
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+
+    gap: 1.5rem;
+
+}
+
+
+/* ==================================================
+   CARD
+================================================== */
+
+.card {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 1.25rem;
+
+    background: #ffffff;
+
+    border-radius: 18px;
+
+    padding: 1.5rem;
+
+    border: 1px solid #e5e7eb;
+
+    transition: .25s;
+
+}
+
+.card:hover {
+
+    transform: translateY(-4px);
+
+    box-shadow: 0 12px 30px rgba(0,0,0,.08);
+
+}
+
+
+/* ==================================================
+   HEADER
+================================================== */
+
+.card-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+}
+
+
+/* ==================================================
+   TÍTULO
+================================================== */
+
+.card-title {
+
+    font-size: .95rem;
+
+    font-weight: 600;
+
+    color: #6b7280;
+
+}
+
+
+/* ==================================================
+   ÍCONE
+================================================== */
+
+.card-icon {
+
+    width: 52px;
+
+    height: 52px;
+
+    border-radius: 14px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    background: #eff6ff;
+
+    color: #2563eb;
+
+    font-size: 1.3rem;
+
+}
+
+
+/* ==================================================
+   BODY
+================================================== */
+
+.card-body {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: .5rem;
+
+}
+
+
+/* ==================================================
+   VALOR
+================================================== */
+
+.card-value {
+
+    font-size: 2rem;
+
+    font-weight: 700;
+
+    color: #111827;
+
+}
+
+
+/* ==================================================
+   TEXTO
+================================================== */
+
+.card-text {
+
+    color: #6b7280;
+
+    font-size: .90rem;
+
+}
+
+
+/* ==================================================
+   FOOTER
+================================================== */
+
+.card-footer {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+}
+
+
+/* ==================================================
+   BADGE
+================================================== */
+
+.card-badge {
+
+    padding: .35rem .8rem;
+
+    border-radius: 50px;
+
+    background: #dcfce7;
+
+    color: #15803d;
+
+    font-size: .75rem;
+
+    font-weight: 600;
+
+}
+
+
+/* ==================================================
+   LINK
+================================================== */
+
+.card-link {
+
+    color: #2563eb;
+
+    text-decoration: none;
+
+    font-weight: 600;
+
+}
+
+.card-link:hover {
+
+    text-decoration: underline;
+
+}
+
+
+/* ==================================================
+   RESPONSIVO
+================================================== */
+
+@media (max-width:768px){
+
+    .cards-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+}

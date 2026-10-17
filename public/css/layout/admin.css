@@ -1,0 +1,165 @@
+/* ==================================================
+   PETFLOW
+   ADMIN.CSS
+   Estrutura Principal do Painel Administrativo
+================================================== */
+
+/* ==================================================
+   BODY
+================================================== */
+
+body {
+
+    margin: 0;
+
+    min-height: 100vh;
+
+    background: #f5f7fb;
+
+    font-family: "Poppins", sans-serif;
+
+    color: #1f2937;
+
+}
+
+
+/* ==================================================
+   ADMIN LAYOUT
+================================================== */
+
+.admin-layout {
+
+    display: flex;
+
+    min-height: 100vh;
+
+}
+
+
+/* ==================================================
+   SIDEBAR
+================================================== */
+
+.sidebar {
+
+    width: 280px;
+
+    min-width: 280px;
+
+    background: #ffffff;
+
+    border-right: 1px solid #e5e7eb;
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+
+/* ==================================================
+   MAIN CONTENT
+================================================== */
+
+.main-content {
+
+    flex: 1;
+
+    display: flex;
+
+    flex-direction: column;
+
+    min-width: 0;
+
+    overflow-x: hidden;
+
+}
+
+
+/* ==================================================
+   TOPBAR
+================================================== */
+
+.topbar {
+
+    height: 75px;
+
+    background: #ffffff;
+
+    border-bottom: 1px solid #e5e7eb;
+
+    display: flex;
+
+    align-items: center;
+
+    padding: 0 2rem;
+
+}
+
+
+/* ==================================================
+   PAGE CONTENT
+================================================== */
+
+.page-content {
+
+    flex: 1;
+
+    padding: 2rem;
+
+    background: #f5f7fb;
+
+}
+
+
+/* ==================================================
+   RESPONSIVO
+================================================== */
+
+@media (max-width: 992px) {
+
+    .sidebar {
+
+        width: 240px;
+
+        min-width: 240px;
+
+    }
+
+}
+
+@media (max-width: 768px) {
+
+    .admin-layout {
+
+        flex-direction: column;
+
+    }
+
+    .sidebar {
+
+        width: 100%;
+
+        min-width: 100%;
+
+        height: auto;
+
+        border-right: none;
+
+        border-bottom: 1px solid #e5e7eb;
+
+    }
+
+    .topbar {
+
+        padding: 0 1rem;
+
+    }
+
+    .page-content {
+
+        padding: 1rem;
+
+    }
+
+}

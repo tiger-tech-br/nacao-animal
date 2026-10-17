@@ -1,0 +1,230 @@
+/* ==================================================
+   BREADCRUMBS
+================================================== */
+
+.breadcrumb {
+
+    display: flex;
+
+    align-items: center;
+
+    flex-wrap: wrap;
+
+    gap: .5rem;
+
+    margin-bottom: var(--space-lg);
+
+    font-size: var(--fs-sm);
+
+}
+
+/* ==================================================
+   LISTA
+================================================== */
+
+.breadcrumb-list {
+
+    display: flex;
+
+    align-items: center;
+
+    flex-wrap: wrap;
+
+    gap: .5rem;
+
+    list-style: none;
+
+}
+
+/* ==================================================
+   ITEM
+================================================== */
+
+.breadcrumb-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: .5rem;
+
+}
+
+/* ==================================================
+   LINKS
+================================================== */
+
+.breadcrumb-item a {
+
+    color: var(--text-light);
+
+    text-decoration: none;
+
+    transition: var(--transition);
+
+}
+
+.breadcrumb-item a:hover {
+
+    color: var(--primary);
+
+}
+
+/* ==================================================
+   ITEM ATUAL
+================================================== */
+
+.breadcrumb-item.active {
+
+    color: var(--text);
+
+    font-weight: 600;
+
+}
+
+/* ==================================================
+   SEPARADOR
+================================================== */
+
+.breadcrumb-separator {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    color: var(--gray-400);
+
+    user-select: none;
+
+}
+
+.breadcrumb-separator i {
+
+    font-size: .75rem;
+
+}
+
+.breadcrumb-separator svg {
+
+    width: 14px;
+
+    height: 14px;
+
+}
+
+/* ==================================================
+   BREADCRUMB COMPACTO
+================================================== */
+
+.breadcrumb-sm {
+
+    font-size: .75rem;
+
+}
+
+.breadcrumb-sm .breadcrumb-list {
+
+    gap: .35rem;
+
+}
+
+/* ==================================================
+   BREADCRUMB COM ÍCONES
+================================================== */
+
+.breadcrumb-icon {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 18px;
+
+    height: 18px;
+
+    color: var(--text-light);
+
+}
+
+.breadcrumb-icon svg {
+
+    width: 16px;
+
+    height: 16px;
+
+}
+
+/* ==================================================
+   TEXTO LONGO
+================================================== */
+
+.breadcrumb-item {
+
+    max-width: 220px;
+
+}
+
+.breadcrumb-item a,
+.breadcrumb-item span {
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+}
+
+/* ==================================================
+   ANIMAÇÃO
+================================================== */
+
+.breadcrumb {
+
+    animation: breadcrumbFade .25s ease;
+
+}
+
+@keyframes breadcrumbFade {
+
+    from {
+
+        opacity: 0;
+
+        transform: translateY(-4px);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform: translateY(0);
+
+    }
+
+}
+
+/* ==================================================
+   RESPONSIVIDADE
+================================================== */
+
+@media (max-width: 768px) {
+
+    .breadcrumb {
+
+        font-size: .8rem;
+
+    }
+
+    .breadcrumb-item {
+
+        max-width: 120px;
+
+    }
+
+}

@@ -1,0 +1,52 @@
+{
+  "name": "petflow-v2",
+  "version": "1.0.0",
+  "description": "Loja de produtos para pets",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "db:migrate": "node scripts/migrate.js",
+    "db:seed-admin": "node scripts/seed-admin.js",
+    "db:seed-catalog": "node scripts/seed-catalog.js",
+    "db:seed-demo-clients": "node scripts/seed-demo-clients.js",
+    "db:backup": "node scripts/backup.js",
+    "db:restore": "node scripts/restore.js",
+    "release:check": "node scripts/release-check.js",
+    "test:links": "node scripts/check-static-links.js",
+    "test": "node --test tests/*.test.js",
+    "check:cloudinary": "node scripts/check-cloudinary.js",
+    "release:package": "node scripts/package-release.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "axios": "^1.20.0",
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^2.11.0",
+    "compression": "^1.8.2",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
+    "express-validator": "^7.3.2",
+    "helmet": "^8.3.0",
+    "hpp": "^0.2.3",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.12.1",
+    "multer": "^2.4.0",
+    "pg": "^8.22.0",
+    "qrcode": "^1.5.4",
+    "uuid": "^14.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^10.7.0",
+    "prettier": "^3.9.5"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

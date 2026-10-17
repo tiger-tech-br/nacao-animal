@@ -1,0 +1,95 @@
+/* ==================================================
+   TIPOGRAFIA
+================================================== */
+
+body {
+    /* font-family: var(--font-primary); */
+    font-size: var(--fs-md);
+    color: var(--text);
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+/* ==================================================
+   TÍTULOS
+================================================== */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: var(--text);
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+h1 {
+    font-size: var(--fs-3xl);
+}
+
+h2 {
+    font-size: var(--fs-2xl);
+}
+
+h3 {
+    font-size: var(--fs-xl);
+}
+
+h4 {
+    font-size: var(--fs-lg);
+}
+
+h5 {
+    font-size: var(--fs-md);
+}
+
+h6 {
+    font-size: var(--fs-sm);
+}
+
+/* ==================================================
+   PARÁGRAFOS
+================================================== */
+
+p {
+    color: var(--text-light);
+    margin-bottom: var(--space-md);
+}
+
+/* ==================================================
+   TEXTOS
+================================================== */
+
+small {
+    font-size: var(--fs-sm);
+}
+
+strong {
+    font-weight: 700;
+}
+
+em {
+    font-style: italic;
+}
+
+/* ==================================================
+   RESPONSIVIDADE
+================================================== */
+
+@media (max-width: 768px) {
+
+    h1 {
+        font-size: var(--fs-2xl);
+    }
+
+    h2 {
+        font-size: var(--fs-xl);
+    }
+
+    h3 {
+        font-size: var(--fs-lg);
+    }
+
+}

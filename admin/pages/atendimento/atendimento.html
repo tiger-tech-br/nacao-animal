@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="robots" content="noindex,nofollow">
+    <title>PetFlow - Atendimento</title>
+    <link rel="stylesheet" href="/css/pages/admin-pages.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
+</head>
+<body>
+<div class="admin-layout">
+    <aside class="sidebar">
+        <a class="sidebar-brand" href="/admin/pages/dashboard/dashboard.html"><i class="fa-solid fa-paw"></i><div><strong>PetFlow</strong><span>Painel administrativo</span></div></a>
+        <nav class="sidebar-nav">
+            <a href="/admin/pages/dashboard/dashboard.html" data-active-page="dashboard"><i class="fa-solid fa-house"></i>Painel da Loja</a>
+            <a href="/admin/pages/clientes/clientes.html" data-active-page="clientes"><i class="fa-solid fa-users"></i>Clientes</a>
+            <a href="/admin/pages/produtos/produtos.html" data-active-page="produtos"><i class="fa-solid fa-box"></i>Produtos</a>
+            <a href="/admin/pages/vendas/vendas.html" data-active-page="vendas"><i class="fa-solid fa-box-open"></i>Pedidos</a>
+            <a href="/admin/pages/financeiro/financeiro.html" data-active-page="financeiro"><i class="fa-solid fa-wallet"></i>Financeiro</a>
+        </nav>
+    </aside>
+    <main class="main-content">
+        <header class="topbar"><div class="topbar-title"><span>Gestão da loja</span><h1 id="moduleTitle">Atendimento</h1></div><a class="btn" href="/admin/index.html">Sair</a></header>
+        <section class="page-content">
+            <header class="page-header"><div class="page-heading"><i id="moduleIcon"></i><div><h2>Atendimento</h2><p id="moduleSubtitle"></p></div></div><button class="btn" id="refreshPage"><i class="fa-solid fa-rotate"></i>Atualizar</button></header>
+            <div class="toolbar"><div class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="pageSearch" type="search" placeholder="Pesquisar protocolo, pedido, cliente ou status"></div></div>
+            <div class="content-grid"><section class="panel"><div class="panel-header"><h3 id="tableTitle"></h3><span class="muted" id="statusLine"></span></div><div class="table-wrap"><table class="data-table"><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table></div></section><aside class="panel"><div class="panel-header"><h3 id="formTitle"></h3></div><form class="form" id="recordForm"></form></aside></div>
+        </section>
+    </main>
+</div>
+<script>window.PetFlowAdminPage={"key":"atendimento","title":"Atendimento ao consumidor","subtitle":"Responda cancelamentos, arrependimentos, devoluções e reclamações dentro do prazo.","endpoint":"/atendimento","icon":"fa-headset","tableTitle":"Solicitações recebidas","formTitle":"Responder solicitação","insights":[{"key":"total","label":"Solicitações","value":"0","note":"registros carregados","icon":"fa-inbox"},{"key":"support_open","label":"Pendentes","value":"0","note":"aguardando resposta","icon":"fa-circle-exclamation"},{"key":"support_due","label":"Prazo próximo","value":"0","note":"vencem em até 1 dia","icon":"fa-clock"},{"key":"support_done","label":"Concluídas","value":"0","note":"atendidas ou encerradas","icon":"fa-circle-check"}],"columns":[{"key":"protocolo","label":"Protocolo"},{"key":"cliente","label":"Cliente"},{"key":"tipo","label":"Tipo","type":"status"},{"key":"pedido_status","label":"Pedido","type":"status"},{"key":"status","label":"Atendimento","type":"status"},{"key":"prazo_em","label":"Prazo","type":"date"}],"fields":[{"name":"protocolo","label":"Protocolo","disabled":true},{"name":"tipo","label":"Tipo","disabled":true},{"name":"motivo","label":"Solicitação do consumidor","type":"textarea","disabled":true},{"name":"status","label":"Status","type":"select","required":true,"options":[{"value":"RECEBIDA","label":"Recebida"},{"value":"EM_ANALISE","label":"Em análise"},{"value":"ATENDIDA","label":"Atendida"},{"value":"NEGADA","label":"Negada"}]},{"name":"resposta","label":"Resposta ao consumidor","type":"textarea","maxlength":"2000"}]};</script>
+<script src="/js/utils/storage.js?v=20260928-1"></script>
+<script src="/js/services/api.js?v=20261003-1"></script>
+<script src="/js/pages/auth/authGuard.js"></script>
+<script src="/js/pages/admin/admin-page.js?v=20261003-3"></script>
+<script src="/js/layout/notifications.js?v=20261002"></script>
+</body>
+</html>

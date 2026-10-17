@@ -1,0 +1,429 @@
+/* ==================================================
+   DASHBOARD CALENDAR
+================================================== */
+
+.dashboard-calendar {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: var(--space-lg);
+
+}
+
+/* ==================================================
+   CALENDAR CARD
+================================================== */
+
+.calendar-card {
+
+    display: flex;
+
+    flex-direction: column;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: var(--radius-xl);
+
+    box-shadow: var(--shadow-sm);
+
+    overflow: hidden;
+
+}
+
+/* ==================================================
+   HEADER
+================================================== */
+
+.calendar-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: var(--space-md);
+
+    padding: 1.25rem 1.5rem;
+
+    border-bottom: 1px solid var(--border);
+
+}
+
+.calendar-title {
+
+    margin: 0;
+
+    font-size: var(--fs-lg);
+
+    font-weight: 600;
+
+    color: var(--text);
+
+}
+
+.calendar-date {
+
+    font-size: var(--fs-sm);
+
+    color: var(--text-light);
+
+}
+
+/* ==================================================
+   LIST
+================================================== */
+
+.calendar-list {
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+/* ==================================================
+   ITEM
+================================================== */
+
+.calendar-item {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: var(--space-lg);
+
+    padding: 1rem 1.5rem;
+
+    border-bottom: 1px solid var(--border);
+
+    transition: var(--transition);
+
+}
+
+.calendar-item:last-child {
+
+    border-bottom: none;
+
+}
+
+.calendar-item:hover {
+
+    background: var(--gray-100);
+
+}
+
+/* ==================================================
+   TIME
+================================================== */
+
+.calendar-time {
+
+    min-width: 80px;
+
+    font-weight: 600;
+
+    color: var(--primary);
+
+}
+
+/* ==================================================
+   INFO
+================================================== */
+
+.calendar-info {
+
+    flex: 1;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: .35rem;
+
+}
+
+.calendar-pet {
+
+    font-weight: 600;
+
+    color: var(--text);
+
+}
+
+.calendar-owner {
+
+    color: var(--text-light);
+
+    font-size: var(--fs-sm);
+
+}
+
+/* ==================================================
+   SERVICE
+================================================== */
+
+.calendar-service {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: .4rem;
+
+    font-size: var(--fs-sm);
+
+    color: var(--text-light);
+
+}
+
+/* ==================================================
+   AVATAR
+================================================== */
+
+.calendar-avatar {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    width: 52px;
+
+    height: 52px;
+
+    border-radius: 50%;
+
+    overflow: hidden;
+
+    background: var(--gray-100);
+
+    flex-shrink: 0;
+
+}
+
+.calendar-avatar img {
+
+    width: 100%;
+
+    height: 100%;
+
+    object-fit: cover;
+
+}
+
+.calendar-avatar i {
+
+    font-size: 1.5rem;
+
+    color: var(--text-light);
+
+}
+
+/* ==================================================
+   RESPONSÁVEL
+================================================== */
+
+.calendar-employee {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: .5rem;
+
+    font-size: var(--fs-sm);
+
+    color: var(--text-light);
+
+}
+
+.calendar-employee i {
+
+    color: var(--primary);
+
+}
+
+/* ==================================================
+   STATUS
+================================================== */
+
+.calendar-status {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: .4rem;
+
+}
+
+/* ==================================================
+   ACTIONS
+================================================== */
+
+.calendar-actions {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: .5rem;
+
+    flex-shrink: 0;
+
+}
+
+/* ==================================================
+   TIMELINE
+================================================== */
+
+.calendar-timeline {
+
+    position: relative;
+
+}
+
+.calendar-timeline::before {
+
+    content: "";
+
+    position: absolute;
+
+    left: 40px;
+
+    top: 0;
+
+    bottom: 0;
+
+    width: 2px;
+
+    background: var(--border);
+
+}
+
+.calendar-item {
+
+    position: relative;
+
+}
+
+.calendar-item::before {
+
+    content: "";
+
+    position: absolute;
+
+    left: 34px;
+
+    top: 50%;
+
+    width: 14px;
+
+    height: 14px;
+
+    border-radius: 50%;
+
+    background: var(--primary);
+
+    border: 3px solid var(--surface);
+
+    transform: translateY(-50%);
+
+}
+
+/* ==================================================
+   HORA ATUAL
+================================================== */
+
+.calendar-item.current {
+
+    background: rgba(59,130,246,.05);
+
+}
+
+.calendar-item.current::before {
+
+    background: var(--success);
+
+}
+
+/* ==================================================
+   HOVER
+================================================== */
+
+.calendar-item:hover {
+
+    transform: translateX(4px);
+
+}
+
+/* ==================================================
+   RESPONSIVIDADE
+================================================== */
+
+@media (max-width: 992px) {
+
+    .calendar-item {
+
+        flex-wrap: wrap;
+
+        align-items: flex-start;
+
+    }
+
+    .calendar-actions {
+
+        width: 100%;
+
+        justify-content: flex-end;
+
+    }
+
+}
+
+@media (max-width: 768px) {
+
+    .calendar-item {
+
+        padding: 1rem;
+
+        gap: var(--space-md);
+
+    }
+
+    .calendar-time {
+
+        min-width: 60px;
+
+    }
+
+    .calendar-avatar {
+
+        width: 44px;
+
+        height: 44px;
+
+    }
+
+    .calendar-timeline::before {
+
+        display: none;
+
+    }
+
+    .calendar-item::before {
+
+        display: none;
+
+    }
+
+}

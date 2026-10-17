@@ -1,0 +1,151 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Produtos PetFlow organizados por tipo de pet.">
+    <title>PetFlow | Categoria</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/layout/public-header.css?v=20260811-1">
+    <link rel="stylesheet" href="/css/pages/public-category.css?v=20261003-1">
+    <link rel="stylesheet" href="/css/layout/cart-sidebar.css?v=20261001">
+<link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
+</head>
+<body>
+    <header class="header public-header">
+        <div class="container">
+            <a class="logo" href="/#hero" aria-label="Ir para a página inicial">
+                <img
+                    src="/images/logo/fred-petflow-logo-transparent.png"
+                    alt="Logo da PetFlow"
+                    width="60"
+                    height="60">
+                <span class="logo-text">PetFlow</span>
+            </a>
+
+            <form class="search-form" data-public-header-search role="search" aria-label="Pesquisar produtos" autocomplete="off">
+                <label class="sr-only" for="publicHeaderSearch">Pesquisar produtos</label>
+                <input
+                    class="form-control"
+                    type="search"
+                    id="publicHeaderSearch"
+                    name="search"
+                    placeholder="Buscar produtos"
+                    maxlength="100"
+                    aria-label="Pesquisar produtos">
+                <button class="search-button" type="submit" aria-label="Pesquisar"></button>
+            </form>
+
+            <nav class="menu" id="menu" aria-label="Menu principal">
+                <ul class="menu-list">
+                    <li class="menu-item">
+                        <a href="/#hero" class="menu-link">Início</a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="/#categories" class="menu-link active">Categorias</a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="/#products" class="menu-link">Produtos</a>
+                    </li>
+                    <li class="menu-item">
+
+                    </li>
+                    <li class="menu-item">
+                        <a href="/#localizacao" class="menu-link">Contato</a>
+                    </li>
+                    <li class="menu-item menu-login-item">
+                        <a href="/login" class="menu-link menu-login-link">Entrar</a>
+                    </li>
+                    <li class="menu-item menu-actions-item">
+                        <a href="/#products" class="menu-action-link" aria-label="Abrir favoritos">
+                            <i class="fa-regular fa-heart"></i>
+                            Favoritos
+                        </a>
+                        <a href="/sacola" class="menu-action-link" aria-label="Abrir sacola">
+                            <i class="fa-solid fa-bag-shopping"></i>
+                            Sacola
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="header-actions">
+                <button
+                    class="icon-badge customer-notification-button"
+                    type="button"
+                    aria-label="Notificações"
+                    aria-expanded="false"
+                    hidden>
+                    <i class="fa-regular fa-bell"></i>
+                </button>
+
+                <a href="/#products" class="icon-badge" aria-label="Favoritos">
+                    <i class="fa-regular fa-heart"></i>
+                </a>
+
+                <a href="/sacola" class="icon-badge" aria-label="Sacola">
+                    <i class="fa-solid fa-bag-shopping"></i>
+                </a>
+
+                <a href="/login" class="btn btn-primary">Entrar</a>
+
+                <button
+                    class="menu-toggle"
+                    type="button"
+                    aria-label="Abrir menu"
+                    aria-controls="menu"
+                    aria-expanded="false">
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="category-page">
+        <section class="category-hero" aria-labelledby="categoryTitle">
+            <div class="category-copy">
+                <span class="eyebrow">Categoria</span>
+                <h1 id="categoryTitle">Carregando categoria...</h1>
+                <p id="categoryDescription">Buscando produtos selecionados para o seu pet.</p>
+            </div>
+            <img id="categoryImage" src="/images/categories/dogs.jpg" alt="Categoria PetFlow" loading="eager">
+        </section>
+
+        <section class="category-products" aria-labelledby="productsTitle">
+            <div class="section-heading">
+                <span>Produtos selecionados</span>
+                <h2 id="productsTitle">Itens disponíveis</h2>
+            </div>
+            <form class="category-toolbar" id="categoryToolbar" role="search">
+                <div class="search-field">
+                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                    <input
+                        class="form-control"
+                        id="categorySearch"
+                        type="search"
+                        placeholder="Buscar produto nesta categoria"
+                        autocomplete="off"
+                        aria-label="Buscar produto">
+                </div>
+                <div class="filter-field">
+                    <label for="categoryFilter">Categoria</label>
+                    <select class="form-control" id="categoryFilter" aria-label="Filtrar por categoria">
+                        <option value="caes">Cães</option>
+                        <option value="gatos">Gatos</option>
+                        <option value="aves">Aves</option>
+                        <option value="peixes">Peixes</option>
+                        <option value="roedores">Roedores</option>
+                        <option value="acessorios">Acessórios</option>
+                    </select>
+                </div>
+            </form>
+            <div class="products-grid" id="categoryProducts"></div>
+        </section>
+    </main>
+
+    <script src="/js/layout/public-header.js?v=20261012-1"></script>
+    <script src="/js/pages/categories/category-detail.js?v=20260928-1"></script>
+    <script src="/js/layout/cart-sidebar.js?v=20261001"></script>
+<script src="/js/layout/notifications.js?v=20261002"></script>
+</body>
+</html>

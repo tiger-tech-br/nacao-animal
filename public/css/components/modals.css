@@ -1,0 +1,260 @@
+/* ==================================================
+   PETFLOW
+   MODALS.CSS
+================================================== */
+
+
+/* ==================================================
+   OVERLAY
+================================================== */
+
+.modal {
+
+    position: fixed;
+
+    inset: 0;
+
+    display: none;
+
+    justify-content: center;
+
+    align-items: center;
+
+    padding: 2rem;
+
+    background: rgba(15,23,42,.55);
+
+    backdrop-filter: blur(4px);
+
+    z-index: 5000;
+
+}
+
+
+/* ==================================================
+   SHOW
+================================================== */
+
+.modal.show {
+
+    display: flex;
+
+}
+
+
+/* ==================================================
+   CONTAINER
+================================================== */
+
+.modal-container {
+
+    width: 100%;
+
+    max-width: 650px;
+
+    max-height: 90vh;
+
+    overflow-y: auto;
+
+    background: #ffffff;
+
+    border-radius: 20px;
+
+    box-shadow: 0 25px 60px rgba(0,0,0,.18);
+
+    animation: modalFade .25s ease;
+
+}
+
+
+/* ==================================================
+   HEADER
+================================================== */
+
+.modal-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    padding: 1.5rem 2rem;
+
+    border-bottom: 1px solid #e5e7eb;
+
+}
+
+
+/* ==================================================
+   TITLE
+================================================== */
+
+.modal-title {
+
+    font-size: 1.2rem;
+
+    font-weight: 700;
+
+    color: #111827;
+
+}
+
+
+/* ==================================================
+   CLOSE
+================================================== */
+
+.modal-close {
+
+    width: 42px;
+
+    height: 42px;
+
+    border: none;
+
+    border-radius: 12px;
+
+    background: #f3f4f6;
+
+    cursor: pointer;
+
+    transition: .25s;
+
+}
+
+.modal-close:hover {
+
+    background: #ef4444;
+
+    color: #ffffff;
+
+}
+
+
+/* ==================================================
+   BODY
+================================================== */
+
+.modal-body {
+
+    padding: 2rem;
+
+}
+
+
+/* ==================================================
+   FOOTER
+================================================== */
+
+.modal-footer {
+
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 1rem;
+
+    padding: 1.5rem 2rem;
+
+    border-top: 1px solid #e5e7eb;
+
+}
+
+
+/* ==================================================
+   SIZES
+================================================== */
+
+.modal-sm .modal-container{
+
+    max-width:400px;
+
+}
+
+.modal-lg .modal-container{
+
+    max-width:900px;
+
+}
+
+.modal-xl .modal-container{
+
+    max-width:1200px;
+
+}
+
+
+/* ==================================================
+   SCROLL
+================================================== */
+
+.modal-container::-webkit-scrollbar{
+
+    width:8px;
+
+}
+
+.modal-container::-webkit-scrollbar-thumb{
+
+    background:#d1d5db;
+
+    border-radius:50px;
+
+}
+
+
+/* ==================================================
+   ANIMATION
+================================================== */
+
+@keyframes modalFade{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(-20px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+
+    }
+
+}
+
+
+/* ==================================================
+   RESPONSIVO
+================================================== */
+
+@media(max-width:768px){
+
+    .modal{
+
+        padding:1rem;
+
+    }
+
+    .modal-header,
+
+    .modal-body,
+
+    .modal-footer{
+
+        padding:1.25rem;
+
+    }
+
+    .modal-footer{
+
+        flex-direction:column;
+
+    }
+
+}

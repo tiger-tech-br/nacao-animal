@@ -1,0 +1,211 @@
+/* ==================================================
+   PETFLOW
+   PAGINATION.CSS
+================================================== */
+
+
+/* ==================================================
+   PAGINATION
+================================================== */
+
+.pagination {
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    flex-wrap: wrap;
+
+    gap: .5rem;
+
+    margin-top: 2rem;
+
+}
+
+
+/* ==================================================
+   ITEM
+================================================== */
+
+.pagination-item {
+
+    min-width: 42px;
+
+    height: 42px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    padding: 0 .85rem;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 12px;
+
+    background: #ffffff;
+
+    color: #374151;
+
+    text-decoration: none;
+
+    font-size: .9rem;
+
+    font-weight: 500;
+
+    cursor: pointer;
+
+    transition: all .25s ease;
+
+}
+
+.pagination-item:hover {
+
+    background: #eff6ff;
+
+    border-color: #2563eb;
+
+    color: #2563eb;
+
+}
+
+
+/* ==================================================
+   ACTIVE
+================================================== */
+
+.pagination-item.active {
+
+    background: #2563eb;
+
+    color: #ffffff;
+
+    border-color: #2563eb;
+
+}
+
+
+/* ==================================================
+   DISABLED
+================================================== */
+
+.pagination-item.disabled {
+
+    opacity: .45;
+
+    cursor: not-allowed;
+
+    pointer-events: none;
+
+}
+
+
+/* ==================================================
+   PREVIOUS / NEXT
+================================================== */
+
+.pagination-prev,
+
+.pagination-next{
+
+    font-weight:600;
+
+}
+
+
+/* ==================================================
+   INFO
+================================================== */
+
+.pagination-info{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:.35rem;
+
+    color:#6b7280;
+
+    font-size:.9rem;
+
+}
+
+
+/* ==================================================
+   PAGE SIZE
+================================================== */
+
+.pagination-size{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:.6rem;
+
+    margin-left:1rem;
+
+}
+
+.pagination-size select{
+
+    padding:.55rem .85rem;
+
+    border:1px solid #d1d5db;
+
+    border-radius:10px;
+
+    background:#ffffff;
+
+    cursor:pointer;
+
+}
+
+
+/* ==================================================
+   WRAPPER
+================================================== */
+
+.pagination-wrapper{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    flex-wrap:wrap;
+
+    gap:1rem;
+
+    margin-top:2rem;
+
+}
+
+
+/* ==================================================
+   RESPONSIVO
+================================================== */
+
+@media(max-width:768px){
+
+    .pagination-wrapper{
+
+        flex-direction:column;
+
+        align-items:center;
+
+    }
+
+    .pagination{
+
+        justify-content:center;
+
+    }
+
+}

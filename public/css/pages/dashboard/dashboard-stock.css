@@ -1,0 +1,393 @@
+/* ==================================================
+   DASHBOARD STOCK
+================================================== */
+
+.dashboard-stock {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: var(--space-lg);
+
+}
+
+/* ==================================================
+   STOCK CARD
+================================================== */
+
+.stock-card {
+
+    display: flex;
+
+    flex-direction: column;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+
+    border-radius: var(--radius-xl);
+
+    box-shadow: var(--shadow-sm);
+
+    overflow: hidden;
+
+}
+
+/* ==================================================
+   HEADER
+================================================== */
+
+.stock-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: var(--space-md);
+
+    padding: 1.25rem 1.5rem;
+
+    border-bottom: 1px solid var(--border);
+
+}
+
+.stock-title {
+
+    margin: 0;
+
+    font-size: var(--fs-lg);
+
+    font-weight: 600;
+
+    color: var(--text);
+
+}
+
+.stock-subtitle {
+
+    margin-top: .25rem;
+
+    color: var(--text-light);
+
+    font-size: var(--fs-sm);
+
+}
+
+/* ==================================================
+   LIST
+================================================== */
+
+.stock-list {
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+.stock-item {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: var(--space-lg);
+
+    padding: 1rem 1.5rem;
+
+    border-bottom: 1px solid var(--border);
+
+    transition: var(--transition);
+
+}
+
+.stock-item:last-child {
+
+    border-bottom: none;
+
+}
+
+.stock-item:hover {
+
+    background: var(--gray-100);
+
+}
+
+/* ==================================================
+   INFO
+================================================== */
+
+.stock-info {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: .35rem;
+
+    flex: 1;
+
+}
+
+.stock-product {
+
+    font-weight: 600;
+
+    color: var(--text);
+
+}
+
+.stock-category {
+
+    color: var(--text-light);
+
+    font-size: var(--fs-sm);
+
+}
+
+/* ==================================================
+   QUANTITY
+================================================== */
+
+.stock-quantity {
+
+    min-width: 80px;
+
+    text-align: center;
+
+    font-size: var(--fs-lg);
+
+    font-weight: 700;
+
+}
+
+/* ==================================================
+   STOCK BAR
+================================================== */
+
+.stock-progress {
+
+    width: 100%;
+
+    height: 8px;
+
+    margin-top: .5rem;
+
+    border-radius: var(--radius-round);
+
+    background: var(--gray-200);
+
+    overflow: hidden;
+
+}
+
+.stock-progress-bar {
+
+    height: 100%;
+
+    width: 0;
+
+    background: var(--success);
+
+    border-radius: inherit;
+
+    transition: width .35s ease;
+
+}
+
+/* ==================================================
+   STATUS DO ESTOQUE
+================================================== */
+
+.stock-normal {
+
+    color: var(--success);
+
+}
+
+.stock-normal .stock-progress-bar {
+
+    background: var(--success);
+
+}
+
+.stock-warning {
+
+    color: var(--warning);
+
+}
+
+.stock-warning .stock-progress-bar {
+
+    background: var(--warning);
+
+}
+
+.stock-low {
+
+    color: #f97316;
+
+}
+
+.stock-low .stock-progress-bar {
+
+    background: #f97316;
+
+}
+
+.stock-empty {
+
+    color: var(--danger);
+
+}
+
+.stock-empty .stock-progress-bar {
+
+    background: var(--danger);
+
+}
+
+/* ==================================================
+   VENCIMENTO
+================================================== */
+
+.stock-expiration {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: .5rem;
+
+    font-size: var(--fs-sm);
+
+    color: var(--text-light);
+
+}
+
+.stock-expiration i {
+
+    color: var(--warning);
+
+}
+
+/* ==================================================
+   ÚLTIMA MOVIMENTAÇÃO
+================================================== */
+
+.stock-movement {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: .5rem;
+
+    font-size: var(--fs-sm);
+
+    color: var(--text-light);
+
+}
+
+.stock-movement i {
+
+    color: var(--primary);
+
+}
+
+/* ==================================================
+   ALERTA
+================================================== */
+
+.stock-alert {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: .4rem;
+
+    padding: .35rem .75rem;
+
+    border-radius: var(--radius-round);
+
+    font-size: var(--fs-xs);
+
+    font-weight: 600;
+
+    background: rgba(239,68,68,.10);
+
+    color: var(--danger);
+
+}
+
+/* ==================================================
+   HOVER
+================================================== */
+
+.stock-card {
+
+    transition:
+        transform .25s ease,
+        box-shadow .25s ease;
+
+}
+
+.stock-card:hover {
+
+    transform: translateY(-4px);
+
+    box-shadow: var(--shadow-md);
+
+}
+
+/* ==================================================
+   RESPONSIVIDADE
+================================================== */
+
+@media (max-width:992px){
+
+    .stock-item{
+
+        flex-wrap:wrap;
+
+        align-items:flex-start;
+
+    }
+
+}
+
+@media (max-width:768px){
+
+    .stock-header{
+
+        flex-direction:column;
+
+        align-items:flex-start;
+
+    }
+
+    .stock-item{
+
+        flex-direction:column;
+
+        align-items:flex-start;
+
+        gap:var(--space-md);
+
+    }
+
+    .stock-quantity{
+
+        text-align:left;
+
+        min-width:auto;
+
+    }
+
+}

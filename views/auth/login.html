@@ -1,0 +1,123 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Entre ou crie sua conta PetFlow para acompanhar pedidos e usar seu endereço salvo.">
+    <title>PetFlow | Entrar</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/pages/public-login.css?v=20260804-2">
+</head>
+<body>
+    <main class="login-container">
+        <section class="login-card" aria-labelledby="login-title">
+            <header class="login-header">
+                <a class="login-logo" href="/" aria-label="Voltar para a página inicial">
+                    <img src="/images/logo/fred-petflow-logo-transparent.png" alt="Logo PetFlow" width="88" height="88">
+                </a>
+                <span class="login-eyebrow">Área do cliente</span>
+                <h1 id="login-title">Entre na sua conta PetFlow</h1>
+                <p>Acompanhe pedidos, favorite produtos e use seu endereço salvo na sacola.</p>
+            </header>
+
+            <div class="auth-tabs" role="tablist" aria-label="Acesso do cliente">
+                <button class="auth-tab active" type="button" data-auth-tab="login">Entrar</button>
+                <button class="auth-tab" type="button" data-auth-tab="register">Criar cadastro</button>
+            </div>
+
+            <form id="publicLoginForm" class="login-form auth-panel active" autocomplete="on">
+                <div class="form-group">
+                    <label for="loginEmail">E-mail</label>
+                    <input class="form-control" type="email" id="loginEmail" name="email" placeholder="Digite seu e-mail" autocomplete="email" maxlength="150" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginSenha">Senha</label>
+                    <input class="form-control" type="password" id="loginSenha" name="senha" placeholder="Digite sua senha" autocomplete="current-password" minlength="6" maxlength="50" required>
+                </div>
+                <button class="btn btn-primary" type="submit">
+                    Entrar
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+                <div class="form-row form-row-end">
+                    <a href="#" data-public-forgot-password>Esqueci minha senha</a>
+                    <a href="#" data-resend-verification>Reenviar confirmação de e-mail</a>
+                </div>
+                <p class="login-note" id="loginStatus"></p>
+            </form>
+
+            <form id="publicRegisterForm" class="login-form auth-panel" autocomplete="on">
+                <div class="form-group field-wide">
+                    <label for="registerNome">Nome</label>
+                    <input class="form-control" id="registerNome" name="nome" placeholder="Nome completo" minlength="3" maxlength="120" pattern="^[A-Za-zÀ-ÿ\s']{3,120}$" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail">E-mail</label>
+                    <input class="form-control" id="registerEmail" name="email" type="email" placeholder="seuemail@exemplo.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerNascimento">Data de nascimento</label>
+                    <input class="form-control" id="registerNascimento" name="data_nascimento" type="date">
+                </div>
+                <div class="form-group">
+                    <label for="registerCpf">CPF</label>
+                    <input class="form-control" id="registerCpf" name="cpf" inputmode="numeric" placeholder="000.000.000-00" pattern="^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$" title="Informe um CPF válido, com ou sem pontuação." required>
+                </div>
+                <div class="form-group">
+                    <label for="registerTelefone">Celular (WhatsApp)</label>
+                    <div class="input-with-icon">
+                        <i class="fa-brands fa-whatsapp" aria-hidden="true"></i>
+                        <input class="form-control" id="registerTelefone" name="telefone" placeholder="(00) 00000-0000" pattern="^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$" required>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="registerCep">CEP</label>
+                        <input class="form-control" id="registerCep" name="cep" placeholder="00000-000" pattern="^\d{5}-?\d{3}$" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerNumero">N°</label>
+                        <input class="form-control" id="registerNumero" name="numero" placeholder="123" maxlength="12" pattern="^[0-9A-Za-zÀ-ÿ\s/-]{1,12}$" required>
+                    </div>
+                </div>
+                <div class="form-group field-wide">
+                    <label for="registerEndereco">Endereço</label>
+                    <input class="form-control" id="registerEndereco" name="endereco" placeholder="Rua, avenida ou travessa" minlength="3" maxlength="160" required>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="registerComplemento">Complemento</label>
+                        <input class="form-control" id="registerComplemento" name="complemento" placeholder="Opcional" maxlength="80">
+                    </div>
+                    <div class="form-group">
+                        <label for="registerBairro">Bairro</label>
+                        <input class="form-control" id="registerBairro" name="bairro" minlength="2" maxlength="80" required>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="registerCidade">Cidade</label>
+                        <input class="form-control" id="registerCidade" name="cidade" minlength="2" maxlength="80" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerEstado">Estado</label>
+                        <input class="form-control" id="registerEstado" name="estado" maxlength="2" pattern="^[A-Za-z]{2}$" placeholder="SP" required>
+                    </div>
+                </div>
+                <div class="form-group field-wide">
+                    <label for="registerSenha">Senha</label>
+                    <input class="form-control" type="password" id="registerSenha" name="senha" minlength="8" maxlength="50" required>
+                </div>
+                <label class="auth-consent field-wide" for="registerPrivacy">
+                    <input id="registerPrivacy" name="aceite_privacidade" type="checkbox" required>
+                    <span>Li e aceito a <a href="/politica-de-privacidade" target="_blank" rel="noopener">Política de Privacidade</a> e os <a href="/termos-de-uso" target="_blank" rel="noopener">Termos de Uso</a>.</span>
+                </label>
+                <button class="btn btn-primary" type="submit">Enviar cadastro</button>
+                <p class="login-note" id="registerStatus"></p>
+            </form>
+        </section>
+    </main>
+
+    <script src="/js/pages/auth/public-auth.js?v=20261003-3"></script>
+</body>
+</html>

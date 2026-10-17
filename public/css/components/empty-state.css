@@ -1,0 +1,238 @@
+/* ==================================================
+   PETFLOW
+   EMPTY-STATE.CSS
+================================================== */
+
+
+/* ==================================================
+   CONTAINER
+================================================== */
+
+.empty-state{
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+    text-align:center;
+
+    padding:4rem 2rem;
+
+}
+
+
+/* ==================================================
+   ICON
+================================================== */
+
+.empty-icon{
+
+    width:100px;
+
+    height:100px;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    margin-bottom:2rem;
+
+    border-radius:50%;
+
+    background:#eff6ff;
+
+    color:#2563eb;
+
+    font-size:2.8rem;
+
+}
+
+
+/* ==================================================
+   TITLE
+================================================== */
+
+.empty-title{
+
+    margin-bottom:.75rem;
+
+    font-size:1.5rem;
+
+    font-weight:700;
+
+    color:#111827;
+
+}
+
+
+/* ==================================================
+   DESCRIPTION
+================================================== */
+
+.empty-description{
+
+    max-width:520px;
+
+    margin-bottom:2rem;
+
+    color:#6b7280;
+
+    line-height:1.7;
+
+    font-size:1rem;
+
+}
+
+
+/* ==================================================
+   ACTIONS
+================================================== */
+
+.empty-actions{
+
+    display:flex;
+
+    gap:1rem;
+
+    flex-wrap:wrap;
+
+    justify-content:center;
+
+}
+
+
+/* ==================================================
+   CARD
+================================================== */
+
+.empty-card{
+
+    width:100%;
+
+    padding:3rem;
+
+    background:#ffffff;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:18px;
+
+}
+
+
+/* ==================================================
+   SMALL
+================================================== */
+
+.empty-sm{
+
+    padding:2rem;
+
+}
+
+.empty-sm .empty-icon{
+
+    width:70px;
+
+    height:70px;
+
+    font-size:2rem;
+
+}
+
+.empty-sm .empty-title{
+
+    font-size:1.2rem;
+
+}
+
+
+/* ==================================================
+   LARGE
+================================================== */
+
+.empty-lg{
+
+    min-height:70vh;
+
+}
+
+
+/* ==================================================
+   ANIMATION
+================================================== */
+
+.empty-icon{
+
+    animation:floatIcon 3s ease-in-out infinite;
+
+}
+
+@keyframes floatIcon{
+
+    0%{
+
+        transform:translateY(0);
+
+    }
+
+    50%{
+
+        transform:translateY(-10px);
+
+    }
+
+    100%{
+
+        transform:translateY(0);
+
+    }
+
+}
+
+
+/* ==================================================
+   RESPONSIVO
+================================================== */
+
+@media(max-width:768px){
+
+    .empty-state{
+
+        padding:2rem 1rem;
+
+    }
+
+    .empty-title{
+
+        font-size:1.25rem;
+
+    }
+
+    .empty-description{
+
+        font-size:.95rem;
+
+    }
+
+    .empty-actions{
+
+        width:100%;
+
+        flex-direction:column;
+
+    }
+
+    .empty-actions .btn{
+
+        width:100%;
+
+    }
+
+}

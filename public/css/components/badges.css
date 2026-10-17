@@ -1,0 +1,186 @@
+/* ==================================================
+   PETFLOW
+   BADGES.CSS
+================================================== */
+
+
+/* ==================================================
+   BADGE BASE
+================================================== */
+
+.badge {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: .45rem;
+
+    padding: .45rem .85rem;
+
+    border-radius: 999px;
+
+    font-size: .75rem;
+
+    font-weight: 600;
+
+    line-height: 1;
+
+    white-space: nowrap;
+
+}
+
+
+/* ==================================================
+   PRIMARY
+================================================== */
+
+.badge-primary {
+
+    background: #dbeafe;
+
+    color: #2563eb;
+
+}
+
+
+/* ==================================================
+   SUCCESS
+================================================== */
+
+.badge-success {
+
+    background: #dcfce7;
+
+    color: #15803d;
+
+}
+
+
+/* ==================================================
+   WARNING
+================================================== */
+
+.badge-warning {
+
+    background: #fef3c7;
+
+    color: #b45309;
+
+}
+
+
+/* ==================================================
+   DANGER
+================================================== */
+
+.badge-danger {
+
+    background: #fee2e2;
+
+    color: #dc2626;
+
+}
+
+
+/* ==================================================
+   INFO
+================================================== */
+
+.badge-info {
+
+    background: #e0f2fe;
+
+    color: #0284c7;
+
+}
+
+
+/* ==================================================
+   SECONDARY
+================================================== */
+
+.badge-secondary {
+
+    background: #f3f4f6;
+
+    color: #4b5563;
+
+}
+
+
+/* ==================================================
+   DARK
+================================================== */
+
+.badge-dark {
+
+    background: #1f2937;
+
+    color: #ffffff;
+
+}
+
+
+/* ==================================================
+   OUTLINE
+================================================== */
+
+.badge-outline {
+
+    background: transparent;
+
+    border: 1px solid #d1d5db;
+
+    color: #4b5563;
+
+}
+
+
+/* ==================================================
+   DOT
+================================================== */
+
+.badge-dot {
+
+    width: 8px;
+
+    height: 8px;
+
+    border-radius: 50%;
+
+    display: inline-block;
+
+}
+
+.badge-success .badge-dot {
+
+    background: #16a34a;
+
+}
+
+.badge-warning .badge-dot {
+
+    background: #f59e0b;
+
+}
+
+.badge-danger .badge-dot {
+
+    background: #dc2626;
+
+}
+
+.badge-info .badge-dot {
+
+    background: #0ea5e9;
+
+}
+
+.badge-primary .badge-dot {
+
+    background: #2563eb;
+
+}

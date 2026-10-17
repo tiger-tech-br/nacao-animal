@@ -1,0 +1,1405 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <!-- ==================================================
+         META TAGS
+    ================================================== -->
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="description"
+        content="PetFlow - Tudo para o seu pet em um só lugar. Rações, brinquedos, higiene e acessórios.">
+
+    <meta
+        name="keywords"
+        content="pet shop, petflow, produtos pet, ração, acessórios">
+
+    <meta
+        name="author"
+        content="Tiger Tech">
+
+    <title>PetFlow | Tudo para o seu pet</title>
+
+    <!-- ==================================================
+         FAVICON
+    ================================================== -->
+
+    <link
+        rel="icon"
+        href="/favicon.ico"
+        type="image/x-icon">
+
+    <!-- ==================================================
+         CSS
+    ================================================== -->
+
+    <link
+        rel="stylesheet"
+        href="/css/base/main.css">
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <link
+        rel="stylesheet"
+        href="/css/pages/home-carousel.css?v=20261003-1">
+
+    <link rel="stylesheet" href="/css/layout/cart-sidebar.css?v=20261001">
+<link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
+</head>
+
+<body>
+
+    <!-- ==================================================
+         HEADER
+    ================================================== -->
+
+        <header class="header">
+
+            <div class="container">
+
+                <!-- ==========================================
+                    LOGO
+                =========================================== -->
+
+                <a
+                    href="#hero"
+                    class="logo"
+                    aria-label="Ir para a página inicial">
+
+                    <img
+                        src="/images/logo/fred-petflow-logo-transparent.png"
+                        alt="Logo da PetFlow"
+                        width="60"
+                        height="60">
+
+                    <span class="logo-text">
+
+                        PetFlow
+
+                    </span>
+
+                </a>
+
+                <!-- ==========================================
+                    PESQUISA
+                =========================================== -->
+
+                <form
+                    class="search-form"
+                    role="search"
+                    aria-label="Pesquisar produtos"
+                    autocomplete="off">
+
+                    <label
+                        class="sr-only"
+                        for="search">
+
+                        Pesquisar produtos
+
+                    </label>
+
+                    <input
+                        class="form-control"
+                        type="search"
+                        id="search"
+                        name="search"
+                        placeholder="Buscar produtos"
+                        maxlength="100"
+                        aria-label="Pesquisar produtos">
+
+                    <button
+                        class="search-button"
+                        type="submit"
+                        aria-label="Pesquisar">
+
+
+
+                    </button>
+
+                </form>
+
+                <!-- ==========================================
+                    MENU
+                =========================================== -->
+
+                <nav
+                    class="menu"
+                    id="menu"
+                    aria-label="Menu principal">
+
+                    <ul class="menu-list">
+
+                        <li class="menu-item">
+
+                            <a
+                                href="#hero"
+                                class="menu-link active">
+
+                                Início
+
+                            </a>
+
+                        </li>
+
+                        <li class="menu-item">
+
+                            <a
+                                href="#categories"
+                                class="menu-link">
+
+                                Categorias
+
+                            </a>
+
+                        </li>
+
+                        <li class="menu-item">
+
+                            <a
+                                href="#products"
+                                class="menu-link">
+
+                                Produtos
+
+                            </a>
+
+                        </li>
+
+                        <li class="menu-item">
+
+
+
+                        </li>
+
+                        <li class="menu-item">
+
+                            <a
+                                href="#localizacao"
+                                class="menu-link">
+
+                                Contato
+
+                            </a>
+
+                        </li>
+
+                        <li class="menu-item menu-login-item">
+
+                            <a
+                                href="/login"
+                                class="menu-link menu-login-link">
+
+                                Entrar
+
+                            </a>
+
+                        </li>
+
+                        <li class="menu-item menu-actions-item">
+
+                            <a
+                                href="#products"
+                                class="menu-action-link"
+                                aria-label="Abrir favoritos">
+
+                                <i class="fa-regular fa-heart"></i>
+                                Favoritos
+
+                            </a>
+
+                            <a
+                                href="#products"
+                                class="menu-action-link"
+                                aria-label="Abrir sacola">
+
+                                <i class="fa-solid fa-bag-shopping"></i>
+                                Sacola
+
+                            </a>
+
+                        </li>
+
+                    </ul>
+
+                </nav>
+
+                <!-- ==========================================
+                    AÇÕES
+                =========================================== -->
+
+                <div class="header-actions">
+
+                    <button
+                        class="icon-badge customer-notification-button"
+                        type="button"
+                        aria-label="Notificações"
+                        aria-expanded="false"
+                        hidden>
+
+                        <i class="fa-regular fa-bell"></i>
+
+                    </button>
+
+                    <a
+                        href="#"
+                        class="icon-badge"
+                        aria-label="Favoritos">
+
+                        <i class="fa-regular fa-heart"></i>
+
+                    </a>
+
+                    <a
+                        href="#products"
+                        class="icon-badge"
+                        aria-label="Sacola">
+
+                        <i class="fa-solid fa-bag-shopping"></i>
+
+                    </a>
+
+                    <a
+                        href="/login"
+                        class="btn btn-primary">
+
+                        Entrar
+
+                    </a>
+
+                    <button
+                        class="menu-toggle"
+                        type="button"
+                        aria-label="Abrir menu"
+                        aria-controls="menu"
+                        aria-expanded="false">
+
+
+
+                    </button>
+
+                </div>
+
+            </div>
+
+    </header>
+
+    <!-- ==================================================
+         MAIN
+    ================================================== -->
+
+    <main class="home">
+
+        <!-- ==========================================
+             HERO
+        ========================================== -->
+
+            <section
+                class="hero carousel"
+                id="hero"
+                aria-label="Banner principal">
+
+                <div class="carousel-track">
+
+            <!-- ==========================================
+                SLIDE 1
+            =========================================== -->
+
+                <article class="carousel-item">
+
+                    <div class="container hero-container">
+
+                        <div class="hero-content">
+
+                            <span class="hero-subtitle">
+
+                                Cuidado e carinho para seu pet
+
+                            </span>
+
+                            <h1 class="hero-title">
+
+                                Tudo o que seu melhor amigo precisa em um só lugar.
+
+                            </h1>
+
+                            <p class="hero-description">
+
+                                Rações, petiscos, brinquedos e acessórios para cuidar do seu melhor amigo.
+
+                            </p>
+
+                            <div class="hero-buttons">
+
+                                <a
+                                    href="#products"
+                                    class="btn btn-primary">
+
+                                    Comprar Agora
+
+                                </a>
+
+
+
+                            </div>
+
+                        </div>
+
+                        <div class="hero-image">
+
+                            <img
+                                src="/images/hero/price-racao-premium.jpg"
+                                alt="Cachorro feliz brincando"
+                                loading="eager"
+                                decoding="async">
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+                <!-- ==========================================
+                    SLIDE 2
+                =========================================== -->
+
+                <article class="carousel-item">
+
+                    <div class="container hero-container">
+
+                        <div class="hero-content">
+
+                            <span class="hero-subtitle">
+
+                                Produtos para gatos
+
+                            </span>
+
+                            <h2 class="hero-title">
+
+                                Tudo para o dia a dia do seu gato.
+
+                            </h2>
+
+                            <p class="hero-description">
+
+                                Rações, areia e acessórios para o conforto e a diversão do seu gato.
+
+                            </p>
+
+                            <div class="hero-buttons"><a href="#products" class="btn btn-primary">Ver produtos</a></div>
+
+                        </div>
+
+                        <div class="hero-image">
+
+                            <img
+                                src="/images/hero/price-kit-gatos.jpg"
+                                alt="Produtos para gatos"
+                                loading="lazy"
+                                decoding="async">
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+            <!-- ==========================================
+                SLIDE 3
+            =========================================== -->
+
+                <article class="carousel-item">
+
+                    <div class="container hero-container">
+
+                        <div class="hero-content">
+
+                            <span class="hero-subtitle">
+
+                                Delivery
+
+                            </span>
+
+                            <h2 class="hero-title">
+
+                                Receba tudo sem sair de casa.
+
+                            </h2>
+
+                            <p class="hero-description">
+
+                                Entregamos produtos para seu pet com rapidez, segurança e comodidade.
+
+                            </p>
+
+                            <div class="hero-buttons">
+
+                                <a
+                                    href="#products"
+                                    class="btn btn-primary">
+
+                                    Ver Produtos
+
+                                </a>
+
+                            </div>
+
+                        </div>
+
+                        <div class="hero-image">
+
+                            <img
+                                src="/images/services/delivery.jpg"
+                                alt="Entrega de produtos pet"
+                                loading="lazy"
+                                decoding="async">
+
+                        </div>
+
+                    </div>
+
+                </article>
+
+            <!-- ==========================================
+                SLIDE 4
+            =========================================== -->
+
+            <article class="carousel-item">
+
+                <div class="container hero-container">
+
+                    <div class="hero-content">
+
+                        <span class="hero-subtitle">
+
+                            Acessórios para pets
+
+                        </span>
+
+                        <h2 class="hero-title">
+
+                            Mais conforto e diversão.
+
+                        </h2>
+
+                        <p class="hero-description">
+
+                            Encontre coleiras, brinquedos e acessórios para acompanhar seu pet todos os dias.
+
+                        </p>
+
+                        <div class="hero-buttons"><a href="#products" class="btn btn-primary">Ver produtos</a></div>
+
+                    </div>
+
+                    <div class="hero-image">
+
+                        <img
+                            src="/images/hero/price-acessorios-fred10.jpg"
+                            alt="Acessórios para pets"
+                            loading="lazy"
+                            decoding="async">
+
+                    </div>
+
+                </div>
+
+            </article>
+
+        </div>
+
+        <!-- ==========================================
+            CONTROLES
+        =========================================== -->
+
+        <button
+            class="carousel-control prev"
+            type="button"
+            aria-label="Slide anterior">
+
+            ❮
+
+        </button>
+
+        <button
+            class="carousel-control next"
+            type="button"
+            aria-label="Próximo slide">
+
+            ❯
+
+        </button>
+
+        <!-- ==========================================
+            INDICADORES
+        =========================================== -->
+
+        <div
+            class="carousel-indicators"
+            aria-label="Indicadores do carrossel">
+
+            <button
+                class="carousel-indicator active"
+                type="button"
+                aria-label="Ir para o slide 1"></button>
+
+            <button
+                class="carousel-indicator"
+                type="button"
+                aria-label="Ir para o slide 2"></button>
+
+            <button
+                class="carousel-indicator"
+                type="button"
+                aria-label="Ir para o slide 3"></button>
+
+            <button
+                class="carousel-indicator"
+                type="button"
+                aria-label="Ir para o slide 4"></button>
+
+        </div>
+
+    </section>
+
+        <!-- ==========================================
+             CATEGORIAS
+        ========================================== -->
+
+            <section
+                class="categories"
+                id="categories"
+                aria-labelledby="categories-title">
+
+                <div class="container">
+
+            <!-- ==========================================
+                CABEÇALHO
+            =========================================== -->
+
+            <div class="section-header">
+
+                <span class="section-subtitle">
+
+                    Categorias
+
+                </span>
+
+                <h2 id="categories-title">
+
+                    Tudo o que seu pet precisa
+
+                </h2>
+
+                <p>
+
+                    Encontre produtos de qualidade para todas as fases da vida do seu melhor amigo.
+
+                </p>
+
+            </div>
+
+            <!-- ==========================================
+                GRID
+            =========================================== -->
+
+            <div class="categories-grid">
+
+                <!-- Cães -->
+
+                <article class="category-card">
+
+                    <a
+                        href="/categorias/caes"
+                        aria-label="Ver produtos para cães">
+
+                        <img
+                            src="/images/categories/dogs.jpg"
+                            alt="Produtos para cães"
+                            loading="lazy"
+                            decoding="async">
+
+                        <h3>
+
+                            Cães
+
+                        </h3>
+
+                    </a>
+
+                </article>
+
+                <!-- Gatos -->
+
+                <article class="category-card">
+
+                    <a
+                        href="/categorias/gatos"
+                        aria-label="Ver produtos para gatos">
+
+                        <img
+                            src="/images/categories/cats.jpg"
+                            alt="Produtos para gatos"
+                            loading="lazy"
+                            decoding="async">
+
+                        <h3>
+
+                            Gatos
+
+                        </h3>
+
+                    </a>
+
+                </article>
+
+                <!-- Aves -->
+
+                <article class="category-card">
+
+                    <a
+                        href="/categorias/aves"
+                        aria-label="Ver produtos para aves">
+
+                        <img
+                            src="/images/categories/birds.jpg"
+                            alt="Produtos para aves"
+                            loading="lazy"
+                            decoding="async">
+
+                        <h3>
+
+                            Aves
+
+                        </h3>
+
+                    </a>
+
+                </article>
+
+                <!-- Peixes -->
+
+                <article class="category-card">
+
+                    <a
+                        href="/categorias/peixes"
+                        aria-label="Ver produtos para peixes">
+
+                        <img
+                            src="/images/categories/fish.jpg"
+                            alt="Produtos para peixes"
+                            loading="lazy"
+                            decoding="async">
+
+                        <h3>
+
+                            Peixes
+
+                        </h3>
+
+                    </a>
+
+                </article>
+
+                <!-- Roedores -->
+
+                <article class="category-card">
+
+                    <a
+                        href="/categorias/roedores"
+                        aria-label="Ver produtos para roedores">
+
+                        <img
+                            src="/images/categories/rodents.jpg"
+                            alt="Produtos para roedores"
+                            loading="lazy"
+                            decoding="async">
+
+                        <h3>
+
+                            Roedores
+
+                        </h3>
+
+                    </a>
+
+                </article>
+
+                <!-- Acessórios -->
+
+                <article class="category-card">
+
+                    <a
+                        href="/categorias/acessorios"
+                        aria-label="Ver acessórios para pets">
+
+                        <img
+                            src="/images/categories/accessories.jpg"
+                            alt="Acessórios para pets"
+                            loading="lazy"
+                            decoding="async">
+
+                        <h3>
+
+                            Acessórios
+
+                        </h3>
+
+                    </a>
+
+                </article>
+
+            </div>
+
+        </div>
+
+    </section>
+
+        <!-- ==========================================
+             PRODUTOS
+        ========================================== -->
+
+            <section
+                class="products"
+                id="products"
+                aria-labelledby="products-title">
+
+                <div class="container">
+
+        <!-- ==========================================
+             CABEÇALHO
+        =========================================== -->
+
+                <div class="section-header">
+
+                    <span class="section-subtitle">
+
+                        Produtos
+
+                    </span>
+
+                    <h2 id="products-title">
+
+                        Produtos em Destaque
+
+                    </h2>
+
+                    <p>
+
+                        Selecionamos alguns dos produtos mais procurados para o bem-estar do seu pet.
+
+                    </p>
+
+                </div>
+
+                <!-- ==========================================
+                    GRID
+                =========================================== -->
+
+                <div class="products-grid">
+                    <div class="public-empty" role="status">Carregando produtos da loja...</div>
+                </div>
+
+                <!-- ==========================================
+                    BOTÒO
+                =========================================== -->
+
+                <div class="section-action">
+
+                        <a
+                            href="#products"
+                            class="btn btn-outline">
+
+                            Ver Todos os Produtos
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+        </section>
+
+        <!-- ==========================================
+             CATÁLOGO
+        ========================================== -->
+
+
+
+        <!-- ==========================================
+             BENEFÍCIOS
+        ========================================== -->
+
+            <section
+    class="benefits"
+    id="benefits"
+    aria-labelledby="benefits-title">
+
+        <div class="container">
+
+            <!-- ==========================================
+                CABEÇALHO
+            =========================================== -->
+
+            <div class="section-header">
+
+                <span class="section-subtitle">
+                    Diferenciais
+                </span>
+
+                <h2 id="benefits-title">
+                    Por que escolher a PetFlow?
+                </h2>
+
+                <p>
+                    Trabalhamos para oferecer a melhor experiência para você e seu pet.
+                </p>
+
+            </div>
+
+            <!-- ==========================================
+                BENEFÍCIOS
+            =========================================== -->
+
+            <div class="benefits-grid">
+
+                <article class="benefit-card">
+
+                    <div class="benefit-icon">
+                        <i class="fa-solid fa-comments"></i>
+                    </div>
+
+                    <h3>
+                        Atendimento Especializado
+                    </h3>
+
+                    <p>
+                        Equipe preparada para ajudar você a escolher produtos para seu pet.
+                    </p>
+
+                </article>
+
+                <article class="benefit-card">
+
+                    <div class="benefit-icon">
+                        <i class="fa-solid fa-truck-fast"></i>
+                    </div>
+
+                    <h3>
+                        Entrega Rápida
+                    </h3>
+
+                    <p>
+                        Receba seus produtos com rapidez e segurança.
+                    </p>
+
+                </article>
+
+                <article class="benefit-card">
+
+                    <div class="benefit-icon">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+
+                    <h3>
+                        Pagamento Seguro
+                    </h3>
+
+                    <p>
+                        Diversas formas de pagamento com total segurança.
+                    </p>
+
+                </article>
+
+                <article class="benefit-card">
+
+                    <div class="benefit-icon">
+                        <i class="fa-solid fa-award"></i>
+                    </div>
+
+                    <h3>
+                        Produtos de Qualidade
+                    </h3>
+
+                    <p>
+                        Trabalhamos apenas com marcas reconhecidas no mercado pet.
+                    </p>
+
+                </article>
+
+                <article class="benefit-card">
+
+                    <div class="benefit-icon">
+                        <i class="fa-solid fa-heart-pulse"></i>
+                    </div>
+
+                    <h3>
+                        Amor pelos Animais
+                    </h3>
+
+                    <p>
+                        Produtos selecionados pensando no bem-estar do seu pet.
+                    </p>
+
+                </article>
+
+                <article class="benefit-card">
+
+                        <div class="benefit-icon">
+                            <i class="fa-solid fa-headset"></i>
+                        </div>
+
+                        <h3>
+                            Suporte ao Cliente
+                        </h3>
+
+                        <p>
+                            Estamos sempre disponíveis para tirar dúvidas e ajudar você.
+                        </p>
+
+                    </article>
+
+                </div>
+
+            </div>
+
+    </section>
+
+        <!-- ==========================================
+             LOCALIZAÇÃO
+        ========================================== -->
+
+    <section
+        class="store-location"
+        id="localizacao"
+        aria-labelledby="store-location-title">
+
+        <div class="container store-location-content">
+
+            <div class="store-location-text">
+
+                <span class="section-subtitle">
+                    Nossa loja
+                </span>
+
+                <h2 id="store-location-title">
+                    Encontre a PetFlow
+                </h2>
+
+                <p>
+                    Este é o ponto de saída das nossas entregas em Santo André.
+                </p>
+
+                <address>
+                    <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                    <span>Avenida Novo Horizonte, 123<br>Vila Sacadura Cabral, Santo André - SP</span>
+                </address>
+
+            </div>
+
+            <div class="store-location-map">
+                <iframe
+                    title="Localização da PetFlow na Avenida Novo Horizonte, 123"
+                    src="https://www.google.com/maps?q=Avenida%20Novo%20Horizonte%2C%20123%2C%20Vila%20Sacadura%20Cabral%2C%20Santo%20Andr%C3%A9%20-%20SP%2C%20Brasil&amp;z=16&amp;output=embed"
+                    width="600"
+                    height="430"
+                    style="border:0"
+                    loading="lazy"
+                    allowfullscreen
+                    referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+            </div>
+
+        </div>
+
+    </section>
+
+        <!-- ==========================================
+             NEWSLETTER
+        ========================================== -->
+
+    <section
+    class="newsletter"
+    id="newsletter"
+    aria-labelledby="newsletter-title">
+
+        <div class="container">
+
+            <!-- ==========================================
+                CONTEÚDO
+            =========================================== -->
+
+            <div class="newsletter-content">
+
+                <div class="newsletter-text">
+
+                    <span class="section-subtitle">
+
+                        Newsletter
+
+                    </span>
+
+                    <h2 id="newsletter-title">
+
+                        Receba novidades e ofertas exclusivas
+
+                    </h2>
+
+                    <p>
+
+                        Cadastre seu e-mail e fique por dentro das promoções,
+                        lançamentos e dicas para cuidar do seu pet.
+
+                    </p>
+
+                </div>
+
+                <!-- ==========================================
+                    FORMULÁRIO
+                =========================================== -->
+
+                <form
+                    class="newsletter-form"
+                    id="newsletterForm"
+                    autocomplete="on"
+                    novalidate>
+
+                    <div class="form-group">
+
+                        <label for="newsletterName">
+
+                            Nome
+
+                        </label>
+
+                        <input
+                            class="form-control"
+                            type="text"
+                            id="newsletterName"
+                            name="name"
+                            placeholder="Digite seu nome"
+                            maxlength="100"
+                            autocomplete="name"
+                            required
+                            aria-label="Nome">
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="newsletterEmail">
+
+                            E-mail
+
+                        </label>
+
+                        <input
+                            class="form-control"
+                            type="email"
+                            id="newsletterEmail"
+                            name="email"
+                            placeholder="Digite seu e-mail"
+                            maxlength="150"
+                            autocomplete="email"
+                            required
+                            aria-label="E-mail">
+
+                    </div>
+
+                    <label class="newsletter-consent" for="newsletterConsent">
+                        <input
+                            type="checkbox"
+                            id="newsletterConsent"
+                            name="consentimento"
+                            value="true"
+                            required>
+                        <span>
+                            Aceito receber comunicações da PetFlow e estou de acordo com a
+                            <a href="/politica-de-privacidade">Política de Privacidade</a>.
+                        </span>
+                    </label>
+
+                    <button
+                        class="btn btn-primary"
+                        type="submit"
+                        aria-label="Inscrever-se na newsletter">
+
+                        Quero Receber
+
+                    </button>
+
+                    <p
+                        class="newsletter-status"
+                        id="newsletterStatus"
+                        role="status">
+                    </p>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+    <!-- ==================================================
+         FOOTER
+    ================================================== -->
+
+        <footer
+            class="footer"
+            aria-labelledby="footer-title">
+
+            <div class="container">
+
+                <div class="footer-content">
+
+                    <!-- ==========================================
+                        EMPRESA
+                    =========================================== -->
+
+                    <div class="footer-column">
+
+                        <h2
+                            id="footer-title"
+                            class="footer-logo">
+                            <span data-store-name>PetFlow</span>
+                        </h2>
+
+                        <p>
+
+                            Tudo para o seu pet em um só lugar.
+                            Produtos de qualidade, variedade e atendimento com carinho.
+
+                        </p>
+
+                    </div>
+
+                    <!-- ==========================================
+                        INSTITUCIONAL
+                    =========================================== -->
+
+                    <div class="footer-column">
+
+                        <h3>
+
+                            Institucional
+
+                        </h3>
+
+                        <ul>
+
+                            <li>
+
+                                <a href="#hero">
+
+                                    Início
+
+                                </a>
+
+                            </li>
+
+
+
+                            <li>
+
+                                <a href="#products">
+
+                                    Produtos
+
+                                </a>
+
+                            </li>
+
+                            <li>
+
+                                <a href="#localizacao">
+
+                                    Contato
+
+                                </a>
+
+                            </li>
+
+                            <li>
+
+                                <a href="/politica-de-privacidade">
+
+                                    Privacidade
+
+                                </a>
+
+                            </li>
+
+                            <li>
+
+                                <a href="/termos-de-uso">
+
+                                    Termos de Uso
+
+                                </a>
+
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+                    <!-- ==========================================
+                        CATEGORIAS
+                    =========================================== -->
+
+                    <div class="footer-column">
+
+                        <h3>
+
+                            Categorias
+
+                        </h3>
+
+                        <ul>
+
+                            <li>
+
+                                <a href="#products">
+
+                                    Rações
+
+                                </a>
+
+                            </li>
+
+                            <li>
+
+                                <a href="#products">
+
+                                    Brinquedos
+
+                                </a>
+
+                            </li>
+
+                            <li>
+
+                                <a href="#products">
+
+                                    Higiene
+
+                                </a>
+
+                            </li>
+
+                            <li>
+
+                                <a href="#products">
+
+                                    Acessórios
+
+                                </a>
+
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+                    <!-- ==========================================
+                        CONTATO
+                    =========================================== -->
+
+                    <div class="footer-column">
+
+                        <h3>
+
+                            Contato
+
+                        </h3>
+
+                        <ul>
+
+                            <li>
+
+                                <span data-store-phone>Telefone não informado</span>
+
+                            </li>
+
+                            <li>
+
+                                <span data-store-email>E-mail não informado</span>
+
+                            </li>
+
+                            <li>
+
+                                <span data-store-address>Avenida Novo Horizonte, 123, Vila Sacadura Cabral, Santo André - SP</span>
+
+                            </li>
+
+                            <li>
+
+                                <span data-store-cnpj>CNPJ não informado</span>
+
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+                </div>
+
+                <!-- ==========================================
+                    COPYRIGHT
+                =========================================== -->
+
+                <div class="footer-bottom">
+
+                    <p>
+
+                        © 2026 PetFlow. Todos os direitos reservados.
+
+                    </p>
+
+                    <p>
+
+                        Desenvolvido por Tiger Tech.
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </footer>
+
+    <!-- ==================================================
+         JAVASCRIPT
+    ================================================== -->
+
+    <script
+        src="/js/layout/menu.js"
+        defer></script>
+
+    <script
+        src="/js/components/carousel.js"
+        defer></script>
+
+    <script
+        src="/js/pages/home/catalog.js?v=20261012-1"
+        defer></script>
+
+    <script src="/js/layout/cart-sidebar.js?v=20261001"></script>
+<script src="/js/layout/notifications.js?v=20261002"></script>
+</body>
+
+</html>

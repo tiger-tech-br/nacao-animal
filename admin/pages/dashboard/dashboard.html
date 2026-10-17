@@ -1,0 +1,190 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex,nofollow">
+    <title>PetFlow - Painel da Loja</title>
+
+    <link rel="stylesheet" href="/css/pages/admin-pages.css">
+    <link rel="stylesheet" href="/css/pages/dashboard/dashboard.css?v=20260808-3">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+<link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <a class="sidebar-brand" href="/admin/pages/dashboard/dashboard.html">
+                <i class="fa-solid fa-paw"></i>
+                <div>
+                    <strong>PetFlow</strong>
+                    <span>Painel administrativo</span>
+                </div>
+            </a>
+
+            <nav class="sidebar-nav" aria-label="Menu administrativo">
+                <a href="/admin/pages/dashboard/dashboard.html" class="active"><i class="fa-solid fa-house"></i>Painel da Loja</a>
+                <a href="/admin/pages/clientes/clientes.html"><i class="fa-solid fa-users"></i>Clientes</a>
+
+
+
+
+                <a href="/admin/pages/categorias/categorias.html"><i class="fa-solid fa-tags"></i>Categorias</a>
+                <a href="/admin/pages/produtos/produtos.html"><i class="fa-solid fa-box"></i>Produtos</a>
+                <a href="/admin/pages/estoque/estoque.html"><i class="fa-solid fa-boxes-stacked"></i>Estoque</a>
+                <a href="/admin/pages/fornecedores/fornecedores.html"><i class="fa-solid fa-truck-field"></i>Fornecedores</a>
+                <a href="/admin/pages/compras/compras.html"><i class="fa-solid fa-bag-shopping"></i>Compras</a>
+                <a href="/admin/pages/vendas/vendas.html"><i class="fa-solid fa-box-open"></i>Pedidos</a>
+                <a href="/admin/pages/financeiro/financeiro.html"><i class="fa-solid fa-wallet"></i>Financeiro</a>
+                <a href="/admin/pages/cupons/cupons.html"><i class="fa-solid fa-ticket"></i>Cupons</a>
+                <a href="/admin/pages/usuarios/usuarios.html"><i class="fa-solid fa-user-shield"></i>Usuários</a>
+                <a href="/admin/pages/auditoria/auditoria.html"><i class="fa-solid fa-clock-rotate-left"></i>Auditoria</a>
+                <a href="/admin/pages/atendimento/atendimento.html"><i class="fa-solid fa-headset"></i>Atendimento</a>
+                <a href="/admin/pages/lgpd/lgpd.html"><i class="fa-solid fa-shield-halved"></i>LGPD</a>
+                <a href="/admin/pages/configuracoes/configuracoes.html"><i class="fa-solid fa-gear"></i>Configurações</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="admin-menu-toggle" type="button" aria-label="Abrir menu administrativo" aria-expanded="false">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div class="topbar-title">
+                        <span>Gestão da loja</span>
+                        <h1>Painel da Loja</h1>
+                    </div>
+                </div>
+
+                <div class="topbar-actions dashboard-topbar-actions">
+                    <button class="btn" id="btnAtualizar" type="button">
+                        <i class="fa-solid fa-rotate"></i>
+                        Atualizar
+                    </button>
+                    <a class="btn btn-primary" href="/admin/pages/vendas/vendas.html">
+                        <i class="fa-solid fa-box-open"></i>
+                        Ver pedidos
+                    </a>
+
+                    <div class="notification-menu">
+                        <button class="notification-button" id="notificationButton" type="button" aria-label="Abrir notificações" aria-expanded="false">
+                            <i class="fa-regular fa-bell"></i>
+                            <span id="notificationCount" hidden></span>
+                        </button>
+                        <div class="notification-panel" id="notificationPanel">
+                            <div class="notification-header">
+                                <strong>Notificações</strong>
+                                <small id="notificationStatus">Nenhuma nova</small>
+                            </div>
+                            <div class="notification-list" id="notificationList">
+                                <div class="dashboard-empty">Carregando notificações...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-profile">
+                        <div class="admin-avatar" aria-hidden="true">A</div>
+                        <div>
+                            <span>Olá, Admin!</span>
+                            <a href="/admin/index.html">Sair</a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <section class="page-content dashboard-page">
+                <header class="dashboard-hero">
+                    <div>
+                        <span class="dashboard-kicker">Hoje na PetFlow</span>
+                        <h2>Resumo da loja</h2>
+                        <p>Pedidos, entregas, estoque, financeiro e fornecedores em uma visão simples do dia.</p>
+                    </div>
+                    <div class="dashboard-date">
+                        <i class="fa-regular fa-calendar"></i>
+                        <span id="dashboardDate">Hoje</span>
+                    </div>
+                </header>
+
+                <section class="metric-grid" aria-label="Indicadores principais">
+                    <article class="metric-card">
+                        <div>
+                            <span>Faturamento hoje</span>
+                            <strong>—</strong>
+                        </div>
+                        <i class="fa-solid fa-sack-dollar"></i>
+                        <small>Carregando dados reais...</small>
+                    </article>
+
+                    <article class="metric-card">
+                        <div>
+                            <span>Pedidos recebidos</span>
+                            <strong>—</strong>
+                        </div>
+                        <i class="fa-solid fa-bag-shopping"></i>
+                        <small>Carregando dados reais...</small>
+                    </article>
+
+                    <article class="metric-card">
+                        <div>
+                            <span>Entregas hoje</span>
+                            <strong>—</strong>
+                        </div>
+                        <i class="fa-solid fa-truck-fast"></i>
+                        <small>Carregando dados reais...</small>
+                    </article>
+
+                    <article class="metric-card">
+                        <div>
+                            <span>Reposição pendente</span>
+                            <strong>—</strong>
+                        </div>
+                        <i class="fa-solid fa-box-open"></i>
+                        <small>Carregando dados reais...</small>
+                    </article>
+                </section>
+
+                <div class="dashboard-grid">
+
+
+                    <section class="panel dashboard-panel">
+                        <div class="panel-header">
+                            <h3>Pedidos recentes</h3>
+                            <a href="/admin/pages/vendas/vendas.html">Ver pedidos</a>
+                        </div>
+                        <div class="sales-list">
+                            <div class="dashboard-empty">Carregando pedidos...</div>
+                        </div>
+                    </section>
+                </div>
+
+                <section class="panel dashboard-panel">
+                    <div class="panel-header">
+                        <h3>Fornecedores e abastecimento</h3>
+                        <a href="/admin/pages/fornecedores/fornecedores.html">Ver fornecedores</a>
+                    </div>
+                    <div class="supplier-list">
+                        <div class="dashboard-empty">Carregando estoque e compras...</div>
+                    </div>
+                </section>
+
+                <section class="panel dashboard-panel">
+                    <div class="panel-header">
+                        <h3>Atalhos rápidos</h3>
+                        <span class="muted">Acesse os fluxos mais usados</span>
+                    </div>
+                    <div class="quick-actions">
+                        <a href="/admin/pages/vendas/vendas.html"><i class="fa-solid fa-box-open"></i>Pedidos recebidos</a>
+                        <a href="/admin/pages/fornecedores/fornecedores.html"><i class="fa-solid fa-truck-field"></i>Fornecedores</a>
+                        <a href="/admin/pages/compras/compras.html"><i class="fa-solid fa-clipboard-list"></i>Compras</a>
+                        <a href="/admin/pages/financeiro/financeiro.html"><i class="fa-solid fa-chart-line"></i>Financeiro</a>
+                    </div>
+                </section>
+            </section>
+        </main>
+    </div>
+
+    <script src="/js/pages/dashboard/dashboard.js?v=20261003-1"></script>
+<script src="/js/layout/notifications.js?v=20261002"></script>
+</body>
+</html>

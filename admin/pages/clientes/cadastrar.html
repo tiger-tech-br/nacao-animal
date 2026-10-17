@@ -1,0 +1,395 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex,nofollow">
+    <title>PetFlow - Cadastrar Cliente</title>
+
+    <link rel="stylesheet" href="/css/pages/admin-pages.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+</head>
+<body>
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <a class="sidebar-brand" href="/admin/pages/dashboard/dashboard.html">
+                <i class="fa-solid fa-paw"></i>
+                <div>
+                    <strong>PetFlow</strong>
+                    <span>Painel administrativo</span>
+                </div>
+            </a>
+
+            <nav class="sidebar-nav" aria-label="Menu administrativo">
+                <a href="/admin/pages/dashboard/dashboard.html" data-active-page="dashboard"><i class="fa-solid fa-house"></i>Painel da Loja</a>
+                <a href="/admin/pages/clientes/clientes.html" data-active-page="clientes" class="active"><i class="fa-solid fa-users"></i>Clientes</a>
+
+
+
+
+                <a href="/admin/pages/categorias/categorias.html" data-active-page="categorias"><i class="fa-solid fa-tags"></i>Categorias</a>
+                <a href="/admin/pages/produtos/produtos.html" data-active-page="produtos"><i class="fa-solid fa-box"></i>Produtos</a>
+                <a href="/admin/pages/estoque/estoque.html" data-active-page="estoque"><i class="fa-solid fa-boxes-stacked"></i>Estoque</a>
+                <a href="/admin/pages/fornecedores/fornecedores.html" data-active-page="fornecedores"><i class="fa-solid fa-truck-field"></i>Fornecedores</a>
+                <a href="/admin/pages/compras/compras.html" data-active-page="compras"><i class="fa-solid fa-bag-shopping"></i>Compras</a>
+                <a href="/admin/pages/vendas/vendas.html" data-active-page="vendas"><i class="fa-solid fa-box-open"></i>Pedidos</a>
+                <a href="/admin/pages/financeiro/financeiro.html" data-active-page="financeiro"><i class="fa-solid fa-wallet"></i>Financeiro</a>
+                <a href="/admin/pages/configuracoes/configuracoes.html" data-active-page="configuracoes"><i class="fa-solid fa-gear"></i>Configurações</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="admin-menu-toggle" type="button" aria-label="Abrir menu administrativo" aria-expanded="false">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div class="topbar-title">
+                        <span>Gestão da loja</span>
+                        <h1>Cadastrar Cliente</h1>
+                    </div>
+                </div>
+                <a class="btn" href="/admin/index.html">Sair</a>
+            </header>
+
+            <section class="page-content">
+                <header class="page-header">
+                    <div class="page-heading">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <div>
+                            <h2>Cadastrar Cliente</h2>
+                            <p>Registre os dados do cliente para compras e entregas.</p>
+                        </div>
+                    </div>
+                    <a class="btn" href="/admin/pages/clientes/clientes.html">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        Voltar
+                    </a>
+                </header>
+
+                <section class="admin-insights" aria-label="Resumo do cadastro">
+                    <article class="insight-card">
+                        <i class="fa-solid fa-id-card"></i>
+                        <div>
+                            <span>Dados básicos</span>
+                            <strong>Tutor</strong>
+                            <small>Nome, CPF e contato principal.</small>
+                        </div>
+                    </article>
+                    <article class="insight-card">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <div>
+                            <span>Entrega</span>
+                            <strong>Endereço</strong>
+                            <small>Base para pedidos e delivery.</small>
+                        </div>
+                    </article>
+
+                    <article class="insight-card">
+                        <i class="fa-solid fa-bag-shopping"></i>
+                        <div>
+                            <span>Loja</span>
+                            <strong>Pedidos</strong>
+                            <small>Cliente pronto para comprar no site.</small>
+                        </div>
+                    </article>
+                </section>
+
+                <div class="content-grid content-grid-wide">
+                    <section class="panel">
+                        <div class="panel-header">
+                            <h3>Dados do cliente</h3>
+                            <span class="muted" id="statusLine">Preencha os campos principais.</span>
+                        </div>
+
+                        <form class="form form-wide" id="clientCreateForm" autocomplete="off">
+                            <div class="form-grid-two">
+                                <div class="form-group">
+                                    <label for="nome">Nome</label>
+                                    <input class="form-control" id="nome" name="nome" type="text" placeholder="Nome completo" minlength="3" pattern="^[A-Za-zÀ-ÿ]+(?:\s+[A-Za-zÀ-ÿ]+)+$" title="Informe nome e sobrenome, usando apenas letras e espaços." required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="cpf">CPF</label>
+                                    <input class="form-control" id="cpf" name="cpf" type="text" inputmode="numeric" placeholder="000.000.000-00" pattern="^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$" title="Use um CPF válido, com ou sem pontuação. Ex: 000.000.000-00">
+                                </div>
+                                <div class="form-group">
+                                    <label for="email">Email</label>
+                                    <input class="form-control" id="email" name="email" type="email" placeholder="cliente@email.com">
+                                </div>
+                                <div class="form-group">
+                                    <label for="celularWhatsapp"><i class="fa-brands fa-whatsapp"></i> Celular (WhatsApp)</label>
+                                    <input class="form-control" id="celularWhatsapp" name="celularWhatsapp" type="tel" inputmode="tel" placeholder="(00) 00000-0000" pattern="^\(?\d{2}\)?\s?9?\d{4}-?\d{4}$" title="Use celular com DDD. Ex: (11) 99999-9999" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="telefone">Telefone fixo</label>
+                                    <input class="form-control" id="telefone" name="telefone" type="tel" inputmode="tel" placeholder="(00) 0000-0000" pattern="^\(?\d{2}\)?\s?\d{4}-?\d{4}$" title="Use telefone fixo com DDD. Ex: (11) 3333-3333">
+                                </div>
+                                <div class="form-group">
+                                    <label for="cep">CEP</label>
+                                    <input class="form-control" id="cep" name="cep" type="text" inputmode="numeric" placeholder="00000-000" pattern="^\d{5}-?\d{3}$" title="Use um CEP válido, com ou sem hífen. Ex: 00000-000">
+                                </div>
+                                <div class="form-group">
+                                    <label for="logradouro">Rua</label>
+                                    <input class="form-control" id="logradouro" name="logradouro" type="text" placeholder="Rua, avenida ou travessa">
+                                </div>
+                                <div class="form-group">
+                                    <label for="numero">N°</label>
+                                    <input class="form-control" id="numero" name="numero" type="text" placeholder="Número da casa" pattern="^[0-9A-Za-zÀ-ÿ\s./-]{1,20}$" title="Informe o número da casa ou bloco. Ex: 123, 12A, Bloco 2">
+                                </div>
+                                <div class="form-group">
+                                    <label for="complemento">Complemento</label>
+                                    <input class="form-control" id="complemento" name="complemento" type="text" placeholder="Casa, bloco, apartamento">
+                                </div>
+                                <div class="form-group">
+                                    <label for="bairro">Bairro</label>
+                                    <input class="form-control" id="bairro" name="bairro" type="text" placeholder="Bairro">
+                                </div>
+                                <div class="form-group">
+                                    <label for="cidade">Cidade</label>
+                                    <input class="form-control" id="cidade" name="cidade" type="text" placeholder="Cidade" pattern="^[A-Za-zÀ-ÿ\s.'-]{2,80}$" title="Informe uma cidade válida.">
+                                </div>
+                                <div class="form-group">
+                                    <label for="estado">Estado</label>
+                                    <input class="form-control" id="estado" name="estado" type="text" placeholder="UF" maxlength="2" pattern="^[A-Za-z]{2}$" title="Use a sigla do estado com 2 letras. Ex: SP">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="observacoes">Observações internas</label>
+                                <textarea class="form-control" id="observacoes" name="observacoes" placeholder="Preferências, restrições de entrega ou informações importantes"></textarea>
+                            </div>
+
+                            <div class="form-actions">
+                                <button class="btn" type="reset">Limpar</button>
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fa-solid fa-floppy-disk"></i>
+                                    Salvar cliente
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+
+                    <aside class="panel">
+                        <div class="panel-header">
+                            <h3>Próximo passo</h3>
+                        </div>
+                        <div class="form">
+                            <p class="muted">Depois de salvar, volte para a lista de clientes para conferir o registro.</p>
+
+                            <a class="btn" href="/admin/pages/clientes/clientes.html">
+                                <i class="fa-solid fa-users"></i>
+                                Ver clientes
+                            </a>
+                        </div>
+                    </aside>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/js/utils/storage.js?v=20260928-1"></script>
+    <script src="/js/services/api.js"></script>
+    <script src="/js/pages/auth/authGuard.js"></script>
+    <script>
+        "use strict";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            if (typeof requireAuth === "function") {
+                requireAuth();
+            }
+
+            const form = document.getElementById("clientCreateForm");
+            const status = document.getElementById("statusLine");
+            const toggle = document.querySelector(".admin-menu-toggle");
+            const sidebar = document.querySelector(".sidebar");
+            const validationRules = {
+                nome: {
+                    regex: /^[A-Za-zÀ-ÿ]+(?:\s+[A-Za-zÀ-ÿ]+)+$/,
+                    message: "Informe nome e sobrenome, usando apenas letras e espaços."
+                },
+                cpf: {
+                    regex: /^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/,
+                    message: "Use um CPF válido, com ou sem pontuação. Ex: 000.000.000-00"
+                },
+                celularWhatsapp: {
+                    regex: /^\(?\d{2}\)?\s?9?\d{4}-?\d{4}$/,
+                    message: "Use celular com DDD. Ex: (11) 99999-9999"
+                },
+                telefone: {
+                    regex: /^\(?\d{2}\)?\s?\d{4}-?\d{4}$/,
+                    message: "Use telefone fixo com DDD. Ex: (11) 3333-3333"
+                },
+                cep: {
+                    regex: /^\d{5}-?\d{3}$/,
+                    message: "Use um CEP válido, com ou sem hífen. Ex: 00000-000"
+                },
+                numero: {
+                    regex: /^[0-9A-Za-zÀ-ÿ\s./-]{1,20}$/,
+                    message: "Informe o número da casa ou bloco. Ex: 123, 12A, Bloco 2"
+                },
+                cidade: {
+                    regex: /^[A-Za-zÀ-ÿ\s.'-]{2,80}$/,
+                    message: "Informe uma cidade válida."
+                },
+                estado: {
+                    regex: /^[A-Za-z]{2}$/,
+                    message: "Use a sigla do estado com 2 letras. Ex: SP"
+                }
+            };
+            const addressFields = {
+                cep: document.getElementById("cep"),
+                logradouro: document.getElementById("logradouro"),
+                numero: document.getElementById("numero"),
+                complemento: document.getElementById("complemento"),
+                bairro: document.getElementById("bairro"),
+                cidade: document.getElementById("cidade"),
+                estado: document.getElementById("estado")
+            };
+
+            if (toggle && sidebar) {
+                let overlay = document.querySelector(".admin-menu-overlay");
+
+                if (!overlay) {
+                    overlay = document.createElement("div");
+                    overlay.className = "admin-menu-overlay";
+                    document.body.appendChild(overlay);
+                }
+
+                function closeSidebar() {
+                    sidebar.classList.remove("active");
+                    overlay.classList.remove("active");
+                    document.body.classList.remove("admin-menu-open");
+                    toggle.setAttribute("aria-expanded", "false");
+                }
+
+                toggle.addEventListener("click", () => {
+                    const willOpen = !sidebar.classList.contains("active");
+                    sidebar.classList.toggle("active", willOpen);
+                    overlay.classList.toggle("active", willOpen);
+                    document.body.classList.toggle("admin-menu-open", willOpen);
+                    toggle.setAttribute("aria-expanded", String(willOpen));
+                });
+
+                overlay.addEventListener("click", closeSidebar);
+            }
+
+            Object.entries(validationRules).forEach(([name, rule]) => {
+                const input = form?.elements[name];
+
+                if (!input) {
+                    return;
+                }
+
+                input.addEventListener("input", () => {
+                    const value = input.value.trim();
+                    input.setCustomValidity(value && !rule.regex.test(value) ?rule.message : "");
+                });
+            });
+
+            function onlyDigits(value) {
+                return String(value || "").replace(/\D/g, "");
+            }
+
+            function formatCep(value) {
+                const digits = onlyDigits(value).slice(0, 8);
+                return digits.length > 5 ?`${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+            }
+
+            function updateFullAddress() {
+                const logradouro = addressFields.logradouro?.value.trim();
+                const numero = addressFields.numero?.value.trim();
+                const complemento = addressFields.complemento?.value.trim();
+                const bairro = addressFields.bairro?.value.trim();
+                const cidade = addressFields.cidade?.value.trim();
+                const estado = addressFields.estado?.value.trim().toUpperCase();
+
+                const parts = [
+                    logradouro,
+                    numero,
+                    complemento,
+                    bairro,
+                    cidade,
+                    estado
+                ].filter(Boolean);
+
+                return parts.join(", ");
+            }
+
+            async function fillAddressByCep() {
+                const cepInput = addressFields.cep;
+                const cep = onlyDigits(cepInput?.value);
+
+                if (!cepInput || cep.length !== 8) {
+                    return;
+                }
+
+                cepInput.value = formatCep(cep);
+                status.textContent = "Buscando endereço pelo CEP...";
+
+                try {
+                    const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                    const data = await response.json();
+
+                    if (!response.ok || data.erro) {
+                        status.textContent = "CEP não encontrado. Preencha o endereço manualmente.";
+                        return;
+                    }
+
+                    addressFields.logradouro.value = data.logradouro || "";
+                    addressFields.bairro.value = data.bairro || "";
+                    addressFields.cidade.value = data.localidade || "";
+                    addressFields.estado.value = data.uf || "";
+                    addressFields.numero?.focus();
+                    status.textContent = "Endereço preenchido pelo CEP. Complete o número.";
+                } catch {
+                    status.textContent = "Não foi possível consultar o CEP agora. Preencha manualmente.";
+                }
+            }
+
+            addressFields.cep?.addEventListener("input", () => {
+                addressFields.cep.value = formatCep(addressFields.cep.value);
+
+                if (onlyDigits(addressFields.cep.value).length === 8) {
+                    fillAddressByCep();
+                }
+            });
+
+            addressFields.cep?.addEventListener("blur", fillAddressByCep);
+
+            form?.addEventListener("submit", async event => {
+                event.preventDefault();
+
+                Object.entries(validationRules).forEach(([name, rule]) => {
+                    const input = form.elements[name];
+                    const value = input?.value.trim() || "";
+
+                    if (input) {
+                        input.setCustomValidity(value && !rule.regex.test(value) ?rule.message : "");
+                    }
+                });
+
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    status.textContent = "Revise os campos destacados antes de salvar.";
+                    return;
+                }
+
+                status.textContent = "Salvando cliente...";
+
+                const data = Object.fromEntries(new FormData(form).entries());
+                data.estado = data.estado?.toUpperCase() || "";
+                data.cep = formatCep(data.cep || "");
+                data.endereco = updateFullAddress();
+
+                try {
+                    await apiPost("/clientes", data);
+                    status.textContent = "Cliente salvo com sucesso.";
+                    form.reset();
+                } catch (error) {
+                    status.textContent = error.message || "Não foi possível salvar o cliente.";
+                }
+            });
+        });
+    </script>
+</body>
+</html>

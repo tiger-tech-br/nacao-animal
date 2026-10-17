@@ -1,0 +1,206 @@
+/* ==================================================
+   PETFLOW
+   DROPDOWN.CSS
+================================================== */
+
+
+/* ==================================================
+   DROPDOWN
+================================================== */
+
+.dropdown {
+
+    position: relative;
+
+    display: inline-flex;
+
+}
+
+
+/* ==================================================
+   TOGGLE
+================================================== */
+
+.dropdown-toggle {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: .75rem;
+
+    padding: .85rem 1rem;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 12px;
+
+    background: #ffffff;
+
+    cursor: pointer;
+
+    transition: all .25s ease;
+
+}
+
+.dropdown-toggle:hover {
+
+    border-color: #2563eb;
+
+}
+
+
+/* ==================================================
+   MENU
+================================================== */
+
+.dropdown-menu {
+
+    position: absolute;
+
+    top: calc(100% + .6rem);
+
+    right: 0;
+
+    min-width: 240px;
+
+    display: none;
+
+    flex-direction: column;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 14px;
+
+    box-shadow: 0 15px 35px rgba(0,0,0,.08);
+
+    overflow: hidden;
+
+    z-index: 1000;
+
+}
+
+
+/* ==================================================
+   SHOW
+================================================== */
+
+.dropdown.show .dropdown-menu {
+
+    display: flex;
+
+}
+
+
+/* ==================================================
+   ITEM
+================================================== */
+
+.dropdown-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: .8rem;
+
+    padding: 1rem 1.2rem;
+
+    text-decoration: none;
+
+    color: #374151;
+
+    transition: .2s;
+
+    cursor: pointer;
+
+}
+
+.dropdown-item:hover {
+
+    background: #f3f4f6;
+
+}
+
+
+/* ==================================================
+   ICON
+================================================== */
+
+.dropdown-item i {
+
+    width: 20px;
+
+    text-align: center;
+
+}
+
+
+/* ==================================================
+   TITLE
+================================================== */
+
+.dropdown-title {
+
+    padding: 1rem 1.2rem;
+
+    font-size: .75rem;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+
+    color: #9ca3af;
+
+    border-bottom: 1px solid #f3f4f6;
+
+}
+
+
+/* ==================================================
+   DIVIDER
+================================================== */
+
+.dropdown-divider {
+
+    height: 1px;
+
+    background: #e5e7eb;
+
+}
+
+
+/* ==================================================
+   DANGER
+================================================== */
+
+.dropdown-danger {
+
+    color: #dc2626;
+
+}
+
+.dropdown-danger:hover {
+
+    background: #fee2e2;
+
+}
+
+
+/* ==================================================
+   RESPONSIVO
+================================================== */
+
+@media (max-width:768px){
+
+    .dropdown-menu{
+
+        min-width:200px;
+
+    }
+
+}
