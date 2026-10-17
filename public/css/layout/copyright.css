@@ -1,0 +1,14 @@
+.site-copyright {
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    padding: 20px 16px;
+    color: inherit;
+    font-size: 13px;
+    line-height: 1.6;
+    text-align: center;
+}
+
+.site-copyright p {
+    margin: 0;
+}
