@@ -19,10 +19,10 @@ A versão é voltada à venda de produtos. Cadastro de pets, agenda e serviços 
 2. Extraia o ZIP e abra um terminal na pasta `petflow-v2`.
 3. Execute `npm ci` para instalar as versões do arquivo de dependências.
 4. Copie `.env.example` para `.env`. No PowerShell: `Copy-Item .env.example .env`.
-5. Crie o banco `petflow_v2` e preencha a conexão. Nunca use o banco de outra instalação. No Railway, use um projeto separado e a referência privada do PostgreSQL, com `DB_EXPECTED_NAME` correspondente.
+5. Use o banco local `nacao-animal`; crie-o somente se ainda não existir. Configure `DB_NAME=nacao-animal` e `DB_EXPECTED_NAME=nacao-animal` no `.env` e preencha a conexão. Nunca use o banco de outra instalação. No Railway, use um projeto separado e a referência privada do PostgreSQL, com `DB_EXPECTED_NAME` correspondente ao nome criado nesse serviço.
 6. Crie um JWT_SECRET aleatório próprio. Configure `JWT_EXPIRES_IN`, o e-mail e a senha do administrador. A senha inicial precisa de 12 caracteres, com maiúscula, minúscula, número e símbolo.
 7. Execute `npm run db:migrate` e, na primeira instalação, `npm run db:seed-admin`. Reexecutar o seed atualiza a senha do administrador desse e-mail; guarde a credencial com o responsável pela loja.
-8. Execute `npm start` e abra `http://localhost:4501` e `http://localhost:4501/admin/`.
+8. Execute `npm start` e abra `http://localhost:4600` e `http://localhost:4600/admin/`.
 9. No painel, complete os dados da empresa, endereço, telefone, e-mail e CNPJ. Cadastre categorias, fornecedores, produtos e saldos de estoque reais.
 
 Os seeds de catálogo e clientes são ferramentas de demonstração. Não carregue contas de demonstração em produção: elas usam credenciais conhecidas.
@@ -47,7 +47,7 @@ Hospedagem, domínio, consumo dos provedores e taxas de pagamento precisam ser m
 
 ## Critérios de aceite
 
-1. Execute `npm test` e `npm run test:links`. A integração com PostgreSQL é ativada com `RUN_DB_TESTS=1` e usa schema temporário somente no banco local `petflow_v2`; os provedores de pagamento/e-mail/mapas são simulados nesses testes.
+1. Execute `npm test` e `npm run test:links`. A integração com PostgreSQL é ativada com `RUN_DB_TESTS=1` e usa schema temporário somente no banco local `nacao-animal`; os provedores de pagamento/e-mail/mapas são simulados nesses testes.
 2. Execute `npm audit --omit=dev --audit-level=high`.
 3. No ambiente definitivo, execute `npm run release:check`. A configuração local em `development` não deve ser aprovada como produção.
 4. Execute o teste real do Cloudinary, cadastre e substitua uma foto de produto e um logo no painel. Confirme a imagem na loja e a preservação do arquivo atual quando uma edição falhar.

@@ -108,7 +108,7 @@ function applyFilters() {
 }
 
 function renderCategoryHeader(config) {
-    document.title = `PetFlow | ${config.title}`;
+    document.title = `Nação Animal | ${config.title}`;
     setText("categoryTitle", config.title);
     setText("categoryDescription", config.description);
 
@@ -178,7 +178,7 @@ function renderProducts(products, config, query = "") {
                     <img src="${escapeHtml(product.foto || "/images/products/petflow-prime-racao.jpg")}" alt="${escapeHtml(product.nome)}" loading="lazy" decoding="async">
                 </a>
                 <div class="product-content">
-                    <span class="product-category">${escapeHtml(product.categoria || "PetFlow")}</span>
+                    <span class="product-category">${escapeHtml(product.categoria || "Nação Animal")}</span>
                     <h3 class="product-title"><a href="${escapeHtml(href)}">${escapeHtml(product.nome)}</a></h3>
                     <p class="product-description">${escapeHtml(product.descricao || "Produto selecionado para o seu pet.")}</p>
                     <div class="product-footer">
@@ -218,7 +218,7 @@ function renderEmpty(message) {
         <div class="empty-card">
             <i class="fa-regular fa-folder-open"></i>
             <strong>Categoria em atualização</strong>
-            <p>${escapeHtml(message)} Enquanto isso, veja os destaques da loja ou fale com a equipe PetFlow.</p>
+            <p>${escapeHtml(message)} Enquanto isso, veja os destaques da loja ou fale com a equipe da Nação Animal.</p>
         </div>
     `;
 }

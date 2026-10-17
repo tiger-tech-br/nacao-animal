@@ -20,15 +20,17 @@ test("migracoes e consultas nao dependem das tabelas clinicas removidas", () => 
     }
 });
 
-test("conexoes e URLs nunca podem apontar para o banco original", () => {
+test("conexoes e URLs usam nacao-animal e rejeitam bancos de outras instalacoes", () => {
     const keys = ["DB_NAME", "DB_EXPECTED_NAME", "DATABASE_URL", "POSTGRES_URL", "DATABASE_PUBLIC_URL"];
     const saved = Object.fromEntries(keys.map(key => [key, process.env[key]]));
     try {
         keys.forEach(key => delete process.env[key]);
-        process.env.DB_NAME = "petflow";
-        assert.throws(buildDbOptions, /nao corresponde/);
-        process.env.DB_NAME = "petflow_v2";
-        assert.equal(buildDbOptions().database, "petflow_v2");
+        for (const database of ["petflow", "petflow_v2"]) {
+            process.env.DB_NAME = database;
+            assert.throws(buildDbOptions, /nao corresponde/, database);
+        }
+        process.env.DB_NAME = "nacao-animal";
+        assert.equal(buildDbOptions().database, "nacao-animal");
         process.env.DB_EXPECTED_NAME = "railway";
         assert.throws(buildDbOptions, /nao corresponde/);
         process.env.DATABASE_URL = "postgresql://postgres:senha@postgres.railway.internal:5432/railway";
@@ -36,9 +38,11 @@ test("conexoes e URLs nunca podem apontar para o banco original", () => {
         delete process.env.DATABASE_URL;
         delete process.env.DB_EXPECTED_NAME;
         for (const key of ["DATABASE_URL", "POSTGRES_URL", "DATABASE_PUBLIC_URL"]) {
-            process.env[key] = "postgresql://localhost/petflow";
-            assert.throws(buildDbOptions, /nao corresponde/);
-            process.env[key] = "postgresql://localhost/petflow_v2";
+            for (const database of ["petflow", "petflow_v2"]) {
+                process.env[key] = `postgresql://localhost/${database}`;
+                assert.throws(buildDbOptions, /nao corresponde/, `${key}: ${database}`);
+            }
+            process.env[key] = "postgresql://localhost/nacao-animal";
             assert.equal(buildDbOptions().connectionString, process.env[key]);
             delete process.env[key];
         }
@@ -79,8 +83,8 @@ test("menus publicos e administrativos nao divulgam modulos removidos", () => {
 
 test("rotas removidas retornam 404 e paginas comerciais continuam acessiveis", async () => {
     require("dotenv").config({ quiet: true });
-    process.env.DB_NAME = "petflow_v2";
-    process.env.DB_EXPECTED_NAME = "petflow_v2";
+    process.env.DB_NAME = "nacao-animal";
+    process.env.DB_EXPECTED_NAME = "nacao-animal";
     process.env.DB_HOST = "127.0.0.1";
     process.env.DB_PORT = "5432";
     process.env.DB_USER = "test";

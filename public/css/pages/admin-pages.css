@@ -102,10 +102,24 @@ body > .sidebar {
     font-size: 22px;
 }
 
+.sidebar-brand img {
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
+    display: block;
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+.sidebar-brand > div {
+    min-width: 0;
+}
+
 .sidebar-brand strong {
     display: block;
-    font-size: 20px;
-    line-height: 1.1;
+    font-size: 18px;
+    line-height: 1.2;
+    overflow-wrap: break-word;
 }
 
 .sidebar-brand span {

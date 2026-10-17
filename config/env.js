@@ -62,7 +62,7 @@ if (
 
 module.exports = {
 
-    PORT: process.env.PORT || 4501,
+    PORT: process.env.PORT || 4600,
 
     DB_HOST: process.env.DB_HOST,
 
@@ -96,7 +96,7 @@ module.exports = {
 
     APP_URL: (process.env.APP_URL?.trim() ||
         (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` :
-            `http://localhost:${process.env.PORT || 4501}`)).replace(/\/+$/, ""),
+            `http://localhost:${process.env.PORT || 4600}`)).replace(/\/+$/, ""),
 
     PAGSEGURO_BASE_URL: process.env.PAGSEGURO_BASE_URL,
 

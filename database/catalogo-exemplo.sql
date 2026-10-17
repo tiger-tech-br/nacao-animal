@@ -1,4 +1,4 @@
--- Executar inteiro no Query Tool do banco da aplicação (Railway: railway).
+-- Executar inteiro no Query Tool do banco da aplicação (local: nacao-animal; Railway: railway).
 -- Reexecutar NÃO altera preços nem repõe estoques de produtos existentes.
 BEGIN;
 SELECT pg_advisory_xact_lock(hashtext('petflow/catalogo-exemplo'));
@@ -9,8 +9,8 @@ DECLARE
     produto UUID;
     item RECORD;
 BEGIN
-    IF current_database() NOT IN ('railway', 'petflow_v2') THEN
-        RAISE EXCEPTION 'Selecione o banco railway ou petflow_v2 da aplicação';
+    IF current_database() NOT IN ('railway', 'nacao-animal') THEN
+        RAISE EXCEPTION 'Selecione o banco railway ou nacao-animal da aplicação';
     END IF;
     FOR item IN SELECT * FROM (VALUES
         ('Rações', 'Ração Canis Prime Adultos 10kg', 'Alimento premium para cães adultos.', 'CANIS-PRIME-10KG', 'PetFlow Prime', 189.90, 128.50, 18, '/images/products/petflow-prime-racao.jpg'),

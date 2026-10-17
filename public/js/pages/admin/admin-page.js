@@ -1466,7 +1466,7 @@
         container.querySelector("#copyDriverLink")?.addEventListener("click", copyLink);
         container.querySelector("#shareDriverLink")?.addEventListener("click", async () => {
             if (!navigator.share) return copyLink();
-            try { await navigator.share({ title: "PetFlow — iniciar viagem", text: "Abra no celular da entrega e toque em Iniciar viagem. Link exclusivo do entregador.", url: container.querySelector("#driverLink").value }); }
+            try { await navigator.share({ title: "Nação Animal — iniciar viagem", text: "Abra no celular da entrega e toque em Iniciar viagem. Link exclusivo do entregador.", url: container.querySelector("#driverLink").value }); }
             catch (error) { if (error.name !== "AbortError") await copyLink(); }
         });
     }

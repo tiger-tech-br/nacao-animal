@@ -34,8 +34,8 @@
         sidebar.className = "sidebar";
         sidebar.innerHTML = `
             <a class="sidebar-brand" href="/admin/pages/dashboard/dashboard.html">
-                <i class="fa-solid fa-paw"></i>
-                <div><strong>PetFlow</strong><span>Painel administrativo</span></div>
+                <img src="/images/logo/nacao-animal-logo-transparent.png" alt="Logo da Nação Animal" width="52" height="52">
+                <div><strong>Nação Animal</strong><span>Painel administrativo</span></div>
             </a>
             <nav class="sidebar-nav">
                 ${links.map(([key, href, icon, label]) => `
@@ -68,7 +68,7 @@
                 </button>
                 <div class="topbar-title">
                     <span>Gestão da loja</span>
-                    <h1>PetFlow</h1>
+                    <h1>Nação Animal</h1>
                 </div>
             </div>
             <a class="btn" href="/admin/index.html">Sair</a>

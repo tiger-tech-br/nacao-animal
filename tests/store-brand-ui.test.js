@@ -5,16 +5,16 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
 
-const DEFAULT_LOGO = "/images/logo/fred-petflow-logo-transparent.png";
+const DEFAULT_LOGO = "/images/logo/nacao-animal-logo-transparent.png";
 const sources = {
     home: fs.readFileSync("public/js/pages/home/catalog.js", "utf8"),
     public: fs.readFileSync("public/js/layout/public-header.js", "utf8")
 };
 
 function setupPage(kind, data, options = {}) {
-    const logo = { src: DEFAULT_LOGO, alt: "Logo da PetFlow" };
-    const label = { textContent: "PetFlow" };
-    const footer = { textContent: "PetFlow" };
+    const logo = { src: DEFAULT_LOGO, alt: "Logo da Nação Animal" };
+    const label = { textContent: "Nação Animal" };
+    const footer = { textContent: "Nação Animal" };
     let requests = 0;
     const storage = { getItem: () => null, setItem() {}, removeItem() {} };
     const context = {
@@ -93,7 +93,7 @@ for (const kind of Object.keys(sources)) {
             const page = setupPage(kind, { nome: "Inválido", logo: "https://example.com/logo.png" }, options);
             await page.load();
             assert.equal(page.logo.src, DEFAULT_LOGO);
-            assert.equal(page.label.textContent, "PetFlow");
+            assert.equal(page.label.textContent, "Nação Animal");
         }
     });
 }

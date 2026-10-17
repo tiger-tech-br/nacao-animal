@@ -1,4 +1,4 @@
--- pgAdmin: selecione o banco usado pelo site, abra Query Tool e execute inteiro.
+-- pgAdmin: selecione nacao-animal (local) ou railway, abra Query Tool e execute inteiro.
 -- Edite os valores abaixo. Troque o SKU para cada produto diferente.
 BEGIN;
 DO $$
@@ -16,7 +16,7 @@ DECLARE
     quantidade_inicial INTEGER := 10;
     foto_produto TEXT := '/images/products/petflow-prime-racao.jpg';
 BEGIN
-    IF current_database() NOT IN ('railway','petflow_v2') THEN RAISE EXCEPTION 'Selecione o banco correto da aplicação'; END IF;
+    IF current_database() NOT IN ('railway','nacao-animal') THEN RAISE EXCEPTION 'Selecione o banco railway ou nacao-animal da aplicação'; END IF;
     IF sku_produto='ALTERE-O-SKU' OR nome_produto='ALTERE O NOME DO PRODUTO' THEN
         RAISE EXCEPTION 'Preencha o nome e o SKU antes de executar';
     END IF;

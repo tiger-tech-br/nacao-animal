@@ -89,10 +89,13 @@ a {
     width: 48px;
     height: 48px;
     object-fit: contain;
+    flex-shrink: 0;
 }
 
 .brand strong {
+    max-width: 190px;
     font-size: 1.15rem;
+    line-height: 1.2;
 }
 
 .cart-topbar nav a {

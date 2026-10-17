@@ -10,7 +10,7 @@
     if (admin) document.body?.classList.add("tracking-admin");
     login.href = admin ? "/admin/index.html" : `/login?next=${encodeURIComponent(location.pathname + location.search)}`;
     if (admin) {
-        document.title = "PetFlow | Acompanhar entrega";
+        document.title = "Nação Animal | Acompanhar entrega";
         document.getElementById("trackingTitle").textContent = "Acompanhar entrega";
         const back = document.getElementById("trackingBack");
         back.href = `/admin/pages/vendas/vendas.html${id ? `?pedido=${encodeURIComponent(id)}` : ""}`;
@@ -58,7 +58,7 @@
             login.hidden = true;
             const data = payload.data;
             if (data.status !== "SAIU_PARA_ENTREGA") {
-                status.textContent = ["ENTREGUE","FINALIZADA"].includes(data.status) ? (admin ? "Pedido entregue. Rastreamento encerrado." : "Pedido entregue. Obrigado por comprar com a PetFlow!") : `Este pedido não está em rota de entrega. Consulte o status ${admin ? "no painel de pedidos" : "em Meus pedidos"}.`;
+                status.textContent = ["ENTREGUE","FINALIZADA"].includes(data.status) ? (admin ? "Pedido entregue. Rastreamento encerrado." : "Pedido entregue. Obrigado por comprar com a Nação Animal!") : `Este pedido não está em rota de entrega. Consulte o status ${admin ? "no painel de pedidos" : "em Meus pedidos"}.`;
                 hideMap(); ended = ["ENTREGUE","FINALIZADA","CANCELADA"].includes(data.status); return;
             }
             if (data.latitude === null || data.longitude === null || !data.atualizado_em) {

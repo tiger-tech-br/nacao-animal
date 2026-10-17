@@ -806,8 +806,8 @@ body {
 
 .login-logo img,
 .login-container:has(#publicRegisterForm.active) .login-logo img {
-    width: 50px;
-    height: 50px;
+    width: 68px;
+    height: 68px;
 }
 
 .login-eyebrow {

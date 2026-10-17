@@ -11,7 +11,7 @@ test("cadastro, confirmação, compra, webhook e estoque em PostgreSQL isolado",
     const options = buildDbOptions();
     const target = options.connectionString ? new URL(options.connectionString) : null;
     assert.ok(["localhost", "127.0.0.1"].includes(target?.hostname || options.host), "Teste restrito ao PostgreSQL local");
-    assert.equal(target ? target.pathname.slice(1) : options.database, "petflow_v2");
+    assert.equal(target ? decodeURIComponent(target.pathname.slice(1)) : options.database, "nacao-animal");
     const schema = `test_backend_${crypto.randomBytes(8).toString("hex")}`;
     const admin = new Pool(options);
     let pool, server;

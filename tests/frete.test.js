@@ -20,7 +20,7 @@ test("cotação usa endereço salvo e Routes API; assinatura vincula cliente e e
         assert.equal(url, "https://routes.googleapis.com/directions/v2:computeRoutes");
         assert.equal(options.headers["X-Goog-Api-Key"], "test-key");
         assert.equal(options.headers["X-Goog-FieldMask"], "routes.distanceMeters");
-        assert.match(JSON.parse(options.body).origin.address, /Novo Horizonte, 123/);
+        assert.match(JSON.parse(options.body).origin.address, /Novo Horizonte, 256/);
         assert.match(JSON.parse(options.body).destination.address, /Rua Exemplo, 10/);
         return { ok: true, json: async () => ({ routes: [{ distanceMeters: 1500 }] }) };
     };

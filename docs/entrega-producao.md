@@ -29,7 +29,7 @@ As ferramentas cliente do PostgreSQL (`pg_dump` e `pg_restore`) precisam estar i
 
 ```powershell
 npm run db:backup
-npm run db:restore -- --file=backups/petflow_v2_AAAA-MM-DD_HH-MM-SS.dump --confirm=petflow_v2
+npm run db:restore -- --file=backups/nacao-animal_AAAA-MM-DD_HH-MM-SS.dump --confirm=nacao-animal
 npm run db:migrate
 ```
 

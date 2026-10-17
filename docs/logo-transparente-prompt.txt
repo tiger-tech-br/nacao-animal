@@ -1,0 +1,5 @@
+Tool: built-in image_gen (imagegen skill), transparent_background=true.
+Input: nacao-animal-logo.jpg (user-provided original).
+Output: public/images/logo/nacao-animal-logo-transparent.png
+
+Use case: background-extraction. Image 1 is the edit target: the supplied Nação Animal pet shop logo. Remove ONLY the white/light gray background outside the outer teal scalloped badge and the orange-red ribbon, replacing it with true transparency (alpha channel). Preserve the complete existing logo, its geometry, proportions, colors, outlines and typography. Keep the exact words "Pet Shop" and "Nação Animal", including the accents. Preserve opaque white inside the artwork: the dog and cat silhouettes, white circular border, ribbon stripes, and white lettering must stay white and fully visible. Keep the black central circle, yellow ring, teal scallops and paw prints, and orange-red ribbon unchanged. Do not redesign, retype, add a shadow, add a plate, add objects, or paint a checkerboard. Keep the whole logo centered with all ribbon tips and badge edges intact, with a small transparent margin. Deliver a PNG with a genuinely transparent background for use on a website.

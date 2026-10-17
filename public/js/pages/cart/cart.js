@@ -464,7 +464,7 @@ async function renderCustomer() {
             <div class="customer-card-inner ${addressComplete ? "" : "is-warning"}">
                 <div>
                     <span>Cliente</span>
-                    <strong>${escapeHtml(customer.nome || "Cliente PetFlow")}</strong>
+                    <strong>${escapeHtml(customer.nome || "Cliente Nação Animal")}</strong>
                     <p>${escapeHtml(contact)}</p>
                 </div>
                 <a class="btn-secondary" href="/conta" target="_top">Editar meus dados</a>

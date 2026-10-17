@@ -28,7 +28,7 @@ function getDatabaseTarget() {
 }
 
 function assertExpectedDatabase(target) {
-    const expected = process.env.DB_EXPECTED_NAME || "petflow_v2";
+    const expected = process.env.DB_EXPECTED_NAME || "nacao-animal";
     if (!target.database || target.database !== expected) {
         throw new Error(`Operacao bloqueada: o banco configurado nao corresponde a DB_EXPECTED_NAME (${expected}).`);
     }

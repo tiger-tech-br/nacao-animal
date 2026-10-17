@@ -2,7 +2,7 @@
 
 (function setupPetFlowPublicHeader() {
     const HEADER_VERSION = "20260811-1";
-    const DEFAULT_LOGO = "/images/logo/fred-petflow-logo-transparent.png";
+    const DEFAULT_LOGO = "/images/logo/nacao-animal-logo-transparent.png";
     let storeInfoRequest;
 
     document.addEventListener("DOMContentLoaded", initPublicHeader);
@@ -34,7 +34,7 @@
         }
 
         const store = await storeInfoRequest;
-        const name = typeof store.nome === "string" && store.nome.trim() ? store.nome.trim() : "PetFlow";
+        const name = typeof store.nome === "string" && store.nome.trim() ? store.nome.trim() : "Nação Animal";
         const label = document.querySelector(".public-header .logo-text");
         const logo = document.querySelector(".public-header .logo img");
         if (label) label.textContent = name;
@@ -79,8 +79,8 @@
             <header class="header public-header" data-public-header="${HEADER_VERSION}">
                 <div class="container">
                     <a class="logo" href="/#hero" aria-label="Ir para a página inicial">
-                        <img src="/images/logo/fred-petflow-logo-transparent.png" alt="Logo da PetFlow" width="60" height="60">
-                        <span class="logo-text">PetFlow</span>
+                        <img src="/images/logo/nacao-animal-logo-transparent.png" alt="Logo da Nação Animal" width="60" height="60">
+                        <span class="logo-text">Nação Animal</span>
                     </a>
 
                     <form class="search-form" data-public-header-search role="search" aria-label="Pesquisar produtos" autocomplete="off">

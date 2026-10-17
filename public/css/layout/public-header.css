@@ -45,7 +45,7 @@ body:has(.public-header) .login-container {
     width: min(1280px, calc(100% - 32px));
     min-height: 82px;
     display: grid;
-    grid-template-columns: 154px minmax(220px, 330px) minmax(0, 1fr) max-content;
+    grid-template-columns: 210px minmax(220px, 330px) minmax(0, 1fr) max-content;
     gap: 16px;
     align-items: center;
     margin-inline: auto;
@@ -58,17 +58,22 @@ body:has(.public-header) .login-container {
     color: var(--pf-ink);
     font-weight: 800;
     white-space: nowrap;
+    min-width: 0;
 }
 
 .public-header .logo img {
     width: 54px;
     height: 54px;
     object-fit: contain;
+    flex-shrink: 0;
     filter: drop-shadow(0 10px 16px rgba(4, 118, 109, .18));
 }
 
 .public-header .logo-text {
-    font-size: 1.28rem;
+    max-width: 148px;
+    font-size: 1rem;
+    line-height: 1.2;
+    white-space: normal;
     letter-spacing: 0;
 }
 
@@ -442,6 +447,7 @@ body:has(.public-header) .login-container {
 @media (max-width: 560px) {
     .public-header .container {
         width: min(100% - 22px, 1180px);
+        grid-template-columns: minmax(0, 1fr) auto;
         gap: 10px;
     }
 
@@ -456,15 +462,16 @@ body:has(.public-header) .login-container {
     }
 
     .public-header .logo-text {
-        font-size: 1.08rem;
+        font-size: .88rem;
     }
 
     .public-header .logo img {
-        width: 48px;
-        height: 48px;
+        width: 44px;
+        height: 44px;
     }
 
     .public-header .header-actions {
+        grid-column: 2 / 3;
         gap: 8px;
     }
 

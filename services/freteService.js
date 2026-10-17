@@ -3,7 +3,7 @@ const crypto = require("node:crypto");
 const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = require("../config/env");
 const quoteSecret = crypto.createHmac("sha256", JWT_SECRET).update("petflow/frete/v1").digest();
-const DEFAULT_ORIGIN = "Avenida Novo Horizonte, 123, Vila Sacadura Cabral, Santo André, SP, Brasil";
+const DEFAULT_ORIGIN = "Avenida Novo Horizonte, 256, Vila Sacadura Cabral, Santo André, SP, 09060-820, Brasil";
 const addressFields = ["endereco", "numero", "complemento", "bairro", "cidade", "estado", "cep"];
 const error = (message, status = 400) => Object.assign(new Error(message), { status });
 

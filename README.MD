@@ -11,10 +11,12 @@ também não é iniciado.
 ## Banco separado no PostgreSQL local
 
 1. No pgAdmin, conecte-se ao PostgreSQL local.
-2. Clique com o botão direito em **Databases → Create → Database** e use
-   **petflow_v2**. Alternativamente, execute `database/create-petflow-v2.sql`
-   no Query Tool conectado ao banco de manutenção `postgres`.
-3. Preencha `DB_PASSWORD` no `.env` com a senha do seu PostgreSQL. Se necessário,
+2. Use o banco **nacao-animal**. Se ele já foi criado, prossiga para a configuração.
+   Caso ainda não exista, clique com o botão direito em **Databases → Create → Database**
+   e use esse nome. Alternativamente, execute `database/create-nacao-animal.sql`
+   no Query Tool conectado ao banco de manutenção `postgres`, sem uma transação.
+3. Configure `DB_NAME=nacao-animal` e `DB_EXPECTED_NAME=nacao-animal` no `.env`.
+   Preencha `DB_PASSWORD` com a senha do seu PostgreSQL. Se necessário,
    ajuste `DB_USER`, `DB_HOST` e `DB_PORT`. O `.env` não é versionado.
 4. Mantenha `DATABASE_URL`, `POSTGRES_URL` e `DATABASE_PUBLIC_URL` vazias para
    usar a conexão local. Essas URLs têm precedência sobre `DB_NAME`.
@@ -30,12 +32,13 @@ Configure `ADMIN_EMAIL` e `ADMIN_PASSWORD` no `.env` antes de criar o administra
 Para carregar produtos de demonstração, execute opcionalmente
 `npm run db:seed-catalog`. Não é necessário copiar dados do banco original.
 
-A loja abre em **http://localhost:4501** e o painel em
-**http://localhost:4501/admin/**. A porta distinta também separa as sessões do
+A loja abre em **http://localhost:4600** e o painel em
+**http://localhost:4600/admin/**. A porta distinta também separa as sessões do
 navegador da instalação original na porta 4500.
 
-Todas as conexões da aplicação e dos scripts exigem o nome `petflow_v2`;
-outros bancos são recusados antes da conexão. Nunca aponte esta cópia para
+Por padrão, as conexões da aplicação e dos scripts exigem o nome `nacao-animal`;
+outros bancos são recusados antes da conexão, a menos que o nome esperado seja
+configurado em `DB_EXPECTED_NAME`, como no Railway. Nunca aponte esta cópia para
 o banco original. As migrações do banco novo não criam tabelas de pets, serviços, agendamentos,
 consultas, prontuários, vacinas ou funcionários. Nenhuma tabela de bancos existentes é apagada.
 
@@ -46,7 +49,7 @@ No serviço da aplicação, configure `DATABASE_URL` com a referência privada
 `${{Postgres.DATABASE_URL}}` e `DB_EXPECTED_NAME` com
 `${{Postgres.PGDATABASE}}`. Assim a aplicação confirma que a URL aponta para
 o banco criado naquele projeto, mesmo que o Railway use o nome padrão
-`railway` em vez de `petflow_v2`.
+`railway` em vez de `nacao-animal`.
 
 Não use `DATABASE_PUBLIC_URL` entre a aplicação e o PostgreSQL. O arquivo
 `railway.json` executa `npm run db:migrate` antes de cada deploy. Ainda é
@@ -67,7 +70,7 @@ depende de configurar o novo banco e as integrações próprias desta loja.
 
 Na sacola (`/sacola`), o cliente confere o endereço salvo, toca em **Calcular frete** e vê produtos, frete e total antes de **Ir para pagamento**. Os atalhos de compra do catálogo levam a essa mesma tela. A cotação vale por 15 minutos e precisa ser refeita se o endereço mudar. O preço e a distância enviados pelo navegador não são aceitos como valores de cobrança.
 
-Origem padrão: **Avenida Novo Horizonte, 123, Vila Sacadura Cabral, Santo André, SP, Brasil**. Para alterar, defina `DELIVERY_ORIGIN_ADDRESS` no serviço da aplicação.
+Origem padrão: **Avenida Novo Horizonte, 256, Vila Sacadura Cabral, Santo André, SP, 09060-820, Brasil**. Para alterar, defina `DELIVERY_ORIGIN_ADDRESS` no serviço da aplicação.
 
 Regra: até 1.000 metros grátis; acima disso, R$ 3 por quilômetro adicional ou fração (`ceil((metros - 1000) / 1000) * 3`). Exemplos: 1 km = grátis; 1,5 km = R$ 3; 2 km = R$ 3; 2,5 km = R$ 6. É a distância da rota de carro calculada pelo Google Maps, não distância em linha reta ou leitura do GPS do cliente. O PagBank recebe o frete em centavos, uma única vez, no objeto `shipping`. Pedidos antigos mantêm frete zero.
 
@@ -97,4 +100,4 @@ $env:RUN_DB_TESTS='1'
 npm test
 ```
 
-O teste recusa bancos fora de localhost/127.0.0.1 e usa schema temporário em `petflow_v2`. Cobre cadastro, frete, adulteração de valores, mudança de endereço, checkout, webhook, GPS, acesso de outro cliente, revogação e reaplicação das migrações sem perder o frete. Os provedores externos são simulados.
+O teste recusa bancos fora de localhost/127.0.0.1 e usa schema temporário em `nacao-animal`. Cobre cadastro, frete, adulteração de valores, mudança de endereço, checkout, webhook, GPS, acesso de outro cliente, revogação e reaplicação das migrações sem perder o frete. Os provedores externos são simulados.

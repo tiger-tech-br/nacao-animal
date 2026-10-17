@@ -40,8 +40,8 @@ function renderProduct(product) {
     const id = getProductId(product);
     const inCart = Boolean(readCart()[id]);
 
-    document.title = `PetFlow | ${product.nome}`;
-    setText("productCategory", product.categoria || "PetFlow");
+    document.title = `Nação Animal | ${product.nome}`;
+    setText("productCategory", product.categoria || "Nação Animal");
     setText("productTitle", product.nome);
     setText("productDescription", product.descricao || "Produto selecionado para cuidar melhor do seu pet.");
     setText("productPrice", currency(product.preco));

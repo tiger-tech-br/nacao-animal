@@ -28,7 +28,7 @@ async function loadStoreInfo() {
         updateStoreBrand(data);
         const address = [data.endereco, data.numero, data.complemento, data.bairro,
             data.cidade, data.estado, data.cep].filter(Boolean).join(", ");
-        document.querySelectorAll("[data-store-name]").forEach(item => { item.textContent = data.nome || "PetFlow"; });
+        document.querySelectorAll("[data-store-name]").forEach(item => { item.textContent = data.nome || "Nação Animal"; });
         document.querySelectorAll("[data-store-phone]").forEach(item => { item.textContent = data.telefone || "Telefone não informado"; });
         document.querySelectorAll("[data-store-email]").forEach(item => { item.textContent = data.email || "E-mail não informado"; });
         document.querySelectorAll("[data-store-address]").forEach(item => { item.textContent = address || "Endereço não informado"; });
@@ -39,8 +39,8 @@ async function loadStoreInfo() {
 }
 
 function updateStoreBrand(store) {
-    const defaultLogo = "/images/logo/fred-petflow-logo-transparent.png";
-    const name = typeof store.nome === "string" && store.nome.trim() ? store.nome.trim() : "PetFlow";
+    const defaultLogo = "/images/logo/nacao-animal-logo-transparent.png";
+    const name = typeof store.nome === "string" && store.nome.trim() ? store.nome.trim() : "Nação Animal";
     const label = document.querySelector(".header .logo-text");
     const logo = document.querySelector(".header .logo img");
     if (label) label.textContent = name;
@@ -244,7 +244,7 @@ function renderProducts(products, options = {}) {
                     <img class="product-image" src="${escapeHtml(product.foto || "/images/products/petflow-prime-racao.jpg")}" alt="${escapeHtml(product.nome)}" loading="lazy" decoding="async">
                 </a>
                 <div class="product-content">
-                    <span class="product-category">${escapeHtml(product.categoria || "PetFlow")}</span>
+                    <span class="product-category">${escapeHtml(product.categoria || "Nação Animal")}</span>
                     <h3 class="product-title"><a href="${escapeHtml(href)}">${escapeHtml(product.nome)}</a></h3>
                     <p class="product-description">${escapeHtml(product.descricao || "Produto selecionado para cuidar melhor do seu pet.")}</p>
                     <div class="product-footer">
@@ -565,7 +565,7 @@ function injectCheckoutModal() {
             <aside class="checkout-panel" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle">
                 <header class="checkout-header">
                     <div>
-                        <span>Sacola PetFlow</span>
+                        <span>Sacola Nação Animal</span>
                         <h2 id="checkoutTitle">Finalizar pedido</h2>
                     </div>
                     <button class="icon-badge" type="button" data-cart-close aria-label="Fechar sacola">

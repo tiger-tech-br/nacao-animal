@@ -10,7 +10,7 @@ test("fotos e logos preservam IDs e serializam substituições no PostgreSQL", {
     const options = require("../config/dbOptions").buildDbOptions();
     const url = options.connectionString ? new URL(options.connectionString) : null;
     assert.ok(["localhost", "127.0.0.1"].includes(url?.hostname || options.host), "Somente PostgreSQL local");
-    assert.equal(url ? url.pathname.slice(1) : options.database, "petflow_v2");
+    assert.equal(url ? decodeURIComponent(url.pathname.slice(1)) : options.database, "nacao-animal");
     const schema = `test_images_${randomBytes(8).toString("hex")}`;
     const admin = new Pool(options);
     let pool;
