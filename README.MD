@@ -2,6 +2,8 @@
 
 Para instalação e entrega comercial, consulte [o guia do comprador](docs/entrega-comercial.md). Para validar uploads, consulte [Cloudinary](docs/cloudinary.md). Instale Node.js 22 ou superior, execute `npm ci` e copie `.env.example` para `.env` antes de configurar o banco e as integrações.
 
+Para preparar Pix e cartão com recebimento no Itaú, consulte [o guia de pagamentos](docs/pagamentos-itau.md). Os campos reservados não habilitam cobranças: os pagamentos ficam desativados enquanto a solução é definida e os adaptadores Rede/Itaú ainda precisam ser implementados.
+
 Versão voltada a um petshop com venda de produtos. Mantém catálogo, sacola,
 conta do cliente, pedidos, pagamentos, clientes, produtos, estoque, fornecedores,
 compras e financeiro. Serviços, agenda, cadastro de pets e módulo de funcionários não
@@ -54,7 +56,7 @@ o banco criado naquele projeto, mesmo que o Railway use o nome padrão
 Não use `DATABASE_PUBLIC_URL` entre a aplicação e o PostgreSQL. O arquivo
 `railway.json` executa `npm run db:migrate` antes de cada deploy. Ainda é
 necessário definir no Railway `JWT_SECRET`, `JWT_EXPIRES_IN`, `APP_URL` e
-`FRONTEND_URL`. Cloudinary atende os uploads de imagens; Resend é necessário para cadastro e recuperação de senha, e PagBank para concluir pagamentos. Configure também as chaves do Google Maps para frete e mapa.
+`FRONTEND_URL`. Cloudinary atende os uploads de imagens; Resend é necessário para cadastro e recuperação de senha. O código herdado usa PagBank, mas os pagamentos desta instalação aguardam a definição e implementação da nova integração descrita no guia de pagamentos. Configure também as chaves do Google Maps para frete e mapa.
 
 ## Verificação
 
@@ -72,16 +74,16 @@ Na sacola (`/sacola`), o cliente confere o endereço salvo, toca em **Calcular f
 
 Origem padrão: **Avenida Novo Horizonte, 256, Vila Sacadura Cabral, Santo André, SP, 09060-820, Brasil**. Para alterar, defina `DELIVERY_ORIGIN_ADDRESS` no serviço da aplicação.
 
-Regra: até 1.000 metros grátis; acima disso, R$ 3 por quilômetro adicional ou fração (`ceil((metros - 1000) / 1000) * 3`). Exemplos: 1 km = grátis; 1,5 km = R$ 3; 2 km = R$ 3; 2,5 km = R$ 6. É a distância da rota de carro calculada pelo Google Maps, não distância em linha reta ou leitura do GPS do cliente. O PagBank recebe o frete em centavos, uma única vez, no objeto `shipping`. Pedidos antigos mantêm frete zero.
+Regra: até 1.000 metros grátis; acima disso, R$ 3 por quilômetro adicional ou fração (`ceil((metros - 1000) / 1000) * 3`). Exemplos: 1 km = grátis; 1,5 km = R$ 3; 2 km = R$ 3; 2,5 km = R$ 6. É a distância da rota de carro calculada pelo Google Maps, não distância em linha reta ou leitura do GPS do cliente. No código de checkout herdado, o PagBank recebe o frete em centavos, uma única vez, no objeto `shipping`; esse envio precisará ser adaptado ao novo provedor. Pedidos antigos mantêm frete zero.
 
 ### Ativar no Railway
 
 1. No projeto Google Cloud, habilite faturamento e **Routes API**. Crie uma chave de servidor restrita à Routes API e configure `GOOGLE_MAPS_API_KEY` nas variáveis do serviço **petflow-v2** / **production** (não no PostgreSQL nem em JavaScript público).
 2. Confira `APP_URL=https://petflow-v2-production.up.railway.app` ou seu domínio HTTPS próprio, e a origem da entrega.
-3. Publique as alterações. O pre-deploy existente executa `npm run db:migrate`, incluindo `107_frete_rastreamento.sql`. Configure a chave antes de publicar: sem ela, novas compras com entrega ficam bloqueadas na cotação; o sistema não assume frete grátis quando o Google falha. O pagamento de pedidos já existentes continua usando o checkout salvo.
-4. Valide a distância para um endereço conhecido e confira frete e total no PagBank antes de pagar. Nesta implementação, Google Maps e PagBank foram simulados nos testes; não foi realizada cobrança real.
+3. Publique as alterações. O pre-deploy existente executa `npm run db:migrate`, incluindo `107_frete_rastreamento.sql`. Configure a chave antes de publicar: sem ela, novas compras com entrega ficam bloqueadas na cotação; o sistema não assume frete grátis quando o Google falha. A configuração do frete não habilita os pagamentos pendentes desta instalação.
+4. Na futura integração de pagamentos, valide a distância para um endereço conhecido e confira frete e total no provedor escolhido antes de pagar. Os testes do código herdado simulam Google Maps e PagBank e não comprovam a integração com Rede/Itaú nem uma cobrança real.
 
-Referências: [Google Routes](https://developers.google.com/maps/documentation/routes/compute_route_directions), [objeto Checkout do PagBank](https://developer.pagbank.com.br/reference/objeto-checkout).
+Referências: [Google Routes](https://developers.google.com/maps/documentation/routes/compute_route_directions), [objeto Checkout do PagBank usado no código herdado](https://developer.pagbank.com.br/reference/objeto-checkout).
 
 ### Compartilhar o GPS
 

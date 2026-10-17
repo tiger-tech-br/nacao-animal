@@ -135,6 +135,8 @@ async function criarPedido(request, response, next) {
            BUSCA EMPRESA E CLIENTE
         ========================================== */
 
+        pagseguroService.assertConfigured();
+
         const empresaIdResult = await db.query(
             `
                 SELECT get_petflow_empresa_id() AS id;
@@ -173,7 +175,6 @@ async function criarPedido(request, response, next) {
            O preço verdadeiro será consultado no banco.
         ========================================== */
 
-        pagseguroService.assertConfigured();
         const frete = freteService.verifyQuote(body.freteToken, { ...enderecoEntrega, id: cliente.id });
         const pedido = await VendaService.finalizarVenda(
             empresaId,

@@ -2,6 +2,7 @@
 
 const axios = require("axios");
 const crypto = require("crypto");
+const { assertPaymentProviderActive, isPaymentProviderActive } = require("../config/payment");
 
 const {
     APP_URL,
@@ -10,6 +11,7 @@ const {
 } = require("../config/env");
 
 function assertConfigured() {
+    assertPaymentProviderActive("pagbank");
     if (!PAGSEGURO_BASE_URL || !PAGSEGURO_TOKEN) {
         const error = new Error(
             "O pagamento online está temporariamente indisponível. Tente novamente mais tarde."
@@ -247,6 +249,7 @@ function extrairEventoWebhook(body) {
 
 function validarAssinaturaWebhook(payloadOriginal, assinaturaRecebida) {
     if (
+        !isPaymentProviderActive("pagbank") ||
         !PAGSEGURO_TOKEN ||
         !payloadOriginal ||
         !assinaturaRecebida

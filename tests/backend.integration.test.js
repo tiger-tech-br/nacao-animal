@@ -26,6 +26,9 @@ test("cadastro, confirmação, compra, webhook e estoque em PostgreSQL isolado",
         process.env.JWT_EXPIRES_IN = "1h";
         process.env.PAGSEGURO_TOKEN = "isolated-test-token";
         process.env.PAGSEGURO_BASE_URL = "https://sandbox.api.pagseguro.com";
+        process.env.PAYMENTS_ENABLED = "true";
+        process.env.PAYMENT_PROVIDER = "pagbank";
+        process.env.PAYMENT_ENVIRONMENT = "sandbox";
         process.env.APP_URL = "http://localhost";
         process.env.NODE_ENV = "test";
         process.env.GOOGLE_MAPS_API_KEY = "test-maps-key";

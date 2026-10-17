@@ -581,7 +581,7 @@ async function submitOrder(event) {
         persistCart();
         renderCart();
         event.target.reset();
-        setStatus(status, "Pedido recebido. Abrindo checkout seguro do PagBank...");
+        setStatus(status, "Pedido recebido. Preparando pagamento seguro...");
 
         await startPayment(
             payload.payment?.vendaId ||
@@ -602,7 +602,7 @@ async function startPayment(vendaId, token, status) {
     if (!vendaId) {
         setStatus(
             status,
-            "Pedido criado, mas não foi possível abrir o checkout do PagBank."
+            "Pedido criado, mas não foi possível iniciar o pagamento."
         );
         return;
     }
@@ -624,7 +624,7 @@ async function startPayment(vendaId, token, status) {
         if (!response.ok) {
             throw new Error(
                 payload.message ||
-                "Não foi possível abrir o checkout do PagBank."
+                "Não foi possível iniciar o pagamento."
             );
         }
 
@@ -641,7 +641,7 @@ async function startPayment(vendaId, token, status) {
         setStatus(
             status,
             error.message ||
-            "Pedido criado, mas o checkout do PagBank não foi aberto."
+            "Pedido criado, mas o pagamento não foi iniciado."
         );
     }
 }

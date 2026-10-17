@@ -8,6 +8,7 @@ const { REQUIRED_MIGRATIONS } = require("../config/productionReadiness");
 test("readiness exige dados da loja e catálogo, sem expor dados ou credenciais", async () => {
     const env = {
         NODE_ENV: "production", JWT_SECRET: "production-readiness-fixture-secret-with-entropy",
+        PAYMENTS_ENABLED: "true", PAYMENT_PROVIDER: "pagbank", PAYMENT_ENVIRONMENT: "production",
         JWT_EXPIRES_IN: "1h", APP_URL: "https://store.petflow.com.br",
         RESEND_API_KEY: "re_fixture_private_key", EMAIL_FROM: "Loja <support@petflow.com.br>",
         PAGSEGURO_BASE_URL: "https://api.pagseguro.com", PAGSEGURO_TOKEN: "fixture-payment-token",

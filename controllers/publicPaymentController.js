@@ -50,6 +50,8 @@ async function consultarPagamento(request, response, next) {
             });
         }
 
+        pagseguroService.assertConfigured();
+
         const pedido = await VendaModel.buscarPorIdDoCliente(
             id,
             customer.id,
@@ -118,6 +120,8 @@ async function consultarPagamento(request, response, next) {
 
 async function receberWebhook(request, response, next) {
     try {
+        pagseguroService.assertConfigured();
+
         const isValidSignature =
             pagseguroService.validarAssinaturaWebhook(
                 request.rawBody,

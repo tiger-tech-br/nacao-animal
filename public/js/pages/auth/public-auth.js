@@ -309,10 +309,11 @@ async function setupPublicOrders() {
 
     const status = document.getElementById("ordersStatus");
 
-    list.addEventListener("click", event => {
+    list.addEventListener("click", async event => {
         const paymentButton = event.target.closest("[data-continue-payment]");
         if (paymentButton) {
-            window.location.href = paymentButton.dataset.continuePayment;
+            event.preventDefault();
+            await continueOrderPayment(paymentButton, status);
             return;
         }
         const requestButton = event.target.closest("[data-request-order]");
@@ -477,11 +478,34 @@ function renderOrderNotes(order) {
     `;
 }
 
+async function continueOrderPayment(button, status) {
+    if (button.disabled) return;
+    const vendaId = button.dataset.continuePayment;
+    if (!vendaId) {
+        setStatus(status, "Não foi possível identificar o pedido para continuar o pagamento.");
+        return;
+    }
+
+    button.disabled = true;
+    setStatus(status, "Verificando disponibilidade do pagamento...");
+    try {
+        // Revalida no servidor para respeitar a disponibilidade atual do provedor.
+        const payload = await request("/pagamentos", "POST", { vendaId });
+        if (payload.payment?.checkoutUrl) {
+            setStatus(status, "Abrindo pagamento seguro...");
+            window.location.href = payload.payment.checkoutUrl;
+            return;
+        }
+        setStatus(status, payload.message || "O pagamento ainda não está disponível. Tente novamente mais tarde.");
+    } catch (error) {
+        setStatus(status, error.message || "Não foi possível iniciar o pagamento.");
+    } finally {
+        button.disabled = false;
+    }
+}
+
 function renderContinuePayment(order) {
-    if (
-        order.status !== "AGUARDANDO_PAGAMENTO" ||
-        !order.pagseguro_checkout_url
-    ) {
+    if (order.status !== "AGUARDANDO_PAGAMENTO" || !order.id) {
         return "";
     }
 
@@ -490,12 +514,12 @@ function renderContinuePayment(order) {
             <button
                 class="btn order-pay-button"
                 type="button"
-                data-continue-payment="${escapeHtml(order.pagseguro_checkout_url)}"
+                data-continue-payment="${escapeHtml(order.id)}"
             >
                 <i class="fa-solid fa-lock"></i>
                 Continuar pagamento
             </button>
-            <span>Você será direcionado para o ambiente seguro do PagBank.</span>
+            <span>O pagamento será aberto quando estiver disponível.</span>
         </div>
     `;
 }

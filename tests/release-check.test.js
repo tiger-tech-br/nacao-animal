@@ -8,6 +8,7 @@ const { runReleaseChecks } = require("../scripts/release-check");
 function productionEnv() {
     return {
         NODE_ENV: "production", JWT_SECRET: "1ca3385e66b641b9916b2b8852e48c95",
+        PAYMENTS_ENABLED: "true", PAYMENT_PROVIDER: "pagbank", PAYMENT_ENVIRONMENT: "production",
         JWT_EXPIRES_IN: "7d", APP_URL: "https://petflow.loja.com.br",
         RESEND_API_KEY: "re_credential", EMAIL_FROM: "PetFlow <contato@loja.com.br>",
         PAGSEGURO_BASE_URL: "https://api.pagseguro.com", PAGSEGURO_TOKEN: "production-credential",
@@ -44,6 +45,21 @@ test("valores de exemplo e JWT repetido nunca aprovam integracoes", () => {
     assert.equal(status.pagamento, false);
     assert.equal(status.imagens, false);
     assert.ok(failed(productionConfigurationChecks({ ...productionEnv(), JWT_SECRET: "a".repeat(64) })).includes("JWT forte"));
+});
+
+test("credenciais Rede ou Itau Pix preenchidas nao liberam pagamento sem integracao implementada", () => {
+    for (const provider of ["pending", "rede", "itau_pix"]) {
+        for (const enabled of ["false", "true"]) {
+            const env = { ...productionEnv(), PAYMENT_PROVIDER: provider, PAYMENTS_ENABLED: enabled,
+                REDE_CLIENT_ID: "future-client", REDE_CLIENT_SECRET: "future-private-secret",
+                ITAU_PIX_CLIENT_ID: "future-client", ITAU_PIX_CLIENT_SECRET: "future-private-secret" };
+            const checks = productionConfigurationChecks(env);
+            assert.equal(configurationStatus(checks).pagamento, false);
+            assert.ok(failed(checks).includes("Integracao de pagamento implementada"));
+            assert.ok(!checks.some(check => check.name.startsWith("Variavel PAGSEGURO_")));
+            assert.doesNotMatch(JSON.stringify(checks), /future-private-secret/);
+        }
+    }
 });
 
 test("PagBank aceita somente origem de producao propria, sem caminhos ou credenciais", () => {

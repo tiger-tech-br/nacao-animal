@@ -784,7 +784,7 @@ function friendlyPaymentError(message) {
     const text = String(message || "");
 
     if (text.toLowerCase().includes("allowlist")) {
-        return "O PagBank bloqueou este checkout porque a conta ainda precisa de liberação para usar a API em produção. O pedido foi criado, mas o pagamento não foi aberto.";
+        return "O pagamento ainda não está disponível. O pedido foi criado, mas o pagamento não foi aberto.";
     }
 
     return text;

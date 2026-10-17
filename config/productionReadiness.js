@@ -1,5 +1,7 @@
 "use strict";
 
+const { getPaymentSettings, isPaymentProviderActive } = require("./payment");
+
 const REQUIRED_MIGRATIONS = [
     "110_admin_profissional.sql",
     "111_lgpd.sql",
@@ -51,7 +53,6 @@ function productionConfigurationChecks(env = process.env, options = {}) {
     const required = {
         JWT_SECRET: "configuracao", JWT_EXPIRES_IN: "configuracao", APP_URL: "configuracao",
         RESEND_API_KEY: "email", EMAIL_FROM: "email",
-        PAGSEGURO_BASE_URL: "pagamento", PAGSEGURO_TOKEN: "pagamento",
         GOOGLE_MAPS_BROWSER_API_KEY: "mapa",
         CLOUDINARY_CLOUD_NAME: "imagens", CLOUDINARY_API_KEY: "imagens", CLOUDINARY_API_SECRET: "imagens"
     };
@@ -66,7 +67,18 @@ function productionConfigurationChecks(env = process.env, options = {}) {
     check("JWT forte", configuredValue(secret) && secret.trim().length >= 32 && !/^(.)\1+$/.test(secret),
         "minimo de 32 caracteres, sem valores de exemplo ou repetidos");
     check("APP_URL HTTPS publico", isPublicHttpsUrl(env.APP_URL), "origem HTTPS publica da loja");
-    check("PagBank producao", isProductionPagBankUrl(env.PAGSEGURO_BASE_URL), "https://api.pagseguro.com", "pagamento");
+    const payment = getPaymentSettings(env);
+    check("Pagamentos online habilitados", payment.enabled, "liberar somente apos integracao e homologacao", "pagamento");
+    check("Integracao de pagamento implementada", isPaymentProviderActive(payment.provider, env),
+        "Rede e Itau Pix aguardam a implementacao da API contratada", "pagamento");
+    check("Ambiente de pagamento de producao", payment.environment === "production",
+        "PAYMENT_ENVIRONMENT=production apos homologacao", "pagamento");
+    if (payment.provider === "pagbank") {
+        for (const name of ["PAGSEGURO_BASE_URL", "PAGSEGURO_TOKEN"]) {
+            check(`Variavel ${name}`, configuredValue(env[name]), "credencial propria do adaptador legado", "pagamento");
+        }
+        check("PagBank producao", isProductionPagBankUrl(env.PAGSEGURO_BASE_URL), "https://api.pagseguro.com", "pagamento");
+    }
     check("Remetente de e-mail", validSender(env.EMAIL_FROM), "endereco de e-mail valido do remetente", "email");
     if (options.cloudinaryConfigured !== undefined) {
         check("Configuracao Cloudinary", options.cloudinaryConfigured, "credenciais proprias das imagens", "imagens");

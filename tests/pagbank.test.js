@@ -1,6 +1,10 @@
 "use strict";
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
+// Exercita somente o adaptador legado com HTTP simulado.
+process.env.PAYMENTS_ENABLED = "true";
+process.env.PAYMENT_PROVIDER = "pagbank";
+process.env.PAYMENT_ENVIRONMENT = "sandbox";
 require.cache[require.resolve("../config/env")] = { exports: { APP_URL:"https://petflow.example", PAGSEGURO_BASE_URL:"https://sandbox.api.pagseguro.com", PAGSEGURO_TOKEN:"test", JWT_SECRET:"test" } };
 let sent, sentUrl, sentConfig;
 require("axios").create = () => ({ post:async (url,body,config)=>{sentUrl=url;sent=body;sentConfig=config;return {data:{id:"CHEC_TEST",reference_id:"local-order",links:[{rel:"PAY",href:"https://example.invalid/pay"}]}};} });

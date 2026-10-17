@@ -1,9 +1,11 @@
 "use strict";
 require("dotenv").config({ quiet: true });
 const crypto = require("node:crypto");
+const { assertPaymentProviderActive } = require("../config/payment");
 
 async function main() {
     if (!process.argv.includes("--create")) throw new Error("Use --create para criar um checkout de diagnóstico sem efetuar pagamento.");
+    assertPaymentProviderActive("pagbank");
     const base = process.env.PAGSEGURO_BASE_URL?.trim().replace(/\/+$/, "");
     if (!["https://api.pagseguro.com", "https://sandbox.api.pagseguro.com"].includes(base)) throw new Error("URL PagBank inválida.");
     const key = process.env.PAGSEGURO_TOKEN?.trim();
