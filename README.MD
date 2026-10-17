@@ -68,6 +68,17 @@ Os testes verificam isolamento do banco, dados comerciais do painel e rotas
 públicas/administrativas. A validação de compras e pagamentos com dados reais
 depende de configurar o novo banco e as integrações próprias desta loja.
 
+Para testar também o PostgreSQL local, use `RUN_DB_TESTS=1 npm test` no Git Bash.
+No PowerShell, use `$env:RUN_DB_TESTS='1'` e depois `npm test`.
+Os testes de banco criam schemas temporários próprios e os removem ao terminar.
+Incluem login administrativo, cadastro e edição de produto, movimentação e
+validações de estoque, painel e catálogo. Fotos e demais provedores externos são
+simulados nesses testes; o upload real pode ser conferido com
+`npm run check:cloudinary -- --upload`.
+
+O resultado da preparação desta instalação está em
+[validação local](docs/validacao-local.md).
+
 ## Frete por distância e GPS de entrega
 
 Na sacola (`/sacola`), o cliente confere o endereço salvo, toca em **Calcular frete** e vê produtos, frete e total antes de **Ir para pagamento**. Os atalhos de compra do catálogo levam a essa mesma tela. A cotação vale por 15 minutos e precisa ser refeita se o endereço mudar. O preço e a distância enviados pelo navegador não são aceitos como valores de cobrança.

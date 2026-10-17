@@ -18,7 +18,7 @@ test("cadastro, confirmação, compra, webhook e estoque em PostgreSQL isolado",
     const originalFetch = global.fetch;
     try {
         await admin.query(`CREATE SCHEMA "${schema}"`);
-        pool = new Pool({ ...options, options: `-c search_path=${schema},public` });
+        pool = new Pool({ ...options, options: `-c search_path=${schema}` });
         for (const file of fs.readdirSync("database/sql").filter(f => f.endsWith(".sql")).sort()) {
             await pool.query(fs.readFileSync(`database/sql/${file}`, "utf8"));
         }

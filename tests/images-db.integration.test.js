@@ -18,7 +18,7 @@ test("fotos e logos preservam IDs e serializam substituições no PostgreSQL", {
     const oldDb = require.cache[dbPath];
     try {
         await admin.query(`CREATE SCHEMA "${schema}"`);
-        pool = new Pool({ ...options, options: `-c search_path=${schema},public` });
+        pool = new Pool({ ...options, options: `-c search_path=${schema}` });
         for (const file of fs.readdirSync("database/sql").filter(name => name.endsWith(".sql")).sort()) {
             await pool.query(fs.readFileSync(`database/sql/${file}`, "utf8"));
         }
