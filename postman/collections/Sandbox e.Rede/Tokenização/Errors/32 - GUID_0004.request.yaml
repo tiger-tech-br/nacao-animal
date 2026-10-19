@@ -1,0 +1,37 @@
+$kind: http-request
+url: "{{urlToken}}/token-service/v2/cryptogram/guid_0004"
+method: POST
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"returnCode equal to '32'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnCode).to.eql(\"32\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"returnMessage equal to 'TokenCryptogram unvailable. Check the token status'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnMessage).to.eql(\"TokenCryptogram unvailable. Check the token status\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Status code is 403\", function () {\r
+
+      \    pm.response.to.have.status(403);\r
+
+      });"
+    language: text/javascript
+order: 28000

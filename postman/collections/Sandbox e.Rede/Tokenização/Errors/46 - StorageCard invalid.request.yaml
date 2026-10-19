@@ -1,0 +1,56 @@
+$kind: http-request
+url: "{{urlToken}}/token-service/v2/tokenization/"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"email\": \"john_snow@gmail.com\",\r
+
+    \    \"cardNumber\": \"4895370010000005\",\r
+
+    \    \"expirationMonth\": \"{{current_month}}\",\r
+
+    \    \"expirationYear\": \"{{current_year}}\",\r
+
+    \    \"cardholderName\": \"John Snow\",\r
+
+    \    \"securityCode\": \"235\",\r
+
+    \    \"storageCard\": 100\r
+
+    }"
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"returnCode equal to '46'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnCode).to.eql(\"46\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"returnMessage equal to 'storageCard: Invalid parameter format'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnMessage).to.eql(\"storageCard: Invalid parameter format\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Status code is 400\", function () {\r
+
+      \    pm.response.to.have.status(400);\r
+
+      });"
+    language: text/javascript
+order: 41000

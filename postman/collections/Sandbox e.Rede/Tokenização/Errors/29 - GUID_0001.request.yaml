@@ -1,0 +1,37 @@
+$kind: http-request
+url: "{{urlToken}}/token-service/v2/cryptogram/guid_0001"
+method: POST
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"returnCode equal to '29'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnCode).to.eql(\"29\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"returnMessage equal to 'Service temporarily unavailable'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnMessage).to.eql(\"Service temporarily unavailable\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Status code is 400\", function () {\r
+
+      \    pm.response.to.have.status(400);\r
+
+      });"
+    language: text/javascript
+order: 25000

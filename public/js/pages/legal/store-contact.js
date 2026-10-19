@@ -14,6 +14,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             link.textContent = email;
         });
     } catch {
-        // Mantem o canal de suporte padrao se os dados da loja estiverem indisponiveis.
+        // Mantem o telefone da loja se o e-mail ainda nao estiver cadastrado ou a consulta falhar.
     }
 });

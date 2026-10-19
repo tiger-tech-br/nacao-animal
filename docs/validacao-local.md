@@ -28,3 +28,19 @@ habilitadas para o domínio. Veja as instruções de GPS no README.
 Os pagamentos permanecem desativados até a definição e implementação da
 integração com o banco. E-mail, domínio, paleta e layout continuam pendentes
 da definição do proprietário.
+
+## Revalidação em 19/10/2026
+
+Após corrigir os textos herdados, o contato público e a configuração de testes
+no GitHub, `RUN_DB_TESTS=1 npm test` aprovou novamente os 137 testes, sem falhas
+ou testes ignorados. Os links estáticos passaram nas 31 páginas HTML.
+Nenhum e-mail ou pagamento real foi enviado nesta rodada. O próximo trabalho
+está organizado em [pendências de publicação](pendencias-publicacao.md).
+
+## Cartão fictício na sacola pública — 19/10/2026
+
+A sacola em `/sacola?teste=1` oferece uma compra fictícia para preenchimento manual do cartão, sem login administrativo, cadastro de produto, pedido ou reserva de estoque. A sacola original fica preservada. O botão **Confirmar compra de teste** envia a operação somente quando acionado pelo usuário.
+
+A validação inicial pela tela confirmou aprovação de R$ 20,00 fictícios, consulta da transação e estorno com estado `Done` no Sandbox da Rede. Depois da validação, a página foi recarregada com os campos vazios para o usuário executar seus próprios testes. Nenhum novo teste de pagamento será disparado automaticamente ao abrir a página.
+
+As verificações locais do código passaram: 143 testes aprovados, 3 testes com PostgreSQL ignorados nesta rodada e links estáticos aprovados nas 31 páginas. O bloqueio de produção, a exigência de conexão/origem local e a rejeição de cartões diferentes do fictício foram cobertos. `PAYMENTS_ENABLED=false` e `PAYMENT_PROVIDER=pending` continuam em vigor; esta ferramenta não habilita o checkout real.

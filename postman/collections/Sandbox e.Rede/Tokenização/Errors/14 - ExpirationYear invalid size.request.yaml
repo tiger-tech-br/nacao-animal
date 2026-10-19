@@ -1,0 +1,52 @@
+$kind: http-request
+url: "{{urlToken}}/token-service/v2/tokenization/"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"email\": \"john_snow@dominio.com.br\",\r
+
+    \    \"cardNumber\": \"4895370010000005\",\r
+
+    \    \"expirationMonth\": \"02\",\r
+
+    \    \"expirationYear\": \"02022\",\r
+
+    \    \"storageCard\": 2\r
+
+    }"
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"returnCode equal to '14'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnCode).to.eql(\"14\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"returnMessage equal to 'ExpirationYear: Invalid parameter size'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnMessage).to.eql(\"ExpirationYear: Invalid parameter size\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Status code is 400\", function () {\r
+
+      \    pm.response.to.have.status(400);\r
+
+      });"
+    language: text/javascript
+order: 14000

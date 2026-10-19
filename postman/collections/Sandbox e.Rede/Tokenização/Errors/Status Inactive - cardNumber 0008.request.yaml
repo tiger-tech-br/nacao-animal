@@ -1,0 +1,126 @@
+$kind: http-request
+url: "{{urlToken}}/token-service/v2/tokenization/{{tokenizationId}}"
+method: GET
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: beforeRequest
+    code: "var url = pm.variables.get(\"urlToken\");\r
+
+      \r
+
+      if (pm.environment.get(\"pv\") == undefined){\r
+
+          var hashToken = btoa(pm.collectionVariables.get(\"pv\") + \":\" + pm.collectionVariables.get(\"token\"));\r
+
+      } else {\r
+
+          var hashToken = btoa(pm.environment.get(\"pv\") + \":\" + pm.environment.get(\"token\"));\r
+
+      }\r
+
+      \r
+
+      const options = {\r
+
+      \  url:  `${url}/token-service/v2/tokenization/`, \r
+
+      \  method: 'POST',\r
+
+      \  header: {\r
+
+      \    'Content-Type': 'application/json',\r
+
+      \    'Authorization': `Basic ${hashToken}`\r
+
+      \  },\r
+
+      \  body: { \r
+
+      \    mode: 'raw',\r
+
+      \    raw:JSON.stringify({\r
+
+      \        \"email\": \"john_snow@gmail.com\",\r
+
+      \        \"cardNumber\": \"0000000000000008\",\r
+
+      \        \"expirationMonth\": `${pm.variables.get(\"current_month\")}`,\r
+
+      \        \"expirationYear\": `${pm.variables.get(\"current_year\")}`,\r
+
+      \        \"securityCode\": \"235\",\r
+
+      \        \"storageCard\": 2\r
+
+      \    })\r
+
+      \  }\r
+
+      };\r
+
+      \r
+
+      pm.sendRequest(options, function (err, res) {\r
+
+      \  if(res.code == 201){\r
+
+      \      console.log(res.json().tokenizationId);\r
+
+      \      const tokenizationId = res.json().tokenizationId\r
+
+      \      pm.variables.set(\"tokenizationId\", tokenizationId);\r
+
+      \r
+
+      \      const options2 = {\r
+
+      \        url:  `${url}/token-service/v2/tokenization/callback/${pm.variables.get(\"tokenizationId\")}`, \r
+
+      \        method: 'PUT',\r
+
+      \        header: {\r
+
+      \            'Content-Type': 'application/json',\r
+
+      \        }\r
+
+      \      }\r
+
+      \r
+
+      \      pm.sendRequest(options2, function (err, resp) {\r
+
+      \        if(resp.code == 201){\r
+
+      \            console.log(\"Callback done\");\r
+
+      \          }\r
+
+      \      });\r
+
+      \  }\r
+
+      });"
+    language: text/javascript
+  - type: afterResponse
+    code: "pm.test(\"tokenizationStatus is 'Inactive'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.tokenizationStatus).to.eql(\"Inactive\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Status code is 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });"
+    language: text/javascript
+order: 43000

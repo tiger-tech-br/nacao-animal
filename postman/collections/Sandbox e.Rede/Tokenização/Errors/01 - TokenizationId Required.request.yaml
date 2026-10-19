@@ -1,0 +1,37 @@
+$kind: http-request
+url: "{{urlToken}}/token-service/v2/tokenization/ "
+method: GET
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"returnCode equal to '01'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnCode).to.eql(\"01\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"returnMessage equal to 'TokenizationId: Required parameter missing.'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnMessage).to.eql(\"TokenizationId: Required parameter missing.\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Status code is 400\", function () {\r
+
+      \    pm.response.to.have.status(400);\r
+
+      });"
+    language: text/javascript
+order: 1000

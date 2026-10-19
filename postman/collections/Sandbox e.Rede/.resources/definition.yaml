@@ -1,0 +1,30 @@
+$kind: collection
+description: |-
+  Coleção com os serviços disponíveis do E-Rede, para realizar vendas online.
+
+  [Clique aqui](https://developer.userede.com.br/e-rede) para acessar a documentação completa.
+
+  Esta coleção já contém variáveis, para visualiza-las clique no nome da coleção **Sandbox e.Rede** e selecione a aba `Variables`.
+variables:
+  base_url: https://sandbox-erede.useredecloud.com.br
+  pv: <informe-pv>
+  token: <informe-token>
+  reference: g261121163305536
+  tid: "10012111261732599560"
+  refund_id: fd9138f1-e1dd-4fee-8964-e27348a63d57
+  autorizacao_amount: "2000"
+  autorizacao_tid: "10012112021617588951"
+  urlToken: https://rl7-sandbox-api.useredecloud.com.br
+  current_month: ""
+  current_year: ""
+  tokenizationId: ""
+  ClientId: <informe-ClientId>
+  ClientSecret: <informe-ClientSecret>
+  access_token: <gerar-token>
+scripts:
+  - type: http:beforeRequest
+    code: |-
+      const moment = require('moment');
+      pm.collectionVariables.set("current_month", moment().format("MM"));
+      pm.collectionVariables.set("current_year", moment().format("YYYY"));
+    language: text/javascript

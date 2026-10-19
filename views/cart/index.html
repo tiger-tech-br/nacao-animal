@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="/css/layout/public-header.css?v=20260811-1">
     <link rel="stylesheet" href="/css/pages/public-cart.css?v=20261001-cupons">
+    <link rel="stylesheet" href="/css/pages/public-cart-sandbox.css?v=20261019-1">
     <link rel="stylesheet" href="/css/layout/cart-sidebar.css?v=20261001">
 <link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
     <link rel="stylesheet" href="/css/layout/copyright.css">
@@ -31,6 +32,16 @@
             <span class="eyebrow">Sacola da Nação Animal</span>
             <h1 id="cartTitle">Revise seu pedido</h1>
             <p>Confira os produtos, ajuste quantidades e finalize usando seus dados salvos.</p>
+        </section>
+
+        <section class="cart-sandbox-banner" id="cartSandboxBanner" aria-labelledby="cartSandboxTitle" hidden>
+            <div>
+                <span class="cart-sandbox-badge">Sandbox · nenhuma cobrança real</span>
+                <h2 id="cartSandboxTitle">Teste de pagamento</h2>
+                <p id="cartSandboxDescription">Use uma sacola fictícia para testar o cartão aqui mesmo. Sua sacola atual será preservada.</p>
+                <p id="cartSandboxAvailability" role="status"></p>
+            </div>
+            <button class="btn-secondary" id="cartSandboxToggle" type="button" disabled>Usar sacola de teste</button>
         </section>
 
         <section class="cart-layout">
@@ -89,10 +100,32 @@
                     <p id="couponStatus" class="cart-status" role="status"></p>
                 </section>
                 <form class="cart-form" id="cartForm">
-                    <label>
+                    <label class="cart-observations">
                         Observações
                         <textarea class="form-control" name="observacoes" placeholder="Ex: entregar à tarde"></textarea>
                     </label>
+                    <fieldset class="cart-sandbox-fields" id="cartSandboxFields" hidden disabled>
+                        <legend>Cartão de crédito fictício</legend>
+                        <p class="cart-sandbox-hint">Somente o cartão de teste abaixo é aceito. Não informe um cartão real.</p>
+                        <div class="cart-sandbox-fixture">
+                            <strong>5448 2800 0000 0007</strong>
+                            <small>Validade 01/2035 · CVV 123</small>
+                            <button class="btn-secondary" id="cartSandboxFill" type="button">Preencher cartão fictício</button>
+                        </div>
+                        <label for="cartSandboxScenario">Resultado do teste</label>
+                        <select class="form-control" id="cartSandboxScenario" name="sandboxScenario">
+                            <option value="approved">Compra aprovada · R$ 20,00 fictícios</option>
+                            <option value="declined">Compra recusada · R$ 0,80 fictícios</option>
+                        </select>
+                        <label for="cartSandboxCard">Número do cartão fictício</label>
+                        <input class="form-control" id="cartSandboxCard" name="sandboxCard" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" maxlength="23" placeholder="5448 2800 0000 0007" required>
+                        <div class="cart-sandbox-card-details">
+                            <label for="cartSandboxMonth">Mês<input class="form-control" id="cartSandboxMonth" name="sandboxMonth" type="text" inputmode="numeric" autocomplete="off" maxlength="2" pattern="[0-9]{1,2}" placeholder="01" required></label>
+                            <label for="cartSandboxYear">Ano<input class="form-control" id="cartSandboxYear" name="sandboxYear" type="text" inputmode="numeric" autocomplete="off" maxlength="4" pattern="[0-9]{4}" placeholder="2035" required></label>
+                            <label for="cartSandboxCode">CVV<input class="form-control" id="cartSandboxCode" name="sandboxCode" type="text" inputmode="numeric" autocomplete="off" maxlength="3" pattern="[0-9]{3}" placeholder="123" required></label>
+                        </div>
+                        <p class="cart-sandbox-hint">A compra aprovada será consultada e estornada automaticamente no ambiente de testes da Rede.</p>
+                    </fieldset>
                     <h3>Resumo do pedido</h3>
                     <div class="cart-total">
                         <span>Produtos (<span id="cartItemCount">0</span>)</span><strong id="cartProductsTotal">R$ 0,00</strong>
@@ -114,6 +147,7 @@
                     <p class="cart-status cart-stock-status" id="cartStockStatus" role="alert" hidden></p>
                     <p class="cart-savings" id="cartSavings" hidden></p>
                     <button class="btn btn-primary" type="submit" disabled>Comprar</button>
+                    <section class="cart-sandbox-result" id="cartSandboxResult" aria-live="polite" aria-atomic="true" hidden></section>
                     <a class="btn-secondary" href="/#products" id="continueShopping">Escolher mais produtos</a>
                     <p class="cart-status" id="cartStatus" role="status"></p>
                 </form>
@@ -123,7 +157,8 @@
     <footer class="site-copyright"><p>© 2026 Nação Animal. Todos os direitos reservados.</p></footer>
 
     <script src="/js/layout/public-header.js?v=20261012-1"></script>
-    <script src="/js/pages/cart/cart.js?v=20261004-cep"></script>
+    <script src="/js/pages/cart/rede-sandbox-cart.js?v=20261019-1"></script>
+    <script src="/js/pages/cart/cart.js?v=20261019-sandbox"></script>
     <script src="/js/layout/cart-sidebar.js?v=20261001"></script>
 <script src="/js/layout/notifications.js?v=20261002"></script>
 </body>

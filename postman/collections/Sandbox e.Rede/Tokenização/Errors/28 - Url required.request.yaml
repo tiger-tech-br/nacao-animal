@@ -1,0 +1,50 @@
+$kind: http-request
+url: "{{urlToken}}/token-service/v1/tokenization/seturl"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"authorization\": {\r
+
+    \        \"type\": \"basic\",\r
+
+    \        \"token\": \"Basic aFGEfgsASDFeuAAhaoe=\"\r
+
+    \    }\r
+
+    }"
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"returnCode equal to '28'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnCode).to.eql(\"28\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"returnMessage equal to 'Url: Required parameter missing'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnMessage).to.eql(\"Url: Required parameter missing\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Status code is 400\", function () {\r
+
+      \    pm.response.to.have.status(400);\r
+
+      });"
+    language: text/javascript
+order: 24000

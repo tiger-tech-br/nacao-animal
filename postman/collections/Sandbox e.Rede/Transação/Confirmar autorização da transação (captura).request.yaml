@@ -1,0 +1,52 @@
+$kind: http-request
+description: |-
+  ### Confirmar autorização da transação (captura)
+
+  > Para autenticar na API, utilize os dados de PV e Token gerados na criação do projeto na área logada do [Portal do Desenvolvedor](https://developer.userede.com.br/login).
+
+  #### Autenticação
+
+  É possível configurar a autenticação no Postman de 2 maneiras:
+
+  *   **Opção 1:** Na aba `Authorization`, selecione o tipo "Basic Auth" e preencha os campos de Username e Password com PV e Token, respectivamente. **Este é o modo que está configurado na requisição.**
+  *   **Opção 2:** Adicione na aba `Headers` da requisição o campo **Authorization** com o hash do PV e Token.  
+      Exemplo para gerar o hash do token na aba `Pre-request Script`:
+      
+      ```
+      var authBasicHash = btoa(pm.environment.get("pv") + ":" + pm.environment.get("token"));
+      pm.environment.set("hash_token", "Basic " + authBasicHash);
+      
+      ```
+      
+
+  #### Serviço
+
+  Ao realizar uma autorização, é necessária a confirmação desta transação (captura).
+
+  > Nesse momento é gerada a cobrança na fatura do portador do cartão.
+
+  A variável de ambiente {autorizacao_tid} contém o ID da última transação feita na requsição **Transação Autorização** da pasta `Realizar transação`.
+
+  [Clique aqui](https://developer.userede.com.br/e-rede#swagger_operations-Transação-confirmarAutorizacaoDaTransacaoCaptura) para acessar a documentação completa.
+url: "{{base_url}}/v1/transactions/{{autorizacao_tid}}"
+method: PUT
+body:
+  type: json
+  content: |-
+    {
+      "amount": {{autorizacao_amount}}
+    }
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: |
+      // Validando status code para uma requisição de sucesso, com tid e valor da transação corretos
+      pm.test("Validação do status code", function () {
+        pm.response.to.have.status(200);
+      });
+    language: text/javascript
+order: 2000

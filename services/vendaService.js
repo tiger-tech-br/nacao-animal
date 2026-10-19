@@ -439,7 +439,7 @@ const VendaService = {
                 acao: "PAGAMENTO_APROVADO",
                 entidade: "VENDA",
                 entidadeId: venda.id,
-                descricao: "Pagamento do pedido confirmado pelo PagBank.",
+                descricao: "Pagamento do pedido confirmado pelo provedor de pagamento.",
                 anterior: { status: venda.status },
                 novo: { status: "PAGAMENTO_APROVADO", pagseguro_status: dadosPagamento.pagseguroStatus }
             }, client);
@@ -475,7 +475,7 @@ const VendaService = {
     async atualizarStatusPedido(empresaId, vendaId, status, options = {}) {
 
         if (status === "PAGAMENTO_APROVADO") {
-            throw Object.assign(new Error("O pagamento só pode ser aprovado após confirmação do PagBank."), { status: 409 });
+            throw Object.assign(new Error("O pagamento só pode ser aprovado após confirmação do provedor de pagamento."), { status: 409 });
         }
 
         if (status === "CANCELADA") {
@@ -533,7 +533,7 @@ const VendaService = {
             let reembolso = null;
             if (pago && !options.skipRefund) {
                 if (!current.pagseguro_charge_id) {
-                    throw Object.assign(new Error("O pedido pago não possui identificador da cobrança. Faça o estorno no PagBank e registre o cancelamento depois."), { status: 409 });
+                    throw Object.assign(new Error("O pedido pago não possui identificador da cobrança. Faça o estorno no provedor de pagamento e registre o cancelamento depois."), { status: 409 });
                 }
                 reembolso = await PagSeguroService.cancelarCobranca(
                     current.pagseguro_charge_id,

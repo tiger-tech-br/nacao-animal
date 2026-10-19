@@ -1,0 +1,50 @@
+$kind: http-request
+url: "{{urlToken}}/token-service/v2/tokenization/"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"email\": \"john_snow@dominio.com.br\",\r
+
+    \    \"cardNumber\": \"4895370010000005\",\r
+
+    \    \"expirationMonth\": \"02\",\r
+
+    \    \"storageCard\": 2\r
+
+    }"
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"returnCode equal to '13'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnCode).to.eql(\"13\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"returnMessage equal to 'ExpirationYear: Required parameter missing'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnMessage).to.eql(\"ExpirationYear: Required parameter missing\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Status code is 400\", function () {\r
+
+      \    pm.response.to.have.status(400);\r
+
+      });"
+    language: text/javascript
+order: 13000

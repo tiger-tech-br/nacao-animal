@@ -1,0 +1,60 @@
+$kind: http-request
+description: |-
+  ### Consultar transação por reference
+
+  > Para autenticar na API, utilize os dados de PV e Token gerados na criação do projeto na área logada do [Portal do Desenvolvedor](https://developer.userede.com.br/login).
+
+  #### Autenticação
+
+  É possível configurar a autenticação no Postman de 2 maneiras:
+
+  *   **Opção 1:** Na aba `Authorization`, selecione o tipo "Basic Auth" e preencha os campos de Username e Password com PV e Token, respectivamente. **Este é o modo que está configurado na requisição.**
+  *   **Opção 2:** Adicione na aba `Headers` da requisição o campo **Authorization** com o hash do PV e Token.  
+      Exemplo para gerar o hash do token na aba `Pre-request Script`:
+      
+      ```
+      var authBasicHash = btoa(pm.environment.get("pv") + ":" + pm.environment.get("token"));
+      pm.environment.set("hash_token", "Basic " + authBasicHash);
+      
+      ```
+      
+
+  #### Serviço
+
+  [Consulta da transação](https://developer.userede.com.br/e-rede#consulta-transacao) a partir do número do pedido criado pelo estabelecimento (reference).
+
+  > O prazo para consulta de pré autorizações pendentes e transações de zero dollar é de 60 dias. Após esse prazo o status da consulta retornará como: **not found**.
+
+  A variável de ambiente {reference} contém o número de pedido da última transação feita em uma das requisições da pasta **`Realizar transação`**, desta forma a consulta das vendas fica mais simples.
+
+  Na aba `Tests` além de fazer a validação do status code da requisição realizada com sucesso, está sendo armazenado o valor do tid da resposta do serviço na variável de ambiente {{id}.
+
+  [Clique aqui](https://developer.userede.com.br/e-rede#swagger_operations-Transação-consultarTransacaoPorReference) para acessar a documentação completa.
+url: "{{base_url}}/v1/transactions?reference={{reference}}"
+method: GET
+headers:
+  Transaction-Response: brand-return-opened
+queryParams:
+  - key: reference
+    value: "{{reference}}"
+    description: Número do pedido gerado pelo estabelecimento.
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: |
+      // Validando status code para uma requisição de sucesso, com reference válido
+      pm.test("Validação do status code", function () {
+        pm.response.to.have.status(200);
+      });
+
+      // Se apresentar o campo tid na resposta, o mesmo será armazenado na variável de ambiente {{tid}}
+      var response = JSON.parse(responseBody);
+      if (response.tid !== undefined){
+        pm.environment.set("tid", response.tid);
+      }
+    language: text/javascript
+order: 21000

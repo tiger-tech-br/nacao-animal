@@ -1,0 +1,39 @@
+$kind: http-request
+description: |-
+  ### Consultar cancelamento por tid
+  > Para autenticar na API, utilize os dados de PV e Token gerados na criação do projeto na área logada do [Portal do Desenvolvedor](https://developer.userede.com.br/login).
+
+  #### Autenticação
+  É possível configurar a autenticação no Postman de 2 maneiras:
+  - **Opção 1:** Na aba `Authorization`, selecione o tipo "Basic Auth" e preencha os campos de Username e Password com PV e Token, respectivamente. **Este é o modo que está configurado na requisição.**
+
+  - **Opção 2:** Adicione na aba `Headers` da requisição adicione o campo **Authorization** com o hash do PV e Token. <br> Exemplo para gerar o hash do token na aba `Pre-request Script`:
+  ```
+  var authBasicHash = btoa(pm.environment.get("pv") + ":" + pm.environment.get("token"));
+  pm.environment.set("hash_token", "Basic " + authBasicHash);
+  ```
+
+  #### Serviço
+  [Consulta do cancelamento](https://developer.userede.com.br/e-rede#consulta-cancelamento) a partir do ID da transação (tid). Lista todos os cancelamentos que foram realizados na transação.
+
+  A variável de ambiente {tid} contém o ID da última transação feita em uma das requisições da pasta `Realizar transação`, desta forma a consulta das vendas fica mais simples.
+
+  Na aba `Tests` é realizada a validação do status code da requisição realizada com sucesso.
+
+  [Clique aqui](https://developer.userede.com.br/e-rede#swagger_operations-Cancelamento-consultarCancelamentoPorTid) para acessar a documentação completa.
+url: "{{base_url}}/v1/transactions/{{tid}}/refunds"
+method: GET
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: |
+      // Validando status code para uma requisição de sucesso, com reference válido
+      pm.test("Validação do status code", function () {
+        pm.response.to.have.status(200);
+      });
+    language: text/javascript
+order: 3000

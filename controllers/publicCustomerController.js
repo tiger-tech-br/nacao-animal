@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
 const db = require("../database/connection");
 const VendaService = require("../services/vendaService");
 const { avaliarCancelamento } = require("../services/cancelamentoEntregaService");
-const PRIVACY_VERSION = "2026-10-03";
+const PRIVACY_VERSION = "2026-10-19";
 
 function digest(value) {
     return crypto.createHash("sha256").update(String(value || "")).digest("hex");
@@ -303,7 +303,7 @@ async function register(request, response, next) {
 
         await createCustomerNotification({
             clienteId,
-            titulo: "Bem-vindo à PetFlow",
+            titulo: "Bem-vindo à Nação Animal",
             mensagem: `${firstName(profile.nome)}, seu cadastro foi criado com sucesso. Agora você pode comprar, favoritar produtos e acompanhar seus pedidos.`,
             tipo: "SISTEMA"
         }, client);
@@ -1023,7 +1023,7 @@ async function exportData(request, response, next) {
                 [customer.empresaId, customer.id])
         ]);
         response.set("Cache-Control", "no-store");
-        response.set("Content-Disposition", `attachment; filename="petflow-meus-dados-${new Date().toISOString().slice(0,10)}.json"`);
+        response.set("Content-Disposition", `attachment; filename="nacao-animal-meus-dados-${new Date().toISOString().slice(0,10)}.json"`);
         return response.json({ geradoEm: new Date().toISOString(), titular: profile,
             pedidos: ordersResult.rows, notificacoes: notices.rows,
             consentimentos: consents.rows, solicitacoes: requests.rows,
@@ -1180,7 +1180,7 @@ async function createConsumerRequest(request, response, next) {
                     automatic = true;
                     const updated = await db.query(
                         `UPDATE solicitacoes_consumidor SET status='ATENDIDA',
-                         resposta='Pedido cancelado. Quando aplicável, o estorno foi solicitado ao PagBank.',
+                         resposta='Pedido cancelado. Quando aplicável, o estorno foi solicitado ao provedor de pagamento.',
                          atendida_em=NOW(),updated_at=NOW() WHERE id=$1 RETURNING *`, [item.id]
                     );
                     item = updated.rows[0];
@@ -1198,7 +1198,7 @@ async function createConsumerRequest(request, response, next) {
         }
         await sendOptionalEmail({
             to: order.cliente_email || customer.email,
-            subject: `Solicitação recebida ${item.protocolo} - PetFlow`,
+            subject: `Solicitação recebida ${item.protocolo} - Nação Animal`,
             text: `Recebemos sua solicitação sobre o pedido #${vendaId.slice(0,8).toUpperCase()}. Protocolo: ${item.protocolo}. ${automatic ? "O pedido foi cancelado." : "A loja responderá em até 5 dias."}`,
             html: `<div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:24px"><h1>Solicitação recebida</h1><p>Protocolo: <strong>${escapeHtml(item.protocolo)}</strong></p><p>Pedido #${escapeHtml(vendaId.slice(0,8).toUpperCase())}</p><p>${automatic ? "O pedido foi cancelado e o estorno foi solicitado quando aplicável." : "A loja responderá em até 5 dias."}</p></div>`,
             idempotencyKey: `atendimento/${item.id}/recebida`

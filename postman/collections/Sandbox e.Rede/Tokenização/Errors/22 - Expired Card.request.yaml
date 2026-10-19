@@ -1,0 +1,56 @@
+$kind: http-request
+url: "{{urlToken}}/token-service/v2/tokenization/"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"email\": \"john_snow@dominio.com.br\",\r
+
+    \    \"cardNumber\": \"4895370010000005\",\r
+
+    \    \"expirationMonth\": \"04\",\r
+
+    \    \"expirationYear\": \"2022\",\r
+
+    \    \"cardholderName\": \"John Snow\",\r
+
+    \    \"securityCode\": \"123\",\r
+
+    \    \"storageCard\": 2\r
+
+    }"
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"returnCode equal to '22'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnCode).to.eql(\"22\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"returnMessage equal to 'Expired card.'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnMessage).to.eql(\"Expired card.\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Status code is 400\", function () {\r
+
+      \    pm.response.to.have.status(400);\r
+
+      });"
+    language: text/javascript
+order: 21000

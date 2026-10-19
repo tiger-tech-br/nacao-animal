@@ -1,4 +1,4 @@
-name: Verificação do PetFlow
+name: Verificação da Nação Animal
 on:
   push:
   pull_request:
@@ -11,20 +11,20 @@ jobs:
       NODE_ENV: test
       DB_HOST: localhost
       DB_PORT: '5432'
-      DB_NAME: petflow_v2
-      DB_EXPECTED_NAME: petflow_v2
+      DB_NAME: nacao-animal
+      DB_EXPECTED_NAME: nacao-animal
       DB_USER: postgres
       DB_PASSWORD: ci-only-database-password
       JWT_SECRET: ci-only-secret-not-for-use-in-production
       JWT_EXPIRES_IN: 1h
-      APP_URL: http://localhost:4501
-      FRONTEND_URL: http://localhost:4501
+      APP_URL: http://localhost:4600
+      FRONTEND_URL: http://localhost:4600
       RUN_DB_TESTS: '1'
     services:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: petflow_v2
+          POSTGRES_DB: nacao-animal
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: ci-only-database-password
         ports:

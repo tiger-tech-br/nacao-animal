@@ -1,8 +1,12 @@
-# PetFlow v2 — loja de produtos
+# Nação Animal — loja de produtos
 
 Para instalação e entrega comercial, consulte [o guia do comprador](docs/entrega-comercial.md). Para validar uploads, consulte [Cloudinary](docs/cloudinary.md). Instale Node.js 22 ou superior, execute `npm ci` e copie `.env.example` para `.env` antes de configurar o banco e as integrações.
 
 Para preparar Pix e cartão com recebimento no Itaú, consulte [o guia de pagamentos](docs/pagamentos-itau.md). Os campos reservados não habilitam cobranças: os pagamentos ficam desativados enquanto a solução é definida e os adaptadores Rede/Itaú ainda precisam ser implementados.
+
+O [passo a passo de cadastro Itaú/Rede](docs/cadastro-itau-rede.md) separa as
+ações do proprietário e do desenvolvedor, desde a contratação até a produção.
+O andamento e os próximos passos estão em [pendências de publicação](docs/pendencias-publicacao.md).
 
 Versão voltada a um petshop com venda de produtos. Mantém catálogo, sacola,
 conta do cliente, pedidos, pagamentos, clientes, produtos, estoque, fornecedores,
@@ -46,7 +50,7 @@ consultas, prontuários, vacinas ou funcionários. Nenhuma tabela de bancos exis
 
 ## Railway
 
-Crie um projeto novo para o PetFlow v2 e adicione um serviço PostgreSQL nele.
+Crie um projeto novo para a Nação Animal e adicione um serviço PostgreSQL nele.
 No serviço da aplicação, configure `DATABASE_URL` com a referência privada
 `${{Postgres.DATABASE_URL}}` e `DB_EXPECTED_NAME` com
 `${{Postgres.PGDATABASE}}`. Assim a aplicação confirma que a URL aponta para
@@ -57,6 +61,10 @@ Não use `DATABASE_PUBLIC_URL` entre a aplicação e o PostgreSQL. O arquivo
 `railway.json` executa `npm run db:migrate` antes de cada deploy. Ainda é
 necessário definir no Railway `JWT_SECRET`, `JWT_EXPIRES_IN`, `APP_URL` e
 `FRONTEND_URL`. Cloudinary atende os uploads de imagens; Resend é necessário para cadastro e recuperação de senha. O código herdado usa PagBank, mas os pagamentos desta instalação aguardam a definição e implementação da nova integração descrita no guia de pagamentos. Configure também as chaves do Google Maps para frete e mapa.
+
+Configure `EMAIL_FROM` com o remetente da Nação Animal verificado no Resend.
+Sem um remetente explícito, o sistema mantém os envios indisponíveis; nenhum
+e-mail de suporte de outra instalação é usado automaticamente.
 
 ## Verificação
 
@@ -89,8 +97,8 @@ Regra: até 1.000 metros grátis; acima disso, R$ 3 por quilômetro adicional ou
 
 ### Ativar no Railway
 
-1. No projeto Google Cloud, habilite faturamento e **Routes API**. Crie uma chave de servidor restrita à Routes API e configure `GOOGLE_MAPS_API_KEY` nas variáveis do serviço **petflow-v2** / **production** (não no PostgreSQL nem em JavaScript público).
-2. Confira `APP_URL=https://petflow-v2-production.up.railway.app` ou seu domínio HTTPS próprio, e a origem da entrega.
+1. No projeto Google Cloud, habilite faturamento e **Routes API**. Crie uma chave de servidor restrita à Routes API e configure `GOOGLE_MAPS_API_KEY` nas variáveis do serviço da **Nação Animal** (não no PostgreSQL nem em JavaScript público).
+2. Configure `APP_URL` com a origem HTTPS da nova aplicação no Railway ou o domínio próprio da Nação Animal e confira a origem da entrega. Não reutilize a URL de outra instalação.
 3. Publique as alterações. O pre-deploy existente executa `npm run db:migrate`, incluindo `107_frete_rastreamento.sql`. Configure a chave antes de publicar: sem ela, novas compras com entrega ficam bloqueadas na cotação; o sistema não assume frete grátis quando o Google falha. A configuração do frete não habilita os pagamentos pendentes desta instalação.
 4. Na futura integração de pagamentos, valide a distância para um endereço conhecido e confira frete e total no provedor escolhido antes de pagar. Os testes do código herdado simulam Google Maps e PagBank e não comprovam a integração com Rede/Itaú nem uma cobrança real.
 

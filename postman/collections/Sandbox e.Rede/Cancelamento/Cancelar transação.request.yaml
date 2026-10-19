@@ -1,0 +1,106 @@
+$kind: http-request
+description: |-
+  ### Cancelar transação
+  > Para autenticar na API, utilize os dados de PV e Token gerados na criação do projeto na área logada do [Portal do Desenvolvedor](https://developer.userede.com.br/login).
+
+  #### Autenticação
+  É possível configurar a autenticação no Postman de 2 maneiras:
+  - **Opção 1:** Na aba `Authorization`, selecione o tipo "Basic Auth" e preencha os campos de Username e Password com PV e Token, respectivamente. **Este é o modo que está configurado na requisição.**
+
+  - **Opção 2:** Adicione na aba `Headers` da requisição adicione o campo **Authorization** com o hash do PV e Token. <br> Exemplo para gerar o hash do token na aba `Pre-request Script`:
+  ```
+  var authBasicHash = btoa(pm.environment.get("pv") + ":" + pm.environment.get("token"));
+  pm.environment.set("hash_token", "Basic " + authBasicHash);
+  ```
+
+  #### Serviço
+  Realiza o [cancelamento](https://developer.userede.com.br/e-rede#cancelamento) de uma venda. O mesmo pode ser solicitado para todas as transações.
+
+  Além disso, na aba `Tests` está sendo feito a validação do status code da requisição realizada com sucesso e está sendo armazenado o valor do refundId da resposta na váriavel {refund_id}.
+
+  [Clique aqui](https://developer.userede.com.br/e-rede#swagger_operations-Cancelamento-cancelarTransacao) para acessar a documentação completa.
+url: "{{base_url}}/v1/transactions/{{tid}}/refunds"
+method: POST
+body:
+  type: json
+  content: |-
+    {
+      "amount": 2000,
+      "urls": [
+        {
+          "kind": "callback",
+          "url": "https://cliente.callback.com.br"
+        }
+      ]
+    }
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: beforeRequest
+    code: |-
+      // Gerando valor randômico com data para a variável de ambiente {{reference}}
+      var moment = require('moment');
+      var reference = "g" + moment().format("DDMMYYHHmmssSSS");
+
+      // Realizar transação para depois ter o tid para cancelar
+      var haveToCreateTransaction = true; //pm.environment.get
+      if (haveToCreateTransaction){
+          var hashToken = "Basic " + btoa(pm.environment.get("pv") + ":" + pm.environment.get("token"));
+          createTransaction(hashToken);
+      }
+
+      // função para cadastrar transação do tipo MCC Dinânmico
+      function createTransaction (hashToken) {
+          var authBasicHash = hashToken;
+          pm.sendRequest({
+              url: pm.environment.get("base_url") + '/v1/transactions',
+              method: 'POST',
+              header: {
+              'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': authBasicHash
+              },
+              body: {
+                  mode: 'raw',
+                  raw: JSON.stringify({
+                              reference: reference,
+                              amount: 2000,
+                              cardholderName: 'John Snow',
+                              cardNumber: '2223020000000005',
+                              expirationMonth: 1,
+                              expirationYear: 2028,
+                              securityCode: '123',
+                              threeDSecure: {
+                                  embedded: false,
+                                  cavv: 'BwABBylVaQAAAAFwllVpAAAAAAA=',
+                                  eci: '05',
+                                  xid: 'Nmp3VFdWMlEwZ05pWGN3SGo4TDA=',
+                                  threeDIndicator: '2'
+                              }
+                          })                 
+              }
+             }, function (err, res) {
+                 if (res.code == 200){
+                     var tid = res.json().tid;
+                     pm.collectionVariables.set("tid", tid);
+                     pm.environment.set("tid", tid);
+              }
+             });
+        };
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      // Validando status code de um cancelamento realizado com sucesso
+      pm.test("Validação do status code", function () {
+          pm.response.to.have.status(200);
+      });
+
+      // Se apresentar o campo tid na resposta, o mesmo será armazenado na variável de ambiente {{tid}}
+      var response = JSON.parse(responseBody);
+      if (response.refundId !== undefined){
+          pm.collectionVariables.set("refund_id", response.refundId);
+          pm.environment.set("refund_id", response.refundId);
+      }
+    language: text/javascript
+order: 1000

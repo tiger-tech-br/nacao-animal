@@ -1,0 +1,224 @@
+{
+  "info": {
+    "_postman_id": "b4302a01-ea27-42ed-b1d1-b9f0110d0527",
+    "name": "Nação Animal — e.Rede Sandbox OAuth",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Coleção preparada para testes fictícios no Sandbox da Rede. Requer credenciais próprias de Sandbox. Não foi executada nem homologada. Selecione o ambiente Nação Animal — e.Rede Sandbox e execute as requisições na ordem. URLs de Sandbox fixas; nenhum pagamento real é criado. O cartão é um exemplo fictício oficial do Sandbox. Esta coleção não implementa a integração do site e não contém testes de Pix. Referências: https://developer.userede.com.br/ponto-partida ; https://developer.userede.com.br/files/erede/oauth-faq.pdf ; https://developer.userede.com.br/files/traducoes/erede/e-rede-24032026.pdf"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "01 — Gerar token de Sandbox",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "basic",
+          "basic": [
+            {
+              "key": "username",
+              "value": "{{ClientId}}",
+              "type": "string"
+            },
+            {
+              "key": "password",
+              "value": "{{ClientSecret}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "client_credentials",
+              "type": "text"
+            }
+          ]
+        },
+        "url": "https://rl7-sandbox-api.useredecloud.com.br/oauth2/token",
+        "description": "Usa ClientId e ClientSecret do projeto de Sandbox. Salva o access_token no ambiente selecionado."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP de sucesso\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              "  const data = pm.response.json();",
+              "  pm.test(\"Token retornado\", function () { pm.expect(data.access_token).to.be.a(\"string\").and.not.empty; });",
+              "  if (data.access_token) pm.environment.set(\"access_token\", data.access_token);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 — Compra fictícia aprovada — R$ 20,00",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"capture\": true,\n  \"kind\": \"credit\",\n  \"reference\": \"NA-OK-{{$guid}}\",\n  \"amount\": 2000,\n  \"cardNumber\": \"5448280000000007\",\n  \"expirationMonth\": 1,\n  \"expirationYear\": 2035,\n  \"securityCode\": \"123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "https://sandbox-erede.useredecloud.com.br/v2/transactions",
+        "description": "Autoriza e captura uma compra fictícia de 2000 centavos com cartão oficial de teste. Salva tid apenas se returnCode for 00."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP de sucesso\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });",
+              "if (pm.response.code >= 200 && pm.response.code < 300) {",
+              "  const data = pm.response.json();",
+              "  pm.test(\"Compra aprovada no Sandbox\", function () { pm.expect(String(data.returnCode)).to.eql(\"00\"); pm.expect(data.tid).to.exist; });",
+              "  if (String(data.returnCode) === \"00\" && data.tid) pm.environment.set(\"tid\", String(data.tid));",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 — Consultar a compra aprovada",
+      "request": {
+        "method": "GET",
+        "url": "https://sandbox-erede.useredecloud.com.br/v2/transactions/{{tid}}",
+        "description": "Execute após a compra aprovada para consultar o tid salvo no ambiente."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP de sucesso\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 — Simular compra recusada — cenário 80",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"capture\": true,\n  \"kind\": \"credit\",\n  \"reference\": \"NA-NO-{{$guid}}\",\n  \"amount\": 80,\n  \"cardNumber\": \"5448280000000007\",\n  \"expirationMonth\": 1,\n  \"expirationYear\": 2035,\n  \"securityCode\": \"123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "https://sandbox-erede.useredecloud.com.br/v2/transactions",
+        "description": "O valor 80 centavos é um cenário fictício de recusa no Sandbox. Preserva o tid da compra aprovada para os testes seguintes."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Recusa simulada\", function () { const data = pm.response.json(); pm.expect(String(data.returnCode)).to.eql(\"80\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 — Solicitar estorno fictício da compra aprovada",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"amount\": 2000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "https://sandbox-erede.useredecloud.com.br/v2/transactions/{{tid}}/refunds",
+        "description": "Solicita estorno integral dos 2000 centavos da compra fictícia aprovada. HTTP de sucesso indica aceitação da requisição; confira o estado final na consulta seguinte."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP de sucesso\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 — Consultar estorno fictício",
+      "request": {
+        "method": "GET",
+        "url": "https://sandbox-erede.useredecloud.com.br/v2/transactions/{{tid}}/refunds",
+        "description": "Confira os dados e o estado do estorno. Pode ser necessário consultar novamente; uma solicitação aceita não comprova estorno finalizado."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP de sucesso\", function () { pm.expect(pm.response.code).to.be.within(200, 299); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

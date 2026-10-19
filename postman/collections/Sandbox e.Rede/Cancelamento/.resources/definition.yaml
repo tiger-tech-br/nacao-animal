@@ -1,0 +1,9 @@
+$kind: collection
+scripts:
+  - type: http:beforeRequest
+    code: |-
+      // Gerando valor randômico com data para a variável de ambiente {{reference}}
+      var moment = require('moment');
+      pm.environment.set("reference", "g" + moment().format("DDMMYYHHmmssSSS"));
+    language: text/javascript
+order: 2000

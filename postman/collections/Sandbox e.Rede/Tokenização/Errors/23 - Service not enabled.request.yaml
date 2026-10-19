@@ -1,0 +1,56 @@
+$kind: http-request
+url: "{{urlToken}}/token-service/v2/tokenization/"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"email\": \"john_snow@dominio.com.br\",\r
+
+    \    \"cardNumber\": \"0000000000000001\",\r
+
+    \    \"expirationMonth\": \"{{current_month}}\",\r
+
+    \    \"expirationYear\": \"{{current_year}}\",\r
+
+    \    \"cardholderName\": \"John Snow\",\r
+
+    \    \"securityCode\": \"123\",\r
+
+    \    \"storageCard\": 2\r
+
+    }"
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"returnCode equal to '23'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnCode).to.eql(\"23\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"returnMessage equal to 'Service not enabled for this establishment'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnMessage).to.eql(\"Service not enabled for this establishment\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Status code is 403\", function () {\r
+
+      \    pm.response.to.have.status(403);\r
+
+      });"
+    language: text/javascript
+order: 22000

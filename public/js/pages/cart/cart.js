@@ -45,7 +45,25 @@ document.addEventListener("petflow:cart-changed", () => {
     }
 });
 
+document.addEventListener("nacao:cart-sandbox-changed", () => {
+    clearTimeout(automaticShippingTimer);
+    clearTimeout(cepLookupTimer);
+    cepLookupController?.abort();
+    ++shippingRevision;
+    ++cepRevision;
+    ++couponRevision;
+    couponLoading = false;
+    renderCart();
+    if (!window.NacaoAnimalCartSandbox?.isActive()) {
+        renderCustomer().then(() => {
+            restoreDeliveryAddress();
+            refreshCoupons();
+        });
+    }
+});
+
 async function setupCartPage() {
+    setupCartEvents();
     try {
         const response = await fetch(`${CART_API}/produtos`);
         const payload = await response.json();
@@ -57,7 +75,6 @@ async function setupCartPage() {
         cartProducts = Array.isArray(payload.data) ? payload.data : [];
         renderCart();
         await renderCustomer();
-        setupCartEvents();
         restoreDeliveryAddress();
         await refreshCoupons();
     } catch (error) {
@@ -153,6 +170,7 @@ function setupCartEvents() {
 }
 
 function renderCart() {
+    if (window.NacaoAnimalCartSandbox?.renderItems()) return;
     const list = document.getElementById("cartItems");
     const total = document.getElementById("cartTotal");
     const items = getCartItems();
@@ -193,6 +211,7 @@ function renderCart() {
 }
 
 function renderTotals() {
+    if (window.NacaoAnimalCartSandbox?.renderTotals()) return;
     document.getElementById("calculateShipping").hidden = Boolean(getToken());
     const items = getCartItems();
     const productsTotal = couponSubtotal ?? getCartTotal(items);
@@ -230,6 +249,7 @@ function renderTotals() {
 }
 
 async function refreshCoupons(codigo = selectedCoupon) {
+    if (window.NacaoAnimalCartSandbox?.isActive()) return;
     const revision = ++couponRevision;
     selectedCoupon = codigo;
     appliedCoupon = null;
@@ -287,6 +307,7 @@ async function refreshCoupons(codigo = selectedCoupon) {
 }
 
 async function calculateShipping({ retry = 0 } = {}) {
+    if (window.NacaoAnimalCartSandbox?.isActive()) return;
     clearTimeout(automaticShippingTimer);
     if (submitting) return;
     const address = readDeliveryAddress();
@@ -410,6 +431,7 @@ async function lookupDeliveryCep() {
 }
 
 function renderEmpty(message) {
+    if (window.NacaoAnimalCartSandbox?.renderItems()) return;
     const list = document.getElementById("cartItems");
 
     if (!list) {
@@ -427,6 +449,10 @@ function renderEmpty(message) {
 }
 
 async function renderCustomer() {
+    if (window.NacaoAnimalCartSandbox?.isActive()) {
+        renderTotals();
+        return;
+    }
     clearTimeout(automaticShippingTimer);
     ++shippingRevision;
     shippingQuote = null;
@@ -454,6 +480,10 @@ async function renderCustomer() {
 
     try {
         customer = await fetchCustomerProfile();
+        if (window.NacaoAnimalCartSandbox?.isActive()) {
+            renderTotals();
+            return;
+        }
         const addressComplete = hasDeliveryAddress(customer);
         const contact = [customer.telefone, customer.email].filter(Boolean).join(" - ");
 
@@ -471,6 +501,10 @@ async function renderCustomer() {
             </div>
         `;
     } catch {
+        if (window.NacaoAnimalCartSandbox?.isActive()) {
+            renderTotals();
+            return;
+        }
         clearCartSession();
         submit.disabled = true;
         container.innerHTML = `
@@ -500,6 +534,7 @@ function clearCartSession() {
 
 async function submitOrder(event) {
     event.preventDefault();
+    if (window.NacaoAnimalCartSandbox?.isActive()) return window.NacaoAnimalCartSandbox.submit(event);
     if (submitting || couponLoading) return;
 
     const status = document.getElementById("cartStatus");

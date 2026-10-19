@@ -203,7 +203,7 @@ async function setupPublicAccount() {
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `petflow-meus-dados-${new Date().toISOString().slice(0, 10)}.json`;
+            link.download = `nacao-animal-meus-dados-${new Date().toISOString().slice(0, 10)}.json`;
             link.click();
             URL.revokeObjectURL(link.href);
             setStatus(status, "Arquivo gerado com sucesso.");

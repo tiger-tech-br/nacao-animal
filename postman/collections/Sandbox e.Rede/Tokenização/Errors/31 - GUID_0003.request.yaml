@@ -1,0 +1,37 @@
+$kind: http-request
+url: "{{urlToken}}/token-service/v2/cryptogram/guid_0003"
+method: POST
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"returnCode equal to '31'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnCode).to.eql(\"31\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"returnMessage equal to 'NotAllowed: This card is considered ineligible for tokenization at this moment'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnMessage).to.eql(\"NotAllowed: This card is considered ineligible for tokenization at this moment\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Status code is 409\", function () {\r
+
+      \    pm.response.to.have.status(409);\r
+
+      });"
+    language: text/javascript
+order: 27000

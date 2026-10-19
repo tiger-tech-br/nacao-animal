@@ -1565,7 +1565,7 @@
 
         try {
             const motivoCancelamento = status === "CANCELADA"
-                ? await askReason("Cancelar pedido", "Informe o motivo. Se o pedido estiver pago, o PagBank será acionado para o reembolso.")
+                ? await askReason("Cancelar pedido", "Informe o motivo. Se o pedido estiver pago, o reembolso será solicitado ao provedor de pagamento.")
                 : "";
             if (status === "CANCELADA" && !motivoCancelamento) {
                 setStatus("Cancelamento não realizado.");

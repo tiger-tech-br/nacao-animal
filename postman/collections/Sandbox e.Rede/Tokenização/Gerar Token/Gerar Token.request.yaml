@@ -1,0 +1,50 @@
+$kind: http-request
+description: |-
+  ### Gerar token
+
+  Utilize esta requisição para gerar o token dos serviços de Tokenização.
+
+  Após criar o projeto na área logada do [Portal do Desenvolvedor](https://developer.userede.com.br/login) Rede, copie as credenciais e coloque na seção de váriaveis de coleção, ao clicar no nome "Sandbox Tokenização".
+
+  Outra opção é colocar os valores copiados direto na requisição, conforme descrição da tabela abaixo:
+
+  | **Projeto Portal Desenvolvedor** | **Postman** Aba -> Campo |
+  | --- | --- |
+  | ClientId | Authorization -> Username |
+  | ClientSecret | Authorization -> Password |
+
+  Acesse a área de [Autenticação OAuth](https://developer.userede.com.br/ponto-partida#configurando-tryoutrer) para mais detalhes.
+
+  A requisição ***Gerar Token*** salva automaticamente a credencial na variável {access_token} e a mesma pode ser utilizada nas requisições.
+
+  Na aba `Tests` é realizada a validação do status code da requisição realizada com sucesso.
+
+  [Clique aqui](https://developer.userede.com.br/e-rede#swagger_bloco-lista-apis) para acessar a documentação completa.
+url: "{{urlToken}}/oauth2/token"
+method: POST
+headers:
+  Content-Type: application/x-www-form-urlencoded
+body:
+  type: urlencoded
+  content:
+    grant_type: client_credentials
+auth:
+  type: basic
+  credentials:
+    username: "{{ClientId}}"
+    password: "{{ClientSecret}}"
+scripts:
+  - type: afterResponse
+    code: |-
+      // Validando status code para token gerado com sucesso
+      pm.test("Validação do status code", function () {
+        pm.response.to.have.status(200);
+      });
+
+      // Se o token for gerado com sucesso, o mesmo será armazenado na variável de ambiente {{access_token}}
+      if (pm.response.code == 200){
+          var response = JSON.parse(responseBody);
+          pm.collectionVariables.set("access_token", response.access_token);
+      }
+    language: text/javascript
+order: 1000

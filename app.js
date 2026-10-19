@@ -58,6 +58,8 @@ const healthRoutes = require("./routes/healthRoutes");
 const publicCatalogRoutes = require("./routes/publicCatalogRoutes");
 
 const publicPaymentRoutes = require("./routes/publicPaymentRoutes");
+const redeSandboxRoutes = require("./routes/redeSandboxRoutes");
+const redeSandboxMiddleware = require("./middlewares/redeSandboxMiddleware");
 
 /* ==========================
    DASHBOARD
@@ -110,6 +112,10 @@ app.use(express.static(path.join(__dirname, "public")));
 // Modulos fora do escopo da loja de produtos, inclusive acesso direto.
 app.use(["/admin/pages/servicos", "/admin/pages/agendamentos", "/admin/pages/pets", "/admin/pages/funcionarios"], (req, res) => {
     res.status(404).json({ success: false, message: "Modulo indisponivel nesta loja." });
+});
+
+app.get("/admin/testar-pagamento", redeSandboxMiddleware, (request, response) => {
+    response.redirect("/sacola?teste=1");
 });
 
 app.use("/admin", express.static(path.join(__dirname, "admin")));
@@ -225,6 +231,7 @@ app.use("/api", healthRoutes);
 ================================================== */
 
 app.use("/api/auth", authRoutes);
+app.use("/api/public/rede-sandbox", redeSandboxRoutes);
 
 app.use("/api/public/pagamentos", publicPaymentRoutes);
 

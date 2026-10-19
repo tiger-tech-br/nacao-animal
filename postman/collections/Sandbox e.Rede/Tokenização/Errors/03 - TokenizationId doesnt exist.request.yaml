@@ -1,0 +1,37 @@
+$kind: http-request
+url: "{{urlToken}}/token-service/v2/tokenization/e8d5f215-cccf-4c12-8fbb-e0b395fba752"
+method: GET
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"returnCode equal to '03'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnCode).to.eql(\"03\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"returnMessage equal to 'There is no data with the given guid.'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnMessage).to.eql(\"There is no data with the given guid.\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Status code is 404\", function () {\r
+
+      \    pm.response.to.have.status(404);\r
+
+      });"
+    language: text/javascript
+order: 3000

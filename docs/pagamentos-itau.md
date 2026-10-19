@@ -2,6 +2,9 @@
 
 A Nação Animal pretende aceitar Pix e cartão de crédito, com recebimento na conta PJ do Itaú. A solução bancária e os serviços a contratar ainda precisam ser confirmados com o responsável pela conta. A integração de pagamentos herdada do PetFlow usa PagBank; os adaptadores para Rede e Itaú ainda não foram implementados.
 
+Para orientar o proprietário desde o cadastro e a contratação até a integração,
+consulte o [passo a passo de cadastro Itaú/Rede](cadastro-itau-rede.md).
+
 Os campos abaixo são reservas de configuração para preencher depois dessa definição. Preenchê-los não habilita cobranças. Mantenha os pagamentos desativados durante a preparação:
 
 ```dotenv
@@ -19,7 +22,30 @@ ITAU_PIX_CERT_PATH=
 ITAU_PIX_PRIVATE_KEY_PATH=
 ```
 
-O nome de cada variável pertence ao contrato desta aplicação; a correspondência com as credenciais e os requisitos do serviço contratado deve ser confirmada na documentação oficial. Nenhum endpoint bancário está definido por esses campos.
+O nome de cada variável pertence ao contrato desta aplicação; a correspondência com as credenciais e os requisitos do serviço contratado deve ser confirmada na documentação oficial. A ferramenta de testes abaixo usa endpoints fixos de Sandbox; essas variáveis não ativam o checkout da loja.
+
+## Testar cartão fictício na tela
+
+Com o servidor iniciado por `npm run dev`, abra a [sacola pública em modo de teste](http://localhost:4600/sacola?teste=1). A própria sacola mostra um produto fictício e os campos do cartão. Preencha manualmente os dados do cartão indicado e clique em **Confirmar compra de teste**. O botão **Preencher cartão fictício** é opcional. Não é necessário entrar no painel ou cadastrar um cliente.
+
+- O exemplo é o cartão fictício `5448 2800 0000 0007`, validade `01/2035`, CVV `123`. Outros cartões são rejeitados antes de qualquer chamada à Rede.
+- A aprovação usa R$ 20,00 fictícios; a recusa usa o cenário de R$ 0,80. O valor e o cartão são fixados novamente no servidor.
+- Após aprovar, a ferramenta consulta a transação, solicita o estorno e consulta seu estado. Só mostra estorno concluído quando a Rede informa `Done`; aceite da solicitação não comprova conclusão.
+- A sacola de teste usa um item fictício, mantendo a sacola verdadeira no navegador. Nenhum produto é cadastrado e nenhum pedido, estoque, financeiro ou dado de cartão é gravado na loja. O token OAuth fica apenas na memória durante a requisição.
+- O modo de teste e sua API ficam disponíveis somente com `NODE_ENV=development`, `PAYMENT_ENVIRONMENT=sandbox` e conexão local direta. A API também exige host local, origem correspondente quando informada e corpo JSON; em produção ou pela rede a ferramenta responde 404. O cartão e o valor são restritos aos cenários fictícios, mesmo sem login.
+- Preencha `REDE_CLIENT_ID` e `REDE_CLIENT_SECRET` com credenciais de **Sandbox**. Mantenha `PAYMENTS_ENABLED=false` e `PAYMENT_PROVIDER=pending`.
+
+Para conferir a API pelo terminal, sem abrir a tela: `node scripts/check-rede-sandbox.js --transactions`. Sem a opção, o script testa somente a autenticação. Os endpoints usados são os do Sandbox OAuth e de transações v2 da Rede, sem redirecionamento para outros hosts.
+
+Essa ferramenta serve para experimentar respostas da Rede. O checkout público, parcelamento, confirmação por webhook e integração com pedidos continuam pendentes da implementação e da homologação.
+
+## Sandbox e produção: onde ficam os dados
+
+Os nomes `REDE_CLIENT_ID` e `REDE_CLIENT_SECRET` são reutilizados por ambiente; os valores de Sandbox e de produção são diferentes. Para os testes atuais, mantenha as credenciais do Developers Rede no `.env` local. Não é necessário cadastrar uma aplicação no Itaú Developers para executar este teste de cartão da e.Rede.
+
+Depois da contratação e liberação da e.Rede, o responsável obtém o PV e a chave de integração de produção no Portal Use Rede. Eles serão configurados nas variáveis privadas da hospedagem, sem substituir as credenciais do Sandbox local. A liberação de produção depende do adaptador de pagamentos, dos pedidos, das notificações e da validação concluídos; apenas alterar `PAYMENT_ENVIRONMENT` não implementa essa integração. A ferramenta desta sacola sempre usa URLs fixas de Sandbox e bloqueia produção.
+
+Referências: [Sandbox no Developers Rede](https://developer.userede.com.br/ponto-partida) e [PV, chave de integração e OAuth](https://developer.userede.com.br/files/erede/tutorial-oauth2.0.pdf).
 
 ## O que preencher depois
 

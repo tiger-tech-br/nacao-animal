@@ -90,9 +90,9 @@ module.exports = {
 
     RESEND_API_KEY: process.env.RESEND_API_KEY?.trim(),
 
-    EMAIL_FROM: process.env.EMAIL_FROM?.trim() || "PetFlow <suporte@tigertech.dev.br>",
+    EMAIL_FROM: process.env.EMAIL_FROM?.trim() || "",
 
-    EMAIL_TEST_TO: process.env.EMAIL_TEST_TO || "suporte@tigertech.dev.br",
+    EMAIL_TEST_TO: process.env.EMAIL_TEST_TO?.trim() || "",
 
     APP_URL: (process.env.APP_URL?.trim() ||
         (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` :

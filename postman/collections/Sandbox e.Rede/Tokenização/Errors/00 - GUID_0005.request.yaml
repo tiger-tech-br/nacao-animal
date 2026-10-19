@@ -1,0 +1,63 @@
+$kind: http-request
+url: "{{urlToken}}/token-service/v2/cryptogram/GUID_0005"
+method: POST
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"returnCode equal to '00'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnCode).to.eql(\"00\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"returnMessage equal to 'Success'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnMessage).to.eql(\"Success\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"tokenizationId equal to 'GUID_0005'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.tokenizationId).to.eql(\"GUID_0005\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"expirationDate is not returned\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    if (jsonData.cryptogramInfo.hasOwnProperty('expirationDate')){\r
+
+      \        pm.expect.fail('expirationDate is returned');\r
+
+      \    }\r
+
+      });\r
+
+      \r
+
+      \r
+
+      pm.test(\"Status code is 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });"
+    language: text/javascript
+order: 29000

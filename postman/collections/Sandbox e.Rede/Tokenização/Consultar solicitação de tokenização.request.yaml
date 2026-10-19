@@ -1,0 +1,133 @@
+$kind: http-request
+url: "{{urlToken}}/token-service/v2/tokenization/{{tokenizationId}}"
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{access_token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"returnCode equal to '00'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnCode).to.eql(\"00\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"returnMessage equal to 'Success'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnMessage).to.eql(\"Success\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Status code is 200\", function () {\r
+
+      \    pm.response.to.have.status(200);\r
+
+      });"
+    language: text/javascript
+  - type: beforeRequest
+    code: "var url = pm.variables.get(\"urlToken\");\r
+
+      \r
+
+      if (pm.environment.get(\"ClientId\") == undefined){\r
+
+          var hashToken = btoa(pm.collectionVariables.get(\"ClientId\") + \":\" + pm.collectionVariables.get(\"ClientSecret\"));\r
+
+      } else {\r
+
+          var hashToken = btoa(pm.environment.get(\"ClientId\") + \":\" + pm.environment.get(\"ClientSecret\"));\r
+
+      }\r
+
+      \r
+
+      const options = {\r
+
+      \  url:  `${url}/token-service/oauth/v2/tokenization/`, \r
+
+      \  method: 'POST',\r
+
+      \  header: {\r
+
+      \    'Content-Type': 'application/json',\r
+
+      \    'Authorization': 'Bearer' + pm.variables.get('access_token')\r
+
+      \  },\r
+
+      \  body: { \r
+
+      \    mode: 'raw',\r
+
+      \    raw:JSON.stringify({\r
+
+      \        \"email\": \"john_snow@gmail.com\",\r
+
+      \        \"cardNumber\": \"4895370010000005\",\r
+
+      \        \"expirationMonth\": `${pm.variables.get(\"current_month\")}`,\r
+
+      \        \"expirationYear\": `${pm.variables.get(\"current_year\")}`,\r
+
+      \        \"securityCode\": \"235\",\r
+
+      \        \"storageCard\": 2\r
+
+      \    })\r
+
+      \  }\r
+
+      };\r
+
+      \r
+
+      pm.sendRequest(options, function (err, res) {\r
+
+      \  if(res.code == 201){\r
+
+      \      console.log(res.json().tokenizationId);\r
+
+      \      pm.variables.set(\"tokenizationId\", res.json().tokenizationId);\r
+
+      \r
+
+      \      const options2 = {\r
+
+      \        url:  `${url}/token-service/v2/tokenization/callback/${pm.variables.get(\"tokenizationId\")}`, \r
+
+      \        method: 'PUT',\r
+
+      \        header: {\r
+
+      \            'Content-Type': 'application/json',\r
+
+      \        }\r
+
+      \      }\r
+
+      \r
+
+      \      pm.sendRequest(options2, function (err, resp) {\r
+
+      \        if(resp.code == 201){\r
+
+      \            console.log(\"Callback done\");\r
+
+      \          }\r
+
+      \      });\r
+
+      \  }\r
+
+      });"
+    language: text/javascript
+order: 6000

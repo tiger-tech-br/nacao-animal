@@ -1,0 +1,52 @@
+$kind: http-request
+url: "{{urlToken}}/token-service/v1/tokenization/seturl"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"url\": \"cname.seudominio.com.br\",\r
+
+    \    \"authorization\": {\r
+
+    \        \"type\": \"basic\",\r
+
+    \        \"token\": 1234\r
+
+    \    }\r
+
+    }"
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"returnCode equal to '35'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnCode).to.eql(\"35\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"returnMessage equal to 'Authorization Token: Invalid parameter format'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnMessage).to.eql(\"Authorization Token: Invalid parameter format\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Status code is 400\", function () {\r
+
+      \    pm.response.to.have.status(400);\r
+
+      });"
+    language: text/javascript
+order: 37000

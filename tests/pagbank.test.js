@@ -56,13 +56,13 @@ test("expiração de checkout não cancela pedido pago nem em entrega; cancelame
     }
 });
 
-test("painel administrativo não pode aprovar pagamento sem confirmação do PagBank", async () => {
+test("painel administrativo não pode aprovar pagamento sem confirmação do provedor de pagamento", async () => {
     await assert.rejects(
         VendaService.atualizarStatusPedido(
             "11111111-1111-4111-8111-111111111111",
             "22222222-2222-4222-8222-222222222222",
             "PAGAMENTO_APROVADO"
         ),
-        error => error?.status === 409 && /PagBank/.test(error.message)
+        error => error?.status === 409 && /provedor de pagamento/.test(error.message)
     );
 });

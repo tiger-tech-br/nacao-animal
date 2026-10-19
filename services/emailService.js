@@ -79,10 +79,10 @@ function welcomeTemplate({ name }) {
     const message = `${safeName}, seu cadastro foi criado com sucesso. Agora você pode comprar, favoritar produtos e acompanhar seus pedidos.`;
 
     return {
-        subject: "Cadastro criado na PetFlow",
+        subject: "Cadastro criado na Nação Animal",
         text: message,
         html: baseEmail(`
-            <h1>Bem-vindo à PetFlow</h1>
+            <h1>Bem-vindo à Nação Animal</h1>
             <p>${message}</p>
         `)
     };
@@ -92,12 +92,12 @@ function emailVerificationTemplate({ name, verifyUrl }) {
     const safeName = escapeHtml(firstName(name) || "cliente");
 
     return {
-        subject: "Confirme seu e-mail na PetFlow",
-        text: `Olá, ${safeName}. Confirme seu e-mail para ativar sua conta PetFlow: ${verifyUrl}`,
+        subject: "Confirme seu e-mail na Nação Animal",
+        text: `Olá, ${safeName}. Confirme seu e-mail para ativar sua conta na Nação Animal: ${verifyUrl}`,
         html: baseEmail(`
             <h1>Confirme seu e-mail</h1>
             <p>Olá, ${safeName}.</p>
-            <p>Recebemos seu cadastro na PetFlow. Para ativar sua conta e poder comprar, confirme seu e-mail pelo botão abaixo.</p>
+            <p>Recebemos seu cadastro na Nação Animal. Para ativar sua conta e poder comprar, confirme seu e-mail pelo botão abaixo.</p>
             <p>
                 <a href="${escapeHtml(verifyUrl)}" style="display:inline-block;background:#04766d;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700">
                     Confirmar e-mail
@@ -112,12 +112,12 @@ function passwordResetTemplate({ name, resetUrl }) {
     const safeName = escapeHtml(firstName(name) || "cliente");
 
     return {
-        subject: "Redefinição de senha PetFlow",
+        subject: "Redefinição de senha Nação Animal",
         text: `Olá, ${safeName}. Use este link para redefinir sua senha: ${resetUrl}`,
         html: baseEmail(`
             <h1>Redefinição de senha</h1>
             <p>Olá, ${safeName}.</p>
-            <p>Recebemos uma solicitação para redefinir sua senha na PetFlow.</p>
+            <p>Recebemos uma solicitação para redefinir sua senha na Nação Animal.</p>
             <p>
                 <a href="${escapeHtml(resetUrl)}" style="display:inline-block;background:#04766d;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700">
                     Criar nova senha
@@ -146,12 +146,12 @@ function orderReceivedTemplate({ name, orderId, total, subtotal, discount, shipp
     `).join("");
 
     return {
-        subject: `Pedido recebido #${orderLabel} - PetFlow`,
+        subject: `Pedido recebido #${orderLabel} - Nação Animal`,
         text: `Olá, ${firstName(name) || "cliente"}. Recebemos seu pedido #${orderLabel}. Produtos: ${currency(subtotal ?? total)}. Desconto: ${currency(discount)}. Frete: ${currency(shipping)}. Total: ${currency(total)}. Pagamento: ${paymentText}. Entrega: ${addressText}. Consulte e solicite atendimento em ${ordersUrl}. Termos: ${termsUrl}.`,
         html: baseEmail(`
             <h1>Pedido recebido</h1>
             <p>Olá, ${safeName}.</p>
-            <p>Recebemos seu pedido <strong>#${orderLabel}</strong>. A PetFlow vai acompanhar a separação e entrega pelo painel administrativo.</p>
+            <p>Recebemos seu pedido <strong>#${orderLabel}</strong>. A Nação Animal vai acompanhar a separação e entrega pelo painel administrativo.</p>
             <ul style="list-style:none;padding:0;margin:18px 0;color:#10212b">
                 ${itemList}
             </ul>
@@ -174,7 +174,7 @@ function paymentApprovedTemplate({ name, orderId, total }) {
     const orderLabel = shortId(orderId);
 
     return {
-        subject: `Pagamento aprovado #${orderLabel} - PetFlow`,
+        subject: `Pagamento aprovado #${orderLabel} - Nação Animal`,
         text: `Olá, ${safeName}. O pagamento do pedido #${orderLabel} foi aprovado no valor de ${currency(total)}.`,
         html: baseEmail(`
             <h1>Pagamento aprovado</h1>
@@ -191,7 +191,7 @@ function orderOutForDeliveryTemplate({ name, orderId }) {
     const trackingUrl = `${APP_URL}/acompanhar-entrega?pedido=${encodeURIComponent(orderId)}`;
 
     return {
-        subject: `Pedido saiu para entrega #${orderLabel} - PetFlow`,
+        subject: `Pedido saiu para entrega #${orderLabel} - Nação Animal`,
         text: `Olá, ${safeName}. Seu pedido #${orderLabel} saiu para entrega. Rastrear pedido: ${trackingUrl} . Entre na conta usada na compra para acompanhar.`,
         html: baseEmail(`
             <h1>Pedido saiu para entrega</h1>
@@ -208,12 +208,12 @@ function orderDeliveredTemplate({ name, orderId }) {
     const orderLabel = shortId(orderId);
 
     return {
-        subject: `Pedido entregue #${orderLabel} - PetFlow`,
+        subject: `Pedido entregue #${orderLabel} - Nação Animal`,
         text: `Olá, ${safeName}. Seu pedido #${orderLabel} foi entregue.`,
         html: baseEmail(`
             <h1>Pedido entregue</h1>
             <p>Olá, ${safeName}.</p>
-            <p>Seu pedido <strong>#${orderLabel}</strong> foi entregue. Obrigado por comprar com a PetFlow.</p>
+            <p>Seu pedido <strong>#${orderLabel}</strong> foi entregue. Obrigado por comprar com a Nação Animal.</p>
         `)
     };
 }
@@ -223,12 +223,12 @@ function orderCanceledTemplate({ name, orderId }) {
     const orderLabel = shortId(orderId);
 
     return {
-        subject: `Pedido cancelado #${orderLabel} - PetFlow`,
+        subject: `Pedido cancelado #${orderLabel} - Nação Animal`,
         text: `Olá, ${safeName}. Seu pedido #${orderLabel} foi cancelado.`,
         html: baseEmail(`
             <h1>Pedido cancelado</h1>
             <p>Olá, ${safeName}.</p>
-            <p>Seu pedido <strong>#${orderLabel}</strong> foi cancelado. Se tiver dúvidas, entre em contato com a PetFlow.</p>
+            <p>Seu pedido <strong>#${orderLabel}</strong> foi cancelado. Se tiver dúvidas, entre em contato com a Nação Animal.</p>
         `)
     };
 }
@@ -238,12 +238,12 @@ function newsletterConfirmationTemplate({ name, email, token }) {
     const unsubscribeUrl = `${APP_URL}/newsletter/cancelar?email=${encodeURIComponent(String(email || ""))}&token=${encodeURIComponent(String(token || ""))}`;
 
     return {
-        subject: "Inscrição confirmada na newsletter PetFlow",
-        text: `Olá, ${safeName}. Sua inscrição na newsletter da PetFlow foi confirmada. Para cancelar: ${unsubscribeUrl}`,
+        subject: "Inscrição confirmada na newsletter Nação Animal",
+        text: `Olá, ${safeName}. Sua inscrição na newsletter da Nação Animal foi confirmada. Para cancelar: ${unsubscribeUrl}`,
         html: baseEmail(`
             <h1>Inscrição confirmada</h1>
             <p>Olá, ${safeName}.</p>
-            <p>Você entrou para a lista da PetFlow. Vamos enviar novidades, promoções e dicas úteis para cuidar melhor do seu pet.</p>
+            <p>Você entrou para a lista da Nação Animal. Vamos enviar novidades, promoções e dicas úteis para cuidar melhor do seu pet.</p>
             <p style="font-size:13px"><a href="${escapeHtml(unsubscribeUrl)}">Cancelar inscrição na newsletter</a></p>
             <p style="color:#647481;font-size:13px">Se você não fez esta inscrição, ignore este e-mail.</p>
         `)
@@ -255,7 +255,7 @@ function baseEmail(content) {
         <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;padding:24px;color:#10212b;line-height:1.55">
             ${content}
             <hr style="border:0;border-top:1px solid #e5edf0;margin:24px 0">
-            <p style="color:#647481;font-size:13px">PetFlow - produtos para o bem-estar do seu pet.</p>
+            <p style="color:#647481;font-size:13px">Nação Animal - produtos para o bem-estar do seu pet.</p>
         </div>
     `;
 }
@@ -282,7 +282,7 @@ function formatAddress(value) {
 }
 
 function formatPayment(value) {
-    return ({ PIX: "Pix", CARTAO_CREDITO: "Cartão de crédito", CARTAO_DEBITO: "Cartão de débito", PAGBANK: "PagBank" })[value] || String(value || "PagBank");
+    return ({ PIX: "Pix", CARTAO_CREDITO: "Cartão de crédito", CARTAO_DEBITO: "Cartão de débito", PAGBANK: "Pagamento online" })[value] || String(value || "Pagamento online");
 }
 
 

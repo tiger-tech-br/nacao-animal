@@ -1,0 +1,142 @@
+$kind: http-request
+name: "Transação 3D Secure 2.0: MPI Rede + SDWO + MCC dinâmico + CBPS + Token"
+description: |-
+  ### Transação 3D Secure 2.0: MPI Rede + SDWO + MCC dinâmico + CBPS + Token
+
+  > Para autenticar na API, utilize os dados de PV e Token gerados na criação do projeto na área logada do [Portal do Desenvolvedor](https://developer.userede.com.br/login).
+
+  #### Autenticação
+
+  É possível configurar a autenticação no Postman de 2 maneiras:
+
+  *   **Opção 1:** Na aba `Authorization`, selecione o tipo "Basic Auth" e preencha os campos de Username e Password com PV e Token, respectivamente. **Este é o modo que está configurado na requisição.**
+  *   **Opção 2:** Adicione na aba `Headers` da requisição o campo **Authorization** com o hash do PV e Token.  
+      Exemplo para gerar o hash do token na aba `Pre-request Script`:
+      
+      ```
+      var authBasicHash = btoa(pm.environment.get("pv") + ":" + pm.environment.get("token"));
+      pm.environment.set("hash_token", "Basic " + authBasicHash);
+      
+      ```
+      
+
+  #### Serviço
+
+  Cadastro da transação e-commerce. Está configurado no request uma transação de [3D Secure 2.0: MPI Rede + SDWO + MCC dinâmico + CBPS + Token](https://developer.userede.com.br/e-rede#3d-secure2-0-mpi-rede-sdwo-mcc-cbps-token)**.**
+
+  A variável de ambiente {reference} do body da requisição está sendo preenchida na aba `Pre-request Script` com valor randômico utilizando data.
+
+  Além disso, na aba `Tests` está sendo feito a validação do status code da requisição realizada com sucesso e está sendo armazenado o valor do tid da resposta na váriavel {tid}.
+
+  [Clique aqui](https://developer.userede.com.br/e-rede#swagger_operations-Transação-realizarTransacao) para acessar a documentação completa que apresenta os demais tipos de transação.
+url: "{{base_url}}/v1/transactions"
+method: POST
+body:
+  type: json
+  content: |-
+    {
+    	"capture": true,
+    	"kind": "credit",
+    	"reference": "pedido123",
+    	"amount": 2000,
+    	"cardHolderName": "John Snow",
+    	"cardNumber": "4895370010000005",
+    	"expirationMonth": 1,
+    	"expirationYear": 2035,
+    	"securityCode": "235",
+    	"tokenCryptogram": "AgAAAAAAAIR8CQrXSohbQAAAAAA=",
+    	"softDescriptor": "LOJADOZE",
+    	"paymentFacilitatorID": 22349202212,
+    	"independentSalesOrganizationID": 1234567,
+    	"subMerchant": {
+    		"mcc": 1111,
+    		"subMerchantID": 1234567890,
+    		"address": "Rua Teste",
+    		"city": "São Paulo",
+    		"state": "SP",
+    		"country": "BRA",
+    		"cep": "04345-030",
+    		"cnpj": "01.425.787/0001-04",
+    		"taxIdNumber": "99999999999"
+    	},
+    	"consumerBillPaymentService": {
+    		"businessApplicationIdentifier": "01",
+    		"merchantTaxId": "99999999999"
+    	},
+    	"wallet": {
+    		"walletId": "3900370000",
+    		"processingType": "01",
+    		"paymentDestination": "04",
+    		"receiverData": {
+    			"firstName": "Arya",
+    			"lastName": "Stark",
+    			"taxIdNumber": "99999999999",
+    			"walletAccountIdentification": "34243209"
+    		},
+    		"senderData": {
+    			"taxIdNumber": "99999999999"
+    		}
+    	},
+    	"threeDSecure": {
+    		"embedded": true,
+    		"onFailure": "continue",
+    		"userAgent": "Mozilla/5.0 (iPad; U; CPU OS 3_2_1 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Mobile/7B405",
+    		"ipAddress": "10.0.0.1",
+    		"device": {
+    			"colorDepth": 1,
+    			"deviceType3ds": "BROWSER",
+    			"javaEnabled": false,
+    			"language": "BR",
+    			"screenHeight": 500,
+    			"screenWidth": 500,
+    			"timeZoneOffset": 3
+    		},
+    		"billing": {
+    			"address": "Rua Juarez Tavorra",
+    			"city": "Guarulhos",
+    			"postalCode": "07151-030",
+    			"state": "SP",
+    			"country": "Brasil",
+    			"emailAddress": "email@user.com",
+    			"phoneNumber": "(11)91234-5678"
+    		}
+    	},
+    	"urls": [
+    		{
+    			"kind": "threeDSecureSuccess",
+    			"url": "https://scommerce.userede.com.br/LojaTeste/Venda/sucesso"
+    		},
+    		{
+    			"kind": "threeDSecureFailure",
+    			"url": "https://scommerce.userede.com.br/LojaTeste/Venda/erro"
+    		}
+    	]
+    }
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: beforeRequest
+    code: |-
+      // Gerando valor randômico com data para a variável de ambiente {{reference}}
+      var moment = require('moment');
+      var reference = "g" + moment().format("DDMMYYHHmmssSSS");
+      pm.collectionVariables.set("reference", reference);
+      pm.environment.set("reference", reference);
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      // Validando status code para uma transação aprovada
+      pm.test("Validação do status code", function () {
+        pm.response.to.have.status(200);
+      });
+
+      // Se apresentar o campo tid na resposta, o mesmo será armazenado na variável de ambiente {{tid}}
+      var response = JSON.parse(responseBody);
+      if (response.tid !== undefined){
+        pm.environment.set("tid", response.tid);
+      }
+    language: text/javascript
+order: 16000

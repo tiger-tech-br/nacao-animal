@@ -1,0 +1,56 @@
+$kind: http-request
+url: "{{urlToken}}/token-service/v2/tokenization/"
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"email\": \"john_snow@dominio.com.br\",\r
+
+    \    \"cardNumber\": \"2223000250000004\",\r
+
+    \    \"expirationMonth\": \"{{current_month}}\",\r
+
+    \    \"expirationYear\": \"{{current_year}}\",\r
+
+    \    \"cardholderName\": \"John Snow\",\r
+
+    \    \"securityCode\": \"1234\",\r
+
+    \    \"storageCard\": 2\r
+
+    }"
+auth:
+  type: basic
+  credentials:
+    username: "{{pv}}"
+    password: "{{token}}"
+scripts:
+  - type: afterResponse
+    code: "pm.test(\"returnCode equal to '27'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnCode).to.eql(\"27\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"returnMessage equal to 'Card is from a brand not enabled for tokenization'\", function () {\r
+
+      \    var jsonData = pm.response.json();\r
+
+      \    pm.expect(jsonData.returnMessage).to.eql(\"Card is from a brand not enabled for tokenization\");\r
+
+      });\r
+
+      \r
+
+      pm.test(\"Status code is 403\", function () {\r
+
+      \    pm.response.to.have.status(403);\r
+
+      });"
+    language: text/javascript
+order: 23000
