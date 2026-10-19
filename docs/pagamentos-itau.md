@@ -43,6 +43,8 @@ Essa ferramenta serve para experimentar respostas da Rede. O checkout público, 
 
 Os nomes `REDE_CLIENT_ID` e `REDE_CLIENT_SECRET` são reutilizados por ambiente; os valores de Sandbox e de produção são diferentes. Para os testes atuais, mantenha as credenciais do Developers Rede no `.env` local. Não é necessário cadastrar uma aplicação no Itaú Developers para executar este teste de cartão da e.Rede.
 
+O `.env` local e o `.env.example` contêm um **modelo comentado para as futuras variáveis do Railway**. Os dados que dependem do cliente, do banco e da hospedagem ficam vazios: domínio, banco de produção, remetente e credenciais da Rede. O bloco comentado é uma referência para copiar depois nas variáveis do serviço; ele não muda o ambiente local. As URLs oficiais de produção já estão registradas como referência para o futuro adaptador, que ainda não foi implementado. Não é necessário criar variáveis de URL que o código atual não lê.
+
 Depois da contratação e liberação da e.Rede, o responsável obtém o PV e a chave de integração de produção no Portal Use Rede. Eles serão configurados nas variáveis privadas da hospedagem, sem substituir as credenciais do Sandbox local. A liberação de produção depende do adaptador de pagamentos, dos pedidos, das notificações e da validação concluídos; apenas alterar `PAYMENT_ENVIRONMENT` não implementa essa integração. A ferramenta desta sacola sempre usa URLs fixas de Sandbox e bloqueia produção.
 
 Referências: [Sandbox no Developers Rede](https://developer.userede.com.br/ponto-partida) e [PV, chave de integração e OAuth](https://developer.userede.com.br/files/erede/tutorial-oauth2.0.pdf).
