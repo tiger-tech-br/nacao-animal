@@ -75,3 +75,24 @@
     .tracking-storefront .tracking-stage.is-expanded { height: 100dvh; min-height: 0; margin: 0; border-radius: 0; }
     .tracking-storefront .tracking-stage.is-expanded .tracking-summary { bottom: max(10px, env(safe-area-inset-bottom)); }
 }
+
+/* Área de conteúdo: centralizada no desktop, com margens seguras no celular. */
+.tracking-storefront .tracking-public-main {
+    width: min(1120px, calc(100% - 48px));
+    margin: 32px auto 60px;
+}
+@media (max-width: 700px) {
+    .tracking-storefront .tracking-public-main {
+        width: calc(100% - 24px);
+        margin: 16px auto 36px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .tracking-storefront .tracking-login,
+    .tracking-storefront .tracking-map-actions button {
+        transition: none;
+    }
+    .tracking-storefront .tracking-live i {
+        animation: none;
+    }
+}

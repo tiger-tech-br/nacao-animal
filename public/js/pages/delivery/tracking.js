@@ -7,7 +7,7 @@
     const distance = document.getElementById("trackingDistance"), duration = document.getElementById("trackingDuration"), arrival = document.getElementById("trackingArrival");
     const expand = document.getElementById("expandTrackingMap"), expandLabel = document.getElementById("expandTrackingLabel");
     const endpoint = admin ? "/api/vendas" : "/api/public/pedidos";
-    if (admin) document.body?.classList.add("tracking-admin");
+    document.body?.classList.add(admin ? "tracking-admin" : "tracking-storefront");
     login.href = admin ? "/admin/index.html" : `/login?next=${encodeURIComponent(location.pathname + location.search)}`;
     if (admin) {
         document.title = "Nação Animal | Acompanhar entrega";
