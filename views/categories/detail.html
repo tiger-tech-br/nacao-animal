@@ -1,153 +1,46 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Produtos da Nação Animal organizados por tipo de pet.">
-    <title>Nação Animal | Categoria</title>
+    <meta name="description" content="Encontre rações, petiscos, acessórios e higiene para cada pet na Nação Animal.">
+    <meta name="theme-color" content="#ffda61">
+    <title>Nação Animal | Categorias</title>
     <link rel="icon" href="/images/logo/nacao-animal-logo-transparent.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="/css/layout/public-header.css?v=20260811-1">
-    <link rel="stylesheet" href="/css/pages/public-category.css?v=20261003-1">
+    <link rel="stylesheet" href="/css/pages/public-category.css?v=20261020-1">
     <link rel="stylesheet" href="/css/layout/cart-sidebar.css?v=20261001">
-<link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
-    <link rel="stylesheet" href="/css/layout/copyright.css">
+    <link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
+    <link rel="stylesheet" href="/css/layout/storefront-theme.css?v=20261020-1">
 </head>
-<body>
-    <header class="header public-header">
-        <div class="container">
-            <a class="logo" href="/#hero" aria-label="Ir para a página inicial">
-                <img
-                    src="/images/logo/nacao-animal-logo-transparent.png"
-                    alt="Logo da Nação Animal"
-                    width="60"
-                    height="60">
-                <span class="logo-text">Nação Animal</span>
-            </a>
-
-            <form class="search-form" data-public-header-search role="search" aria-label="Pesquisar produtos" autocomplete="off">
-                <label class="sr-only" for="publicHeaderSearch">Pesquisar produtos</label>
-                <input
-                    class="form-control"
-                    type="search"
-                    id="publicHeaderSearch"
-                    name="search"
-                    placeholder="Buscar produtos"
-                    maxlength="100"
-                    aria-label="Pesquisar produtos">
-                <button class="search-button" type="submit" aria-label="Pesquisar"></button>
-            </form>
-
-            <nav class="menu" id="menu" aria-label="Menu principal">
-                <ul class="menu-list">
-                    <li class="menu-item">
-                        <a href="/#hero" class="menu-link">Início</a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="/#categories" class="menu-link active">Categorias</a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="/#products" class="menu-link">Produtos</a>
-                    </li>
-                    <li class="menu-item">
-
-                    </li>
-                    <li class="menu-item">
-                        <a href="/#localizacao" class="menu-link">Contato</a>
-                    </li>
-                    <li class="menu-item menu-login-item">
-                        <a href="/login" class="menu-link menu-login-link">Entrar</a>
-                    </li>
-                    <li class="menu-item menu-actions-item">
-                        <a href="/#products" class="menu-action-link" aria-label="Abrir favoritos">
-                            <i class="fa-regular fa-heart"></i>
-                            Favoritos
-                        </a>
-                        <a href="/sacola" class="menu-action-link" aria-label="Abrir sacola">
-                            <i class="fa-solid fa-bag-shopping"></i>
-                            Sacola
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-
-            <div class="header-actions">
-                <button
-                    class="icon-badge customer-notification-button"
-                    type="button"
-                    aria-label="Notificações"
-                    aria-expanded="false"
-                    hidden>
-                    <i class="fa-regular fa-bell"></i>
-                </button>
-
-                <a href="/#products" class="icon-badge" aria-label="Favoritos">
-                    <i class="fa-regular fa-heart"></i>
-                </a>
-
-                <a href="/sacola" class="icon-badge" aria-label="Sacola">
-                    <i class="fa-solid fa-bag-shopping"></i>
-                </a>
-
-                <a href="/login" class="btn btn-primary">Entrar</a>
-
-                <button
-                    class="menu-toggle"
-                    type="button"
-                    aria-label="Abrir menu"
-                    aria-controls="menu"
-                    aria-expanded="false">
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <main class="category-page">
+<body class="storefront-page category-storefront">
+    <a class="skip-link" href="#category-main">Pular para o conteúdo</a>
+    <main class="category-page storefront-container" id="category-main">
+        <nav class="storefront-breadcrumbs" aria-label="Caminho de navegação"><ol><li><a href="/">Início</a></li><li><a href="/#categories">Categorias</a></li><li><span id="categoryBreadcrumb" aria-current="page">Categoria</span></li></ol></nav>
         <section class="category-hero" aria-labelledby="categoryTitle">
-            <div class="category-copy">
-                <span class="eyebrow">Categoria</span>
-                <h1 id="categoryTitle">Carregando categoria...</h1>
-                <p id="categoryDescription">Buscando produtos selecionados para o seu pet.</p>
-            </div>
-            <img id="categoryImage" src="/images/categories/dogs.jpg" alt="Categoria de produtos" loading="eager">
+            <div class="category-copy"><span class="eyebrow">Um carinho para cada pet</span><h1 id="categoryTitle">Carregando categoria…</h1><p id="categoryDescription">Buscando os produtos da nossa loja para o seu melhor amigo.</p><a class="category-hero-link" href="#category-products">Explorar produtos <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></div>
+            <div class="category-hero-media"><span class="category-paw" aria-hidden="true"><i class="fa-solid fa-paw"></i></span><img id="categoryImage" src="/images/categories/dogs.jpg" alt="Categoria de produtos" width="540" height="360" loading="eager" decoding="async"></div>
         </section>
-
-        <section class="category-products" aria-labelledby="productsTitle">
-            <div class="section-heading">
-                <span>Produtos selecionados</span>
-                <h2 id="productsTitle">Itens disponíveis</h2>
-            </div>
-            <form class="category-toolbar" id="categoryToolbar" role="search">
-                <div class="search-field">
-                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-                    <input
-                        class="form-control"
-                        id="categorySearch"
-                        type="search"
-                        placeholder="Buscar produto nesta categoria"
-                        autocomplete="off"
-                        aria-label="Buscar produto">
-                </div>
-                <div class="filter-field">
-                    <label for="categoryFilter">Categoria</label>
-                    <select class="form-control" id="categoryFilter" aria-label="Filtrar por categoria">
-                        <option value="caes">Cães</option>
-                        <option value="gatos">Gatos</option>
-                        <option value="aves">Aves</option>
-                        <option value="peixes">Peixes</option>
-                        <option value="roedores">Roedores</option>
-                        <option value="acessorios">Acessórios</option>
-                    </select>
-                </div>
+        <nav class="category-quick-links" aria-label="Escolha o seu pet">
+            <a href="/categorias/caes" data-category-link="caes">Cães</a><a href="/categorias/gatos" data-category-link="gatos">Gatos</a><a href="/categorias/aves" data-category-link="aves">Aves</a><a href="/categorias/peixes" data-category-link="peixes">Peixes</a><a href="/categorias/roedores" data-category-link="roedores">Roedores</a><a href="/categorias/acessorios" data-category-link="acessorios">Acessórios</a>
+        </nav>
+        <section class="category-products" id="category-products" aria-labelledby="productsTitle">
+            <div class="section-heading"><div><span class="eyebrow">Escolha com carinho</span><h2 id="productsTitle">Produtos da categoria</h2></div><p id="categoryResults" role="status" aria-live="polite">Carregando produtos…</p></div>
+            <form class="category-toolbar" id="categoryToolbar" role="search" aria-label="Filtrar produtos da categoria">
+                <div class="search-field"><label for="categorySearch">O que seu pet precisa?</label><div class="search-input"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input class="form-control" id="categorySearch" name="busca" type="search" placeholder="Buscar nesta categoria" maxlength="100" autocomplete="off"></div></div>
+                <div class="filter-field"><label for="categoryFilter">Seu pet</label><select class="form-control" id="categoryFilter" aria-label="Filtrar por categoria"><option value="caes">Cães</option><option value="gatos">Gatos</option><option value="aves">Aves</option><option value="peixes">Peixes</option><option value="roedores">Roedores</option><option value="acessorios">Acessórios</option></select></div>
+                <div class="filter-field"><label for="categorySort">Ordenar por</label><select class="form-control" id="categorySort"><option value="default">Seleção da loja</option><option value="price-asc">Menor preço</option><option value="price-desc">Maior preço</option><option value="name">Nome de A a Z</option></select></div>
             </form>
-            <div class="products-grid" id="categoryProducts"></div>
+            <div class="products-grid" id="categoryProducts" aria-busy="true"><div class="empty-card"><span class="empty-icon" aria-hidden="true"><i class="fa-solid fa-paw"></i></span><h3>Preparando a seleção</h3><p>Estamos buscando os produtos da categoria.</p></div></div>
+            <noscript><p class="empty-card">Ative o JavaScript para consultar os produtos e usar a sacola.</p></noscript>
         </section>
+        <aside class="category-help" aria-label="Precisa de ajuda?"><span aria-hidden="true"><i class="fa-regular fa-heart"></i></span><div><h2>Ficou em dúvida na escolha?</h2><p>A equipe da Nação Animal está pronta para ajudar.</p></div><a href="/#localizacao">Fale com a gente <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></aside>
     </main>
-    <footer class="site-copyright"><p>© 2026 Nação Animal. Todos os direitos reservados.</p></footer>
-
-    <script src="/js/layout/public-header.js?v=20261012-1"></script>
-    <script src="/js/pages/categories/category-detail.js?v=20260928-1"></script>
-    <script src="/js/layout/cart-sidebar.js?v=20261001"></script>
-<script src="/js/layout/notifications.js?v=20261002"></script>
+    <footer class="storefront-footer"><div class="storefront-container"><div class="storefront-footer-top"><div><a class="storefront-footer-brand" href="/">Nação Animal</a><p>O melhor para o seu pet, sempre.</p></div><nav aria-label="Links do rodapé"><a href="/#products">Produtos</a><a href="/login">Minha conta</a><a href="/sacola">Minha sacola</a><a href="/#localizacao">Contato</a></nav></div><div class="storefront-footer-bottom"><p>© 2026 Nação Animal. Todos os direitos reservados.</p><div><a href="/politica-de-privacidade">Privacidade</a><a href="/termos-de-uso">Termos de uso</a></div></div></div></footer>
+    <script src="/js/layout/public-header.js?v=20261020-1" defer></script>
+    <script src="/js/pages/categories/category-detail.js?v=20261020-1" defer></script>
+    <script src="/js/layout/cart-sidebar.js?v=20261001" defer></script>
+    <script src="/js/layout/notifications.js?v=20261002" defer></script>
 </body>
 </html>

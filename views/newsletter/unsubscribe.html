@@ -12,14 +12,18 @@
     <link rel="stylesheet" href="/css/layout/cart-sidebar.css?v=20261001">
 <link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
     <link rel="stylesheet" href="/css/layout/copyright.css">
+    <link rel="stylesheet" href="/css/layout/storefront-theme.css?v=20261020-1">
+    <link rel="stylesheet" href="/css/pages/legal-storefront.css?v=20261020-1">
 </head>
-<body>
-    <main class="legal-page">
-        <article class="legal-card">
+<body class="storefront-page legal-storefront newsletter-storefront">
+    <a class="storefront-skip" href="#main-content">Pular para o conteúdo</a>
+    <nav class="storefront-container storefront-breadcrumbs" aria-label="Caminho da página"><ol><li><a href="/">Início</a></li><li aria-current="page">Newsletter</li></ol></nav>
+    <main class="legal-page storefront-container" id="main-content">
+        <article class="legal-card" aria-labelledby="unsubscribe-title">
             <header>
                 <span>Newsletter</span>
-                <h1>Cancelar inscrição</h1>
-                <p id="unsubscribeStatus">Processando sua solicitação...</p>
+                <h1 id="unsubscribe-title">Cancelar inscrição</h1>
+                <p id="unsubscribeStatus" role="status" aria-live="polite">Processando sua solicitação...</p>
             </header>
             <p>Você pode voltar para a loja quando quiser.</p>
             <p style="margin-top:18px">
@@ -27,8 +31,8 @@
             </p>
         </article>
     </main>
-    <footer class="site-copyright"><p>© 2026 Nação Animal. Todos os direitos reservados.</p></footer>
-    <script src="/js/layout/public-header.js?v=20261012-1"></script>
+    <footer class="storefront-footer"><div class="storefront-container"><div class="storefront-footer-top"><a class="storefront-footer-brand" href="/">Nação Animal</a><nav aria-label="Links do rodapé"><a href="/#products">Produtos</a><a href="/#localizacao">Contato</a></nav></div><div class="storefront-footer-bottom"><p>© 2026 Nação Animal. Todos os direitos reservados.</p><nav aria-label="Informações legais"><a href="/politica-de-privacidade">Privacidade</a><a href="/termos-de-uso">Termos de uso</a></nav></div></div></footer>
+    <script src="/js/layout/public-header.js?v=20261020-1"></script>
     <script src="/js/pages/newsletter/unsubscribe.js"></script>
     <script src="/js/layout/cart-sidebar.js?v=20261001"></script>
 <script src="/js/layout/notifications.js?v=20261002"></script>

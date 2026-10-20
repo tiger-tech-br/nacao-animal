@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Revise sua sacola da Nação Animal e finalize seu pedido.">
+    <meta name="theme-color" content="#ffda61">
     <title>Nação Animal | Sacola</title>
     <link rel="icon" href="/images/logo/nacao-animal-logo-transparent.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
@@ -13,25 +14,16 @@
     <link rel="stylesheet" href="/css/layout/cart-sidebar.css?v=20261001">
 <link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
     <link rel="stylesheet" href="/css/layout/copyright.css">
+    <link rel="stylesheet" href="/css/layout/storefront-theme.css?v=20261020-1">
+    <link rel="stylesheet" href="/css/pages/cart-storefront.css?v=20261020-1">
 </head>
-<body>
-    <header class="cart-topbar">
-        <a class="brand" href="/" aria-label="Voltar para a Nação Animal">
-            <img src="/images/logo/nacao-animal-logo-transparent.png" alt="Logo da Nação Animal">
-            <strong>Nação Animal</strong>
-        </a>
-        <nav aria-label="Navegação">
-            <a href="/#products">Produtos</a>
-            <a href="/meus-pedidos">Meus pedidos</a>
-            <a href="/login">Entrar</a>
-        </nav>
-    </header>
-
-    <main class="cart-page">
+<body class="storefront-page cart-storefront">
+    <main class="cart-page storefront-container">
+        <nav class="storefront-breadcrumbs cart-breadcrumbs" aria-label="Caminho de navegação"><ol><li><a href="/">Início</a></li><li><a href="/#products">Produtos</a></li><li aria-current="page">Minha sacola</li></ol></nav>
         <section class="cart-header" aria-labelledby="cartTitle">
             <span class="eyebrow">Sacola da Nação Animal</span>
-            <h1 id="cartTitle">Revise seu pedido</h1>
-            <p>Confira os produtos, ajuste quantidades e finalize usando seus dados salvos.</p>
+            <h1 id="cartTitle">Uma sacola cheia de carinho.</h1>
+            <p>Confira os produtos do seu pet e os detalhes da sua entrega.</p>
         </section>
 
         <section class="cart-sandbox-banner" id="cartSandboxBanner" aria-labelledby="cartSandboxTitle" hidden>
@@ -154,9 +146,9 @@
             </aside>
         </section>
     </main>
-    <footer class="site-copyright"><p>© 2026 Nação Animal. Todos os direitos reservados.</p></footer>
+    <footer class="storefront-footer"><div class="storefront-container"><div class="footer-inner"><a class="footer-brand" href="/">Nação Animal</a><nav class="footer-links" aria-label="Links do rodapé"><a href="/#products">Continuar comprando</a><a href="/meus-pedidos">Meus pedidos</a><a href="/politica-de-privacidade">Privacidade</a><a href="/termos-de-uso">Termos de uso</a></nav></div><p>© 2026 Nação Animal. O melhor para o seu pet, sempre!</p></div></footer>
 
-    <script src="/js/layout/public-header.js?v=20261012-1"></script>
+    <script src="/js/layout/public-header.js?v=20261020-2"></script>
     <script src="/js/pages/cart/rede-sandbox-cart.js?v=20261019-1"></script>
     <script src="/js/pages/cart/cart.js?v=20261019-sandbox"></script>
     <script src="/js/layout/cart-sidebar.js?v=20261001"></script>

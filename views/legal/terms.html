@@ -11,33 +11,39 @@
     <link rel="stylesheet" href="/css/layout/cart-sidebar.css?v=20261001">
 <link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
     <link rel="stylesheet" href="/css/layout/copyright.css">
+    <link rel="stylesheet" href="/css/layout/storefront-theme.css?v=20261020-1">
+    <link rel="stylesheet" href="/css/pages/legal-storefront.css?v=20261020-1">
 </head>
-<body>
-    <main class="legal-page">
+<body class="storefront-page legal-storefront">
+    <a class="storefront-skip" href="#main-content">Pular para o conteúdo</a>
+    <nav class="storefront-container storefront-breadcrumbs" aria-label="Caminho da página"><ol><li><a href="/">Início</a></li><li aria-current="page">Termos de Uso</li></ol></nav>
+    <main class="legal-page storefront-container" id="main-content">
         <a class="legal-back" href="/">Voltar para a loja</a>
-        <article class="legal-card">
+        <div class="legal-layout">
+        <aside class="legal-index"><nav aria-label="Sumário dos Termos de Uso"><h2>Neste documento</h2><ol><li><a href="#termos-uso">Uso da loja</a></li><li><a href="#termos-cadastro">Cadastro e senha</a></li><li><a href="#termos-pedidos">Pedidos e pagamento</a></li><li><a href="#termos-entrega">Entrega e disponibilidade</a></li><li><a href="#termos-precos">Preços, cupons e frete</a></li><li><a href="#termos-cancelamento">Cancelamento e devolução</a></li><li><a href="#termos-privacidade">Privacidade</a></li><li><a href="#termos-alteracoes">Alterações</a></li></ol></nav><a class="legal-related-link" href="/politica-de-privacidade">Consultar Política de Privacidade <span aria-hidden="true">→</span></a></aside>
+        <article class="legal-card" aria-labelledby="terms-title">
             <header>
                 <span>Nação Animal</span>
-                <h1>Termos de Uso</h1>
+                <h1 id="terms-title">Termos de Uso</h1>
                 <p>Última atualização: 19/10/2026</p>
             </header>
 
-            <section>
+            <section id="termos-uso">
                 <h2>1. Uso da loja</h2>
                 <p>Ao usar a Nação Animal, você concorda em fornecer informações verdadeiras para cadastro, entrega e pedidos.</p>
             </section>
 
-            <section>
+            <section id="termos-cadastro">
                 <h2>2. Cadastro e senha</h2>
                 <p>O cliente é responsável por manter sua senha em segurança. Caso perceba uso indevido da conta, deve comunicar a Nação Animal.</p>
             </section>
 
-            <section>
+            <section id="termos-pedidos">
                 <h2>3. Pedidos e pagamento</h2>
                 <p>As compras online serão disponibilizadas após a conclusão da integração de pagamentos. Quando habilitadas, a confirmação do pedido dependerá da aprovação do pagamento.</p>
             </section>
 
-            <section>
+            <section id="termos-entrega">
                 <h2>4. Entrega e disponibilidade</h2>
                 <p>O rastreamento depende da autorização de GPS e da conexão do entregador. Rotas são referências; o mapa pode mostrar a última posição recebida. O uso do mapa está sujeito aos <a href="https://maps.google.com/help/terms_maps/" target="_blank" rel="noopener noreferrer">Termos do Google Maps</a>.</p>
                 <p>Produtos, valores, estoque e prazos podem variar. A Nação Animal poderá entrar em contato caso haja indisponibilidade ou necessidade de ajuste no pedido.</p>
@@ -45,13 +51,13 @@
 
 
 
-            <section>
+            <section id="termos-precos">
                 <h2>5. Preços, cupons e frete</h2>
                 <p>O valor final é apresentado antes da confirmação da compra e inclui produtos, descontos válidos e frete calculado para o endereço informado. Cupons possuem regras de validade, compra mínima e limite de uso exibidas durante a aplicação.</p>
                 <p>Até 1 km de distância pelas ruas a entrega é gratuita. Acima disso, são cobrados R$ 3,00 por quilômetro adicional ou fração, conforme a cotação exibida na sacola.</p>
             </section>
 
-            <section>
+            <section id="termos-cancelamento">
                 <h2>6. Cancelamento, arrependimento e devolução</h2>
                 <p>Em <a href="/meus-pedidos">Meus pedidos</a>, o consumidor pode solicitar cancelamento, exercer o direito de arrependimento, pedir devolução ou registrar reclamação. O sistema confirma o recebimento imediatamente, gera um protocolo e mantém a resposta vinculada ao pedido.</p>
                 <p>Nas primeiras 24 horas após a compra, pedidos podem ser cancelados automaticamente antes de sair da loja. Depois da saída, dentro desse mesmo prazo, o cancelamento automático permanece disponível somente enquanto o GPS recente e preciso indicar que o entregador está a mais de 1 km do destino. Se o prazo ou essa condição terminar, o cliente ainda poderá registrar arrependimento, devolução ou reclamação para análise da loja.</p>
@@ -59,19 +65,20 @@
                 <p>Pedidos já entregues seguem o fluxo de devolução e análise. Produtos com vício ou defeito possuem as garantias previstas no Código de Defesa do Consumidor. A loja responderá às solicitações eletrônicas em até 5 dias. Também é possível entrar em contato: <a data-store-contact href="tel:+551144215284">(11) 4421-5284</a>.</p>
             </section>
 
-            <section>
+            <section id="termos-privacidade">
                 <h2>7. Privacidade</h2>
                 <p>O tratamento dos dados pessoais segue a Política de Privacidade da Nação Animal.</p>
             </section>
 
-            <section>
+            <section id="termos-alteracoes">
                 <h2>8. Alterações</h2>
                 <p>Estes termos podem ser atualizados para refletir melhorias no sistema, mudanças operacionais ou exigências legais.</p>
             </section>
         </article>
+        </div>
     </main>
-    <footer class="site-copyright"><p>© 2026 Nação Animal. Todos os direitos reservados.</p></footer>
-    <script src="/js/layout/public-header.js?v=20261012-1"></script>
+    <footer class="storefront-footer"><div class="storefront-container"><div class="storefront-footer-top"><a class="storefront-footer-brand" href="/">Nação Animal</a><nav aria-label="Links do rodapé"><a href="/#products">Produtos</a><a href="/conta">Minha conta</a><a href="/#localizacao">Contato</a></nav></div><div class="storefront-footer-bottom"><p>© 2026 Nação Animal. Todos os direitos reservados.</p><nav aria-label="Informações legais"><a href="/politica-de-privacidade">Privacidade</a><a href="/termos-de-uso" aria-current="page">Termos de uso</a></nav></div></div></footer>
+    <script src="/js/layout/public-header.js?v=20261020-1"></script>
     <script src="/js/layout/cart-sidebar.js?v=20261001"></script>
     <script src="/js/pages/legal/store-contact.js?v=20261019"></script>
 <script src="/js/layout/notifications.js?v=20261002"></script>

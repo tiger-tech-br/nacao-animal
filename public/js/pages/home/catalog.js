@@ -1,6 +1,7 @@
 ﻿"use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
+    updateHeaderCounters();
     loadPublicCatalog();
     loadStoreInfo();
     setupPublicSearch();
@@ -88,10 +89,13 @@ async function loadPublicCatalog() {
             return;
         }
 
-        grid.innerHTML = '<div class="public-empty">Nenhum produto ativo foi cadastrado ainda.</div>';
+        renderProducts([], { emptyMessage: "Nenhum produto ativo foi cadastrado ainda." });
     } catch {
         publicProducts = [];
         grid.innerHTML = '<div class="public-empty">Não foi possível carregar os produtos. Atualize a página em alguns instantes.</div>';
+        updateCatalogStatus(0, "Não foi possível carregar os produtos.");
+    } finally {
+        if (getHomeNavigation().favorites) openFavoritesPanel();
     }
 }
 
@@ -109,6 +113,9 @@ function setupPublicSearch() {
         return;
     }
 
+    const navigation = getHomeNavigation();
+    if (navigation.search !== null) input.value = navigation.search;
+
     form.addEventListener("submit", event => {
         event.preventDefault();
         applyPublicSearch(input.value, true);
@@ -120,7 +127,21 @@ function setupPublicSearch() {
 }
 
 function getSearchValue() {
-    return document.getElementById("search")?.value || "";
+    return document.getElementById("search")?.value ?? getHomeNavigation().search ?? "";
+}
+
+function getHomeNavigation() {
+    try {
+        const url = new URL(window.location.href);
+        const hashQuery = url.hash.includes("?") ? url.hash.slice(url.hash.indexOf("?") + 1) : "";
+        const legacy = new URL(`/?${hashQuery}`, url.origin).searchParams;
+        return {
+            search: url.searchParams.get("busca") ?? legacy.get("busca"),
+            favorites: (url.searchParams.get("favoritos") ?? legacy.get("favoritos")) === "1"
+        };
+    } catch {
+        return { search: null, favorites: false };
+    }
 }
 
 function setupNewsletterForm() {
@@ -174,7 +195,7 @@ function filterProducts(term) {
     const normalized = normalize(term);
 
     if (!normalized) {
-        renderProducts(publicProducts.slice(0, 6));
+        renderProducts(publicProducts);
         return;
     }
 
@@ -199,7 +220,7 @@ function applyPublicSearch(term, shouldScroll) {
     currentSearchTerm = term || "";
 
     if (!normalized) {
-        renderProducts(publicProducts.slice(0, 6));
+        renderProducts(publicProducts);
         filterStaticCards(".category-card", "");
         return;
     }
@@ -227,7 +248,9 @@ function renderProducts(products, options = {}) {
     }
 
     if (!products.length) {
-        grid.innerHTML = `<div class="public-empty">${options.emptyMessage || "Nenhum produto disponível no momento."}</div>`;
+        const message = options.emptyMessage || "Nenhum produto disponível no momento.";
+        grid.innerHTML = `<div class="public-empty">${escapeHtml(message)}</div>`;
+        updateCatalogStatus(0, message);
         return;
     }
 
@@ -241,22 +264,20 @@ function renderProducts(products, options = {}) {
         return `
             <article class="product-card" data-product-card data-id="${escapeHtml(id)}">
                 <a class="product-link" href="${escapeHtml(href)}" aria-label="Ver produto ${escapeHtml(product.nome)}">
-                    <img class="product-image" src="${escapeHtml(product.foto || "/images/products/petflow-prime-racao.jpg")}" alt="${escapeHtml(product.nome)}" loading="lazy" decoding="async">
+                    ${product.foto
+                        ? `<img class="product-image" src="${escapeHtml(product.foto)}" alt="${escapeHtml(product.nome)}" loading="lazy" decoding="async">`
+                        : '<span class="product-image product-image-placeholder">Imagem indisponível</span>'}
                 </a>
+                <button class="cart-action favorite ${favorite ? "is-active" : ""}" type="button" data-action="toggle-favorite" aria-label="${favorite ? "Remover" : "Salvar"} ${escapeHtml(product.nome)} ${favorite ? "dos" : "nos"} favoritos" aria-pressed="${favorite}">
+                    ${favoriteActionContent(favorite)}
+                </button>
                 <div class="product-content">
-                    <span class="product-category">${escapeHtml(product.categoria || "Nação Animal")}</span>
                     <h3 class="product-title"><a href="${escapeHtml(href)}">${escapeHtml(product.nome)}</a></h3>
-                    <p class="product-description">${escapeHtml(product.descricao || "Produto selecionado para cuidar melhor do seu pet.")}</p>
                     <div class="product-footer">
                         <strong class="product-price">${currency(product.preco)}</strong>
                         <div class="cart-actions" aria-label="Ações da sacola">
-                            <button class="cart-action add ${inCart ?"is-active" : ""}" type="button" data-action="toggle-cart" ${available <= 0 ? "disabled" : ""}>
-                                <i class="fa-solid ${available <= 0 ? "fa-ban" : inCart ?"fa-check" : "fa-plus"}"></i>
-                                <span>${available <= 0 ? "Esgotado" : inCart ?"Na sacola" : "Adicionar à sacola"}</span>
-                            </button>
-                            <button class="cart-action favorite ${favorite ?"is-active" : ""}" type="button" data-action="toggle-favorite">
-                                <i class="fa-${favorite ?"solid" : "regular"} fa-heart"></i>
-                                <span>${favorite ?"Favorito" : "Favoritar"}</span>
+                            <button class="cart-action add ${inCart ? "is-active" : ""}" type="button" data-action="toggle-cart" aria-label="${escapeHtml(cartActionLabel(product, inCart))}" aria-pressed="${inCart}" ${available <= 0 ? "disabled" : ""}>
+                                ${cartActionContent(product, inCart)}
                             </button>
                         </div>
                     </div>
@@ -265,11 +286,30 @@ function renderProducts(products, options = {}) {
         `;
     }).join("");
 
-    if (options.emptyMessage) {
-        grid.insertAdjacentHTML("afterbegin", `<div class="public-empty">${escapeHtml(options.emptyMessage)}</div>`);
-    }
-
+    updateCatalogStatus(products.length);
     bindProductActions();
+}
+
+function cartActionLabel(product, inCart) {
+    const name = product?.nome || "produto";
+    if (stockAvailable(product) <= 0) return `${name}: esgotado`;
+    return inCart ? `Remover ${name} da sacola` : `Adicionar ${name} à sacola`;
+}
+
+function cartActionContent(product, inCart) {
+    return `<svg class="icon" aria-hidden="true"><use href="#icon-cart"></use></svg><span class="sr-only">${escapeHtml(cartActionLabel(product, inCart))}</span>`;
+}
+
+function favoriteActionContent(favorite) {
+    return `<svg class="icon" viewBox="0 0 24 24" fill="${favorite ? "currentColor" : "none"}" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg><span class="sr-only">${favorite ? "Favorito" : "Favoritar"}</span>`;
+}
+
+function updateCatalogStatus(count, message) {
+    const status = document.getElementById("searchStatus");
+    if (!status) return;
+    status.textContent = message || (currentSearchTerm.trim()
+        ? `${count} ${count === 1 ? "produto encontrado" : "produtos encontrados"} para “${currentSearchTerm.trim()}”.`
+        : `${count} ${count === 1 ? "produto disponível" : "produtos disponíveis"}.`);
 }
 
 function bindProductActions() {
@@ -326,18 +366,16 @@ function syncProductButtons() {
             const unavailable = available <= 0;
             cartButton.disabled = unavailable;
             cartButton.classList.toggle("is-active", inCart);
-            cartButton.innerHTML = `
-                <i class="fa-solid ${unavailable ? "fa-ban" : inCart ? "fa-check" : "fa-plus"}"></i>
-                <span>${unavailable ? "Esgotado" : inCart ? "Na sacola" : "Adicionar à sacola"}</span>
-            `;
+            cartButton.setAttribute("aria-label", cartActionLabel(product, inCart));
+            cartButton.setAttribute("aria-pressed", String(inCart));
+            cartButton.innerHTML = cartActionContent(product, inCart);
         }
 
         if (favoriteButton) {
             favoriteButton.classList.toggle("is-active", favorite);
-            favoriteButton.innerHTML = `
-                <i class="fa-${favorite ? "solid" : "regular"} fa-heart"></i>
-                <span>${favorite ? "Favorito" : "Favoritar"}</span>
-            `;
+            favoriteButton.setAttribute("aria-pressed", String(favorite));
+            favoriteButton.setAttribute("aria-label", `${favorite ? "Remover" : "Salvar"} ${product?.nome || "produto"} ${favorite ? "dos" : "nos"} favoritos`);
+            favoriteButton.innerHTML = favoriteActionContent(favorite);
         }
     });
 }
@@ -365,7 +403,7 @@ function currentVisibleProducts() {
         });
     }
 
-    return publicProducts.slice(0, 6);
+    return publicProducts;
 }
 
 function toggleSet(set, value) {

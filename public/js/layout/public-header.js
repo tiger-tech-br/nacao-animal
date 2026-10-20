@@ -1,7 +1,7 @@
 "use strict";
 
 (function setupPetFlowPublicHeader() {
-    const HEADER_VERSION = "20260811-1";
+    const HEADER_VERSION = "20261020-1";
     const DEFAULT_LOGO = "/images/logo/nacao-animal-logo-transparent.png";
     let storeInfoRequest;
 
@@ -17,6 +17,7 @@
         ensureHeader();
         setupHeaderSearch();
         setupMenuToggle();
+        setupStorefrontControls();
         updateHeaderState();
         return loadStoreBrand();
     }
@@ -75,6 +76,7 @@
     }
 
     function headerTemplate() {
+        if (document.body?.classList?.contains("storefront-page")) return storefrontHeaderTemplate();
         return `
             <header class="header public-header" data-public-header="${HEADER_VERSION}">
                 <div class="container">
@@ -162,6 +164,53 @@
         `;
     }
 
+    function storefrontIcon(name) {
+        const paths = {
+            search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
+            cart: '<path d="M2 3h3l2.5 12h11L21 7H6"/><path d="M8 18h10"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/>',
+            menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+            close: '<path d="m6 6 12 12M18 6 6 18"/>'
+        };
+        return `<svg class="storefront-icon" viewBox="0 0 24 24" aria-hidden="true">${paths[name] || ""}</svg>`;
+    }
+
+    function storefrontHeaderTemplate() {
+        return `
+            <header class="header public-header storefront-header" data-public-header="${HEADER_VERSION}">
+                <div class="container">
+                    <a class="logo" href="/#hero" aria-label="Ir para a página inicial">
+                        <img src="${DEFAULT_LOGO}" alt="Logo da Nação Animal" width="175" height="175">
+                        <span class="logo-text sr-only">Nação Animal</span>
+                    </a>
+                    <nav class="menu" id="menu" aria-label="Menu principal">
+                        <ul class="menu-list">
+                            <li class="menu-item"><a href="/#hero" class="menu-link" data-public-nav="home">Início</a></li>
+                            <li class="menu-item"><a href="/#sobre" class="menu-link">Sobre</a></li>
+                            <li class="menu-item"><a href="/#products" class="menu-link" data-public-nav="products">Produtos</a></li>
+                            <li class="menu-item"><a href="/#benefits" class="menu-link">Serviços</a></li>
+                            <li class="menu-item"><a href="/#localizacao" class="menu-link" data-public-nav="contact">Contato</a></li>
+                            <li class="menu-item menu-login-item"><a href="/login" class="menu-link menu-login-link">Entrar</a></li>
+                            <li class="menu-item menu-actions-item"><a href="/?favoritos=1#products" class="menu-action-link" aria-label="Abrir favoritos">Meus favoritos</a></li>
+                        </ul>
+                    </nav>
+                    <div class="header-actions">
+                        <button class="icon-badge customer-notification-button" type="button" aria-label="Notificações" aria-expanded="false" hidden><i class="fa-regular fa-bell" aria-hidden="true"></i></button>
+                        <a class="storefront-account" href="/login">Entrar</a>
+                        <button class="storefront-search-toggle" type="button" aria-label="Abrir pesquisa" aria-controls="storefront-search" aria-expanded="false">${storefrontIcon("search")}</button>
+                        <a class="icon-badge storefront-cart" href="/sacola" aria-label="Sacola" data-count="0">${storefrontIcon("cart")}</a>
+                        <button class="menu-toggle" type="button" aria-label="Abrir menu" aria-controls="menu" aria-expanded="false">${storefrontIcon("menu")}</button>
+                    </div>
+                    <form class="search-form" id="storefront-search" data-public-header-search role="search" aria-label="Pesquisar produtos" autocomplete="off" hidden>
+                        <label class="sr-only" for="publicHeaderSearch">Pesquisar produtos</label>
+                        <input class="form-control" type="search" id="publicHeaderSearch" name="search" placeholder="O que seu pet precisa?" maxlength="100" aria-label="Pesquisar produtos">
+                        <button class="search-button" type="submit" aria-label="Pesquisar">${storefrontIcon("search")}</button>
+                        <button class="storefront-search-close" type="button" aria-label="Fechar pesquisa">${storefrontIcon("close")}</button>
+                    </form>
+                </div>
+            </header>
+        `;
+    }
+
     function setupHeaderSearch() {
         const form = document.querySelector("[data-public-header-search]");
         const input = document.getElementById("publicHeaderSearch");
@@ -180,12 +229,65 @@
             if (categorySearch) {
                 categorySearch.value = query;
                 categorySearch.dispatchEvent(new Event("input", { bubbles: true }));
+                document.getElementById("categoryProducts")?.scrollIntoView({ behavior: "smooth", block: "start" });
                 return;
             }
 
             window.location.href = query
-                ? `/#products?busca=${encodeURIComponent(query)}`
+                ? document.querySelector(".storefront-header")
+                    ? `/?busca=${encodeURIComponent(query)}#products`
+                    : `/#products?busca=${encodeURIComponent(query)}`
                 : "/#products";
+        });
+    }
+
+    function setupStorefrontControls() {
+        const header = document.querySelector(".storefront-header");
+        if (!header || header.dataset.storefrontBound === "true") return;
+        header.dataset.storefrontBound = "true";
+        const form = header.querySelector(".search-form");
+        const input = document.getElementById("publicHeaderSearch");
+        const toggle = header.querySelector(".storefront-search-toggle");
+        const close = header.querySelector(".storefront-search-close");
+        const menu = document.getElementById("menu");
+        const menuToggle = header.querySelector(".menu-toggle");
+
+        function closeSearch(returnFocus = false) {
+            form.hidden = true;
+            toggle.setAttribute("aria-expanded", "false");
+            if (returnFocus) toggle.focus();
+        }
+
+        function closeMenu(returnFocus = false) {
+            menu?.classList.remove("active");
+            menuToggle?.setAttribute("aria-expanded", "false");
+            menuToggle?.setAttribute("aria-label", "Abrir menu");
+            if (returnFocus) menuToggle?.focus();
+        }
+
+        toggle.addEventListener("click", () => {
+            if (!form.hidden) return closeSearch(true);
+            closeMenu();
+            form.hidden = false;
+            toggle.setAttribute("aria-expanded", "true");
+            input?.focus();
+        });
+        close.addEventListener("click", () => closeSearch(true));
+        form.addEventListener("submit", () => closeSearch());
+        menuToggle?.addEventListener("click", () => closeSearch());
+        menu?.querySelectorAll("a").forEach(link => link.addEventListener("click", () => closeMenu()));
+        header.addEventListener("keydown", event => {
+            if (event.key !== "Escape") return;
+            if (!form.hidden) {
+                event.preventDefault();
+                closeSearch(true);
+            } else if (menu?.classList.contains("active")) {
+                event.preventDefault();
+                closeMenu(true);
+            }
+        });
+        window.addEventListener("resize", () => {
+            if (window.innerWidth > 820) closeMenu();
         });
     }
 
@@ -221,7 +323,7 @@
         });
 
         if (path.startsWith("/categorias")) {
-            setActive("categories");
+            setActive(document.querySelector(".storefront-header") ? "products" : "categories");
         } else if (path.startsWith("/produtos")) {
             setActive("products");
         } else if (path === "/") {

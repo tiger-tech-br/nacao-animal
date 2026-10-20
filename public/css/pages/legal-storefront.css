@@ -1,0 +1,69 @@
+/* Conteúdo legal preservado; a apresentação acompanha a identidade da loja. */
+.legal-storefront .legal-page { padding: 0 0 18px; }
+.legal-storefront .legal-back { display: inline-flex; align-items: center; min-height: 42px; margin-bottom: 24px; padding: 10px 18px; border: 1px solid #eedcc0; border-radius: 999px; color: #b64b00; background: #fff; font-size: 12px; font-weight: 600; transition: color .2s, background-color .2s, transform .2s; }
+.legal-storefront .legal-back:hover { color: #9c3900; background: #fff0d0; transform: translateY(-1px); }
+.legal-storefront .legal-layout { display: grid; grid-template-columns: 225px minmax(0, 1fr); align-items: start; gap: 28px; }
+.legal-storefront .legal-index { position: sticky; top: 26px; display: grid; gap: 17px; min-width: 0; }
+.legal-storefront .legal-index nav { padding: 24px 21px; border: 1px solid #f0e1c5; border-radius: 20px; background: #fff7e6; }
+.legal-storefront .legal-index h2 { margin: 0 0 19px; color: #a36a23; font-size: 11px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; }
+.legal-storefront .legal-index ol { display: grid; gap: 10px; padding: 0 0 0 19px; margin: 0; color: #b99d6c; font-size: 11px; list-style: decimal; }
+.legal-storefront .legal-index li { padding-left: 3px; }
+.legal-storefront .legal-index a { display: inline-block; color: #78664b; font-size: 12px; line-height: 1.65; transition: color .18s; }
+.legal-storefront .legal-index a:hover { color: #d65000; text-decoration: underline; text-underline-offset: 4px; }
+.legal-storefront .legal-index .legal-related-link { display: flex; align-items: start; justify-content: space-between; gap: 12px; padding: 0 12px; color: #b64b00; font-size: 11px; font-weight: 500; }
+.legal-storefront .legal-related-link span { font-size: 16px; line-height: 1.2; }
+.legal-storefront .legal-card { min-width: 0; padding: 28px 30px 35px; border: 1px solid #f0e4d1; border-radius: 24px; background: #fff; box-shadow: 0 5px 20px #845b1b05; }
+.legal-storefront .legal-card > header { margin: 0 0 31px; padding: 29px 30px; border: 1px solid #ffe3a6; border-radius: 18px; background: linear-gradient(110deg, #fff2bf, #ffe6a0); }
+.legal-storefront .legal-card > header > span { display: inline-block; margin-bottom: 5px; color: #b1761e; font-size: 10px; font-weight: 700; letter-spacing: 1.6px; }
+.legal-storefront .legal-card h1 { max-width: 680px; margin: 8px 0 14px; color: var(--store-ink); font-size: clamp(29px, 3.1vw, 41px); font-weight: 800; line-height: 1.1; letter-spacing: -1.3px; overflow-wrap: anywhere; }
+.legal-storefront .legal-card > header p { color: #a07e42; font-size: 11px; font-weight: 400; line-height: 1.7; }
+.legal-storefront .legal-card section { scroll-margin-top: 28px; }
+.legal-storefront .legal-card section + section { margin-top: 26px; padding-top: 26px; border-top: 1px solid #f5ecde; }
+.legal-storefront .legal-card section h2 { margin: 0 0 13px; color: var(--store-ink); font-size: 18px; font-weight: 700; line-height: 1.4; letter-spacing: -.35px; }
+.legal-storefront .legal-card p { margin: 0; color: #736b5f; font-size: 13px; line-height: 1.95; overflow-wrap: anywhere; }
+.legal-storefront .legal-card section p + p { margin-top: 15px; }
+.legal-storefront .legal-card p a:not(.legal-back) { color: #ba4900; font-weight: 500; text-decoration: underline; text-decoration-color: #f6d4b8; text-underline-offset: 3px; }
+.legal-storefront .legal-card p a:not(.legal-back):hover { color: #963700; text-decoration-color: currentColor; }
+
+.storefront-page.newsletter-storefront .legal-page { width: min(750px, calc(100% - 48px)); padding-top: 15px; padding-bottom: 70px; }
+.newsletter-storefront .legal-card { padding: 30px; }
+.newsletter-storefront .legal-card > header { padding: 35px 30px; margin-bottom: 25px; }
+.newsletter-storefront .legal-card h1 { font-size: clamp(28px, 3.3vw, 39px); }
+.newsletter-storefront .legal-card #unsubscribeStatus { margin-top: 18px; color: #715c35; font-size: 13px; line-height: 1.85; }
+.newsletter-storefront .legal-card > p { padding-inline: 8px; }
+.newsletter-storefront .legal-card .legal-back { margin-bottom: 0; border-color: #ff6b17; color: #fff; background: linear-gradient(100deg, #ff6900, #ff4e00); }
+.newsletter-storefront .legal-card .legal-back:hover { color: #fff; background: #df4a00; }
+
+@media (max-width: 1000px) {
+    .legal-storefront .legal-layout { grid-template-columns: 200px minmax(0, 1fr); gap: 20px; }
+    .legal-storefront .legal-index nav { padding: 21px 18px; }
+    .legal-storefront .legal-card { padding: 24px; }
+    .legal-storefront .legal-card > header { padding: 25px; }
+}
+@media (max-width: 820px) {
+    .legal-storefront .legal-layout { grid-template-columns: 1fr; gap: 24px; }
+    .legal-storefront .legal-index { position: static; gap: 12px; }
+    .legal-storefront .legal-index ol { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 25px; }
+    .legal-storefront .legal-index h2 { margin-bottom: 15px; }
+    .legal-storefront .legal-index .legal-related-link { justify-content: start; padding-inline: 4px; }
+    .legal-storefront .legal-card > header { margin-bottom: 27px; }
+    .legal-storefront .legal-card h1 { font-size: 35px; }
+    .legal-storefront .legal-card p { font-size: 13px; }
+}
+@media (max-width: 540px) {
+    .legal-storefront .legal-back { margin-bottom: 20px; }
+    .legal-storefront .legal-index nav { padding: 22px 19px; border-radius: 18px; }
+    .legal-storefront .legal-index ol { gap: 10px 22px; }
+    .legal-storefront .legal-index a { font-size: 11px; }
+    .legal-storefront .legal-card { padding: 19px; border-radius: 21px; }
+    .legal-storefront .legal-card > header { padding: 25px 21px; border-radius: 16px; }
+    .legal-storefront .legal-card h1 { font-size: 30px; letter-spacing: -1px; }
+    .legal-storefront .legal-card section h2 { font-size: 17px; }
+    .legal-storefront .legal-card p { font-size: 12px; line-height: 1.95; }
+    .legal-storefront .legal-card section + section { margin-top: 23px; padding-top: 23px; }
+    .storefront-page.newsletter-storefront .legal-page { width: calc(100% - 36px); padding-top: 2px; padding-bottom: 40px; }
+    .newsletter-storefront .legal-card { padding: 20px; }
+    .newsletter-storefront .legal-card > header { padding: 27px 21px; }
+    .newsletter-storefront .legal-card h1 { font-size: 28px; }
+    .newsletter-storefront .legal-card .legal-back { justify-content: center; width: 100%; padding-inline: 10px; }
+}

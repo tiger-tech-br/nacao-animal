@@ -11,64 +11,71 @@
     <link rel="stylesheet" href="/css/layout/cart-sidebar.css?v=20261001">
 <link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
     <link rel="stylesheet" href="/css/layout/copyright.css">
+    <link rel="stylesheet" href="/css/layout/storefront-theme.css?v=20261020-1">
+    <link rel="stylesheet" href="/css/pages/legal-storefront.css?v=20261020-1">
 </head>
-<body>
-    <main class="legal-page">
+<body class="storefront-page legal-storefront">
+    <a class="storefront-skip" href="#main-content">Pular para o conteúdo</a>
+    <nav class="storefront-container storefront-breadcrumbs" aria-label="Caminho da página"><ol><li><a href="/">Início</a></li><li aria-current="page">Política de Privacidade</li></ol></nav>
+    <main class="legal-page storefront-container" id="main-content">
         <a class="legal-back" href="/">Voltar para a loja</a>
-        <article class="legal-card">
+        <div class="legal-layout">
+        <aside class="legal-index"><nav aria-label="Sumário da Política de Privacidade"><h2>Neste documento</h2><ol><li><a href="#privacidade-dados">Dados coletados</a></li><li><a href="#privacidade-finalidade">Finalidade do uso</a></li><li><a href="#privacidade-pagamentos">Pagamentos</a></li><li><a href="#privacidade-compartilhamento">Compartilhamento</a></li><li><a href="#privacidade-direitos">Direitos do titular</a></li><li><a href="#privacidade-seguranca">Segurança</a></li><li><a href="#privacidade-retencao">Retenção</a></li><li><a href="#privacidade-contato">Contato</a></li></ol></nav><a class="legal-related-link" href="/termos-de-uso">Consultar Termos de Uso <span aria-hidden="true">→</span></a></aside>
+        <article class="legal-card" aria-labelledby="privacy-title">
             <header>
                 <span>LGPD</span>
-                <h1>Política de Privacidade</h1>
+                <h1 id="privacy-title">Política de Privacidade</h1>
                 <p>Versão 2026-10-19 · última atualização: 19/10/2026</p>
             </header>
 
-            <section>
+            <section id="privacidade-dados">
                 <h2>1. Dados coletados</h2>
                 <p>A Nação Animal atua como controladora dos dados. São tratados nome, CPF, data de nascimento, e-mail, celular, endereço, credenciais protegidas, pedidos, pagamentos, preferências de newsletter, registros de acesso, solicitações de atendimento e solicitações de privacidade.</p>
             </section>
 
-            <section>
+            <section id="privacidade-finalidade">
                 <h2>2. Finalidade do uso</h2>
                 <p>Usamos os dados para identificar clientes, processar pedidos, organizar entregas, enviar comunicações transacionais, recuperar senha e enviar novidades quando houver consentimento.</p>
                 <p>O tratamento relacionado à conta, compra, pagamento e entrega é necessário para executar o contrato e cumprir obrigações legais. Comunicações promocionais dependem de consentimento e podem ser canceladas a qualquer momento.</p>
             </section>
 
-            <section>
+            <section id="privacidade-pagamentos">
                 <h2>3. Pagamentos</h2>
                 <p>Os pagamentos online aguardam a conclusão da integração e homologação. As informações sobre o provedor e o tratamento dos dados de pagamento serão atualizadas antes da liberação das cobranças.</p>
             </section>
 
-            <section>
+            <section id="privacidade-compartilhamento">
                 <h2>4. Compartilhamento</h2>
                 <p>Dados estritamente necessários podem ser compartilhados com Railway (hospedagem e banco), Cloudinary (imagens), Resend (e-mail), Google Maps (mapas e rotas) e o entregador responsável pelo pedido. Esses fornecedores atuam somente para viabilizar as funções contratadas.</p>
                 <p>Ao calcular o frete, o endereço de entrega é enviado ao Google Maps para obter a distância pelas ruas. A chave de integração permanece no servidor.</p>
                 <p>O entregador pode autorizar o compartilhamento de sua posição GPS durante a entrega. Apenas o cliente autenticado do pedido pode consultar essa posição pela loja. A posição recente também é usada para verificar se o cancelamento automático ainda está disponível pela distância até o destino. Guardamos a última posição, sem histórico de percurso; ela é removida ao parar o compartilhamento ou quando o pedido deixa a etapa de entrega. O link expira após 12 horas. O mapa utiliza Google Maps: a posição atual e o endereço do pedido são enviados ao Google para mostrar a rota. Consulte também a <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Política de Privacidade do Google</a>.</p>
             </section>
 
-            <section>
+            <section id="privacidade-direitos">
                 <h2>5. Direitos do titular</h2>
                 <p>Você pode solicitar confirmação e acesso, correção, informação sobre compartilhamento, portabilidade, anonimização, bloqueio, eliminação quando aplicável e revogação de consentimento. A exclusão pode preservar registros necessários ao cumprimento de obrigações legais, regulatórias, fiscais ou ao exercício regular de direitos.</p>
                 <p>Na área <a href="/conta">Minha conta</a>, você pode corrigir o cadastro, baixar uma cópia estruturada dos seus dados, registrar uma solicitação com protocolo, revogar a newsletter ou pedir a exclusão da conta. Solicitações mais amplas serão analisadas em até 15 dias.</p>
             </section>
 
-            <section>
+            <section id="privacidade-seguranca">
                 <h2>6. Segurança</h2>
                 <p>Adotamos senhas com hash, controle de acesso por função, separação entre clientes e administradores, limitação de requisições, validação de webhooks, registros de auditoria, backups e conexões HTTPS em produção. Nenhuma medida elimina todos os riscos; incidentes relevantes são tratados segundo a legislação aplicável.</p>
             </section>
 
-            <section>
+            <section id="privacidade-retencao">
                 <h2>7. Retenção</h2>
                 <p>Dados de conta ficam armazenados enquanto ela estiver ativa. Pedidos e registros financeiros são conservados pelo período necessário às obrigações legais, fiscais, prevenção a fraude e exercício de direitos. GPS mantém apenas a posição mais recente durante a entrega e é apagado quando o rastreamento termina. Dados sem finalidade são eliminados ou anonimizados.</p>
             </section>
 
-            <section>
+            <section id="privacidade-contato">
                 <h2>8. Contato</h2>
                 <p>Use a área <a href="/conta">Minha conta</a> para gerar um protocolo, ou entre em contato: <a data-store-contact href="tel:+551144215284">(11) 4421-5284</a>.</p>
             </section>
         </article>
+        </div>
     </main>
-    <footer class="site-copyright"><p>© 2026 Nação Animal. Todos os direitos reservados.</p></footer>
-    <script src="/js/layout/public-header.js?v=20261012-1"></script>
+    <footer class="storefront-footer"><div class="storefront-container"><div class="storefront-footer-top"><a class="storefront-footer-brand" href="/">Nação Animal</a><nav aria-label="Links do rodapé"><a href="/#products">Produtos</a><a href="/conta">Minha conta</a><a href="/#localizacao">Contato</a></nav></div><div class="storefront-footer-bottom"><p>© 2026 Nação Animal. Todos os direitos reservados.</p><nav aria-label="Informações legais"><a href="/politica-de-privacidade" aria-current="page">Privacidade</a><a href="/termos-de-uso">Termos de uso</a></nav></div></div></footer>
+    <script src="/js/layout/public-header.js?v=20261020-1"></script>
     <script src="/js/layout/cart-sidebar.js?v=20261001"></script>
     <script src="/js/pages/legal/store-contact.js?v=20261019"></script>
 <script src="/js/layout/notifications.js?v=20261002"></script>

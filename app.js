@@ -173,7 +173,7 @@ app.get("/entregador", (request, response) => {
     response.sendFile(path.join(__dirname, "views", "delivery", "driver.html"));
 });
 app.get("/acompanhar-entrega", (request, response) => {
-    response.sendFile(path.join(__dirname, "views", "delivery", "tracking.html"));
+    response.sendFile(path.join(__dirname, "views", "delivery", "public-tracking.html"));
 });
 app.get("/admin/acompanhar-entrega", (request, response) => {
     response.set("Cache-Control", "no-store");

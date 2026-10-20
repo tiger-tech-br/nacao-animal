@@ -1,70 +1,61 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Confira os detalhes do produto na Nação Animal.">
+    <meta name="description" content="Confira os detalhes e a disponibilidade dos produtos da Nação Animal. Qualidade e carinho para o seu pet.">
+    <meta name="theme-color" content="#ffda61">
     <title>Nação Animal | Produto</title>
     <link rel="icon" href="/images/logo/nacao-animal-logo-transparent.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="/css/layout/public-header.css?v=20260811-1">
-    <link rel="stylesheet" href="/css/pages/public-product.css">
+    <link rel="stylesheet" href="/css/pages/public-product.css?v=20261020-1">
     <link rel="stylesheet" href="/css/layout/cart-sidebar.css?v=20261001">
-<link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
-    <link rel="stylesheet" href="/css/layout/copyright.css">
+    <link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
+    <link rel="stylesheet" href="/css/layout/storefront-theme.css?v=20261020-1">
 </head>
-<body>
-    <header class="product-topbar">
-        <a class="brand" href="/" aria-label="Voltar para a Nação Animal">
-            <img src="/images/logo/nacao-animal-logo-transparent.png" alt="Logo da Nação Animal">
-            <strong>Nação Animal</strong>
-        </a>
-        <nav aria-label="Navegação">
-            <a href="/#products">Produtos</a>
-            <a href="/#categories">Categorias</a>
-            <a href="/sacola">Sacola</a>
-            <a href="/login">Entrar</a>
+<body class="storefront-page product-storefront">
+    <a class="storefront-skip" href="#main-content">Pular para o conteúdo</a>
+    <main class="product-page storefront-container" id="main-content">
+        <nav class="storefront-breadcrumbs" aria-label="Caminho da página">
+            <ol><li><a href="/">Início</a></li><li><a href="/#products">Produtos</a></li><li><span id="productBreadcrumb" aria-current="page">Produto</span></li></ol>
         </nav>
-    </header>
-
-    <main class="product-page">
-        <section class="product-detail" aria-labelledby="productTitle">
+        <section class="product-detail" id="productDetail" aria-labelledby="productTitle" aria-busy="true">
             <div class="product-media">
-                <img id="productImage" src="/images/products/petflow-prime-racao.jpg" alt="Imagem do produto" loading="eager">
-            </div>
-
-            <article class="product-info">
-                <span class="eyebrow" id="productCategory">Nação Animal</span>
-                <h1 id="productTitle">Carregando produto...</h1>
-                <p id="productDescription">Buscando informações do produto.</p>
-
-                <dl class="product-specs">
-                    <div>
-                        <dt>SKU</dt>
-                        <dd id="productSku">-</dd>
-                    </div>
-                    <div>
-                        <dt>Disponibilidade</dt>
-                        <dd id="productAvailability">Consultando estoque</dd>
-                    </div>
-                </dl>
-
-                <div class="purchase-panel">
-                    <strong id="productPrice">R$ 0,00</strong>
-                    <button class="btn btn-primary" id="addProductToCart" type="button">
-                        <i class="fa-solid fa-plus"></i>
-                        Adicionar à sacola
-                    </button>
-                    <p id="productStatus" class="status"></p>
+                <img id="productImage" alt="" width="640" height="640" loading="eager" decoding="async" hidden>
+                <div class="product-image-placeholder" id="productImagePlaceholder">
+                    <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M11 14h26l3 27H8l3-27Z"/><path d="M17 15V11a7 7 0 0 1 14 0v4"/><path d="m18 26 4 4 8-8"/></svg>
+                    <span id="productImageMessage">Buscando o produto…</span>
                 </div>
+            </div>
+            <article class="product-info">
+                <span class="product-eyebrow" id="productCategory">Um carinho para o seu pet</span>
+                <h1 id="productTitle">Carregando produto…</h1>
+                <p class="product-description" id="productDescription">Estamos consultando as informações e a disponibilidade deste produto.</p>
+                <dl class="product-specs" id="productSpecs" hidden>
+                    <div><dt>Código do produto</dt><dd id="productSku">—</dd></div>
+                    <div><dt>Disponibilidade</dt><dd id="productAvailability">Consultando estoque</dd></div>
+                </dl>
+                <div class="purchase-panel" id="purchasePanel" hidden>
+                    <span class="product-price-label">Preço do produto</span>
+                    <strong id="productPrice"></strong>
+                    <button class="product-purchase-button" id="addProductToCart" type="button" disabled><i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>Adicionar à sacola</button>
+                    <a class="product-cart-link" href="/sacola">Ver minha sacola <span aria-hidden="true">→</span></a>
+                </div>
+                <p id="productStatus" class="product-status" role="status" aria-live="polite"></p>
+                <a class="product-back-link" id="productFallback" href="/#products" hidden>Ver os produtos disponíveis <span aria-hidden="true">→</span></a>
             </article>
         </section>
+        <section class="product-benefits" aria-label="Carinho em cada compra">
+            <article><span class="product-benefit-icon"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i></span><div><h2>Entrega para o seu pet</h2><p>Consulte as opções na sacola.</p></div></article>
+            <article><span class="product-benefit-icon"><i class="fa-solid fa-paw" aria-hidden="true"></i></span><div><h2>Produtos selecionados</h2><p>Um cuidado para cada fase.</p></div></article>
+            <article><span class="product-benefit-icon"><i class="fa-solid fa-heart" aria-hidden="true"></i></span><div><h2>Atendimento com carinho</h2><p><a href="/#localizacao">Conheça a nossa loja.</a></p></div></article>
+        </section>
     </main>
-    <footer class="site-copyright"><p>© 2026 Nação Animal. Todos os direitos reservados.</p></footer>
-
-    <script src="/js/layout/public-header.js?v=20261012-1"></script>
-    <script src="/js/pages/products/product-detail.js?v=20260928-1"></script>
-    <script src="/js/layout/cart-sidebar.js?v=20261001"></script>
-<script src="/js/layout/notifications.js?v=20261002"></script>
+    <footer class="storefront-footer"><div class="storefront-container"><a class="storefront-footer-brand" href="/">Nação Animal</a><p>O melhor para o seu pet, sempre!</p><nav aria-label="Links do rodapé"><a href="/#categories">Categorias</a><a href="/sacola">Minha sacola</a><a href="/login">Minha conta</a><a href="/politica-de-privacidade">Privacidade</a><a href="/termos-de-uso">Termos de uso</a></nav><p>© 2026 Nação Animal. Todos os direitos reservados.</p></div></footer>
+    <script src="/js/layout/public-header.js?v=20261020-1" defer></script>
+    <script src="/js/pages/products/product-detail.js?v=20261020-1" defer></script>
+    <script src="/js/layout/cart-sidebar.js?v=20261001" defer></script>
+    <script src="/js/layout/notifications.js?v=20261002" defer></script>
 </body>
 </html>

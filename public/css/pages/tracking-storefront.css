@@ -1,0 +1,77 @@
+/* Acompanhamento público. O painel administrativo mantém delivery.css e tracking.html. */
+.tracking-storefront { padding: 0; background: #fffcf6; }
+.tracking-storefront .storefront-header button { margin: 0; }
+.tracking-storefront .tracking-public-main { margin-bottom: 60px; }
+.tracking-storefront .tracking-card { max-width: none; margin: 0; padding: 0; overflow: hidden; border: 1px solid #eee3d0; border-radius: 28px; background: #fff; box-shadow: 0 8px 32px #80602208; }
+.tracking-storefront .tracking-header { padding: 29px 34px 27px; background: linear-gradient(105deg, #fff8e8, #fff0c4); }
+.tracking-storefront .tracking-topline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 28px; }
+.tracking-storefront #trackingBack { display: inline-flex; align-items: center; gap: 9px; color: #a75d1f; font-size: 12px; font-weight: 500; }
+.tracking-storefront #trackingBack:hover { color: #ce4d00; text-decoration: underline; }
+.tracking-storefront .tracking-eyebrow { display: block; margin-bottom: 11px; color: #c05a06; font-size: 11px; font-weight: 600; line-height: 1.5; letter-spacing: 1.4px; text-transform: uppercase; }
+.tracking-storefront .tracking-header h1 { margin: 0 0 15px; color: var(--store-ink, #101b21); font-size: clamp(28px, 3.1vw, 42px); font-weight: 800; line-height: 1.15; letter-spacing: -1.25px; }
+.tracking-storefront .tracking-header p { max-width: 760px; margin: 0; color: #8a7758; font-size: 13px; line-height: 1.85; }
+.tracking-storefront .tracking-live { float: none; gap: 9px; margin: 0; padding: 6px 12px; border: 1px solid #d2eadc; border-radius: 999px; color: #28754a; background: #f0faf2; font-size: 11px; font-weight: 500; }
+.tracking-storefront .tracking-live i { width: 7px; height: 7px; }
+.tracking-storefront #trackingStatus { margin: 23px 30px; padding: 16px 19px; border: 1px solid #f3e4c6; border-radius: 15px; color: #836841; background: #fffbf1; font-size: 13px; line-height: 1.8; }
+.tracking-storefront .tracking-login { display: inline-flex; align-items: center; gap: 16px; min-height: 47px; margin: 0 30px 25px; padding: 12px 24px; border-radius: 999px; color: #fff; background: #ff5a00; font-size: 13px; font-weight: 600; transition: background-color .2s, transform .2s; }
+.tracking-storefront .tracking-login:hover { color: #fff; background: #dc4a00; transform: translateY(-1px); }
+.tracking-storefront .tracking-stage { position: relative; height: min(70vh, 650px); min-height: 520px; margin: 0 20px; overflow: hidden; border: 1px solid #eee5d4; border-radius: 22px; background: #f0eade; }
+.tracking-storefront .tracking-stage #deliveryMap { height: 100%; width: 100%; border: 0; border-radius: 0; }
+.tracking-storefront .tracking-map-actions { top: 16px; right: 16px; gap: 9px; }
+.tracking-storefront .tracking-map-actions button { display: inline-flex; justify-content: center; align-items: center; gap: 7px; width: auto; min-height: 43px; margin: 0; padding: 10px 16px; border: 1px solid #f2e3c4; border-radius: 999px; color: #a54609; background: #fffdf8f5; box-shadow: 0 4px 15px #74552312; font-size: 13px; font-weight: 600; backdrop-filter: blur(6px); transition: background-color .2s, color .2s; }
+.tracking-storefront .tracking-map-actions button:hover { color: #fff; border-color: #ff5a00; background: #ff5a00; }
+.tracking-storefront .tracking-summary { left: 18px; right: 18px; bottom: 18px; max-width: 730px; padding: 18px 23px 15px; border: 1px solid #f6eddc; border-radius: 22px; background: #fffffff5; box-shadow: 0 8px 28px #73531a20; }
+.tracking-storefront .tracking-summary-heading { gap: 12px; }
+.tracking-storefront .tracking-summary-heading small { color: #9b8868; font-size: 10px; font-weight: 500; letter-spacing: .65px; }
+.tracking-storefront .tracking-summary-heading strong { margin-top: 3px; color: #302b23; font-size: 18px; font-weight: 600; line-height: 1.4; }
+.tracking-storefront .tracking-package { width: 43px; height: 43px; border-radius: 14px; color: #f58314; background: #fff0cf; font-size: 19px; }
+.tracking-storefront .tracking-metrics { gap: 14px; margin-top: 16px; padding-top: 14px; border-color: #eee3d0; }
+.tracking-storefront .tracking-metrics strong { margin-bottom: 4px; color: #de5900; font-size: 21px; font-weight: 700; }
+.tracking-storefront .tracking-metrics span { color: #97866b; font-size: 10px; line-height: 1.5; }
+.tracking-storefront .tracking-summary #trackingUpdated { margin: 12px 0 0; color: #a39177; font-size: 10px; line-height: 1.6; }
+.tracking-storefront .tracking-address { gap: 13px; margin: 24px 30px 12px; padding: 18px 20px; border: 1px solid #f0e5d2; border-radius: 18px; background: #fffcf5; }
+.tracking-storefront .tracking-address > span { width: 40px; height: 40px; flex-basis: 40px; color: #ff7100; background: #fff0cf; font-size: 18px; }
+.tracking-storefront .tracking-address div { min-width: 0; }
+.tracking-storefront .tracking-address small { color: #9b8868; font-size: 10px; font-weight: 600; letter-spacing: .7px; }
+.tracking-storefront .tracking-address p { color: #6c604c; font-size: 13px; line-height: 1.8; overflow-wrap: anywhere; }
+.tracking-storefront .tracking-address #originAddress { margin-top: 6px; color: #998a70; font-size: 11px; font-weight: 400; }
+.tracking-storefront .tracking-card #mapStatus { margin: 8px 30px 15px; color: #9a835d; font-size: 11px; line-height: 1.8; }
+.tracking-storefront .tracking-card #mapStatus:empty { display: none; }
+.tracking-storefront .tracking-note { display: flex; align-items: flex-start; gap: 9px; margin: 13px 30px 26px; color: #c4ad84; }
+.tracking-storefront .tracking-note i { margin-top: 4px; font-size: 12px; }
+.tracking-storefront .tracking-note small { color: #a59171; font-size: 11px; line-height: 1.8; }
+.tracking-storefront .tracking-stage.is-expanded { position: fixed; z-index: 10000; inset: 0; width: 100vw; height: 100dvh; min-height: 0; margin: 0; border: 0; border-radius: 0; }
+.tracking-storefront .tracking-stage.is-expanded #deliveryMap { height: 100dvh; }
+.tracking-storefront .tracking-stage.is-expanded .tracking-map-actions { top: max(16px, env(safe-area-inset-top)); }
+.tracking-storefront .tracking-stage.is-expanded .tracking-summary { bottom: max(18px, env(safe-area-inset-bottom)); }
+.tracking-storefront .cart-sidebar iframe { border-radius: 0; }
+@media (max-width: 700px) {
+    .tracking-storefront .tracking-public-main { margin-bottom: 40px; }
+    .tracking-storefront .tracking-card { min-height: 0; border: 1px solid #eee3d0; border-radius: 22px; }
+    .tracking-storefront .tracking-header { padding: 22px; }
+    .tracking-storefront .tracking-topline { gap: 12px; margin-bottom: 23px; }
+    .tracking-storefront .tracking-header h1 { font-size: 29px; letter-spacing: -.8px; }
+    .tracking-storefront .tracking-header p { font-size: 12px; line-height: 1.8; }
+    .tracking-storefront .tracking-live { font-size: 10px; }
+    .tracking-storefront #trackingStatus { margin: 18px; padding: 14px; font-size: 12px; }
+    .tracking-storefront .tracking-login { margin: 0 18px 22px; padding: 12px 20px; font-size: 12px; }
+    .tracking-storefront .tracking-stage { height: 70dvh; min-height: 530px; margin: 0 10px; border-radius: 17px; }
+    .tracking-storefront .tracking-map-actions { top: 12px; right: 12px; }
+    .tracking-storefront .tracking-map-actions button { width: 43px; height: 43px; min-height: 43px; padding: 0; border-radius: 50%; font-size: 19px; }
+    .tracking-storefront .tracking-map-actions button span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+    .tracking-storefront .tracking-summary { left: 10px; right: 10px; bottom: 10px; padding: 15px; border-radius: 17px; }
+    .tracking-storefront .tracking-summary-heading strong { font-size: 15px; }
+    .tracking-storefront .tracking-package { width: 37px; height: 37px; font-size: 17px; }
+    .tracking-storefront .tracking-metrics { gap: 8px; margin-top: 13px; padding-top: 12px; }
+    .tracking-storefront .tracking-metrics strong { font-size: 17px; }
+    .tracking-storefront .tracking-metrics span { font-size: 9px; }
+    .tracking-storefront .tracking-summary #trackingUpdated { font-size: 9px; }
+    .tracking-storefront .tracking-address { margin: 20px 18px 12px; padding: 15px; }
+    .tracking-storefront .tracking-address > span { width: 33px; height: 33px; flex-basis: 33px; font-size: 16px; }
+    .tracking-storefront .tracking-address p { font-size: 12px; }
+    .tracking-storefront .tracking-card #mapStatus { margin-inline: 18px; font-size: 10px; }
+    .tracking-storefront .tracking-note { margin: 10px 18px 23px; }
+    .tracking-storefront .tracking-note small { font-size: 10px; }
+    .tracking-storefront .tracking-stage.is-expanded { height: 100dvh; min-height: 0; margin: 0; border-radius: 0; }
+    .tracking-storefront .tracking-stage.is-expanded .tracking-summary { bottom: max(10px, env(safe-area-inset-bottom)); }
+}

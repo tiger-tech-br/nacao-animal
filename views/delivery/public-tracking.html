@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="theme-color" content="#ffda61">
+    <meta name="description" content="Acompanhe a entrega do seu pedido da Nação Animal.">
+    <title>Nação Animal | Acompanhar entrega</title>
+    <link rel="icon" href="/images/logo/nacao-animal-logo-transparent.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/layout/public-header.css?v=20260811-1">
+    <link rel="stylesheet" href="/css/pages/delivery.css">
+    <link rel="stylesheet" href="/css/layout/cart-sidebar.css?v=20261001">
+    <link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
+    <link rel="stylesheet" href="/css/layout/storefront-theme.css?v=20261020-1">
+    <link rel="stylesheet" href="/css/pages/tracking-storefront.css?v=20261020-1">
+</head>
+<body class="storefront-page tracking-page tracking-storefront">
+    <a class="storefront-skip" href="#main-content">Pular para o conteúdo</a>
+    <main class="tracking-public-main storefront-container" id="main-content">
+        <nav class="storefront-breadcrumbs" aria-label="Caminho da página"><ol><li><a href="/">Início</a></li><li><a href="/meus-pedidos">Meus pedidos</a></li><li aria-current="page">Acompanhar entrega</li></ol></nav>
+        <div class="delivery-card tracking-card">
+            <header class="tracking-header">
+                <div class="tracking-topline"><a id="trackingBack" href="/meus-pedidos"><span aria-hidden="true">←</span> Meus pedidos</a><span id="trackingLive" class="tracking-live" hidden><i aria-hidden="true"></i>Acompanhamento ao vivo</span></div>
+                <span class="tracking-eyebrow">Carinho a caminho</span>
+                <h1 id="trackingTitle">Seu pedido, mais pertinho.</h1>
+                <p id="trackingDescription">Acompanhe a van do entregador, a linha azul da rota e o destino no mapa. Atualizamos a posição a cada 5 segundos enquanto esta página estiver visível.</p>
+            </header>
+            <p id="trackingStatus" class="tracking-status" role="status" aria-live="polite">Carregando entrega…</p>
+            <a id="trackingLogin" class="tracking-login" href="/login" hidden>Entrar para rastrear pedido <span aria-hidden="true">→</span></a>
+            <section id="trackingStage" class="tracking-stage" aria-label="Mapa e resumo da entrega" hidden>
+                <div id="deliveryMap" aria-label="Mapa com a van do entregador, a rota azul e o destino da entrega" hidden></div>
+                <div class="tracking-map-actions" aria-label="Controles do mapa"><button id="centerTrackingMap" type="button" title="Centralizar van e destino">⌾ <span>Centralizar</span></button><button id="expandTrackingMap" type="button" aria-pressed="false" title="Expandir mapa">⛶ <span id="expandTrackingLabel">Expandir</span></button></div>
+                <section class="tracking-summary" aria-label="Resumo da entrega">
+                    <div class="tracking-summary-heading"><span class="tracking-package" aria-hidden="true"><i class="fa-solid fa-box-open"></i></span><div><small>Status da entrega</small><strong id="trackingHeadline">Entregador a caminho</strong></div></div>
+                    <div class="tracking-metrics"><div><strong id="trackingDistance">—</strong><span>Distância estimada</span></div><div><strong id="trackingDuration">—</strong><span>Tempo estimado</span></div><div><strong id="trackingArrival">—</strong><span>Previsão de chegada</span></div></div>
+                    <p id="trackingUpdated"></p>
+                </section>
+            </section>
+            <section class="tracking-address" aria-label="Endereço da entrega"><span aria-hidden="true"><i class="fa-solid fa-location-dot"></i></span><div><small>Destino da entrega</small><p id="destinationAddress"></p><p id="originAddress"></p></div></section>
+            <p id="mapStatus" role="status" aria-live="polite"></p>
+            <p class="tracking-note"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><small>A localização depende da precisão do GPS e da conexão do entregador.</small></p>
+        </div>
+    </main>
+    <footer class="storefront-footer"><div class="storefront-container"><div class="storefront-footer-top"><a class="storefront-footer-brand" href="/">Nação Animal</a><p>O melhor para o seu pet, sempre!</p><nav aria-label="Links do rodapé"><a href="/meus-pedidos">Meus pedidos</a><a href="/#localizacao">Contato</a><a href="/politica-de-privacidade">Privacidade</a><a href="/termos-de-uso">Termos de uso</a></nav></div><div class="storefront-footer-bottom"><span>© 2026 Nação Animal. Todos os direitos reservados.</span><span>Desenvolvido por Tiger Tech.</span></div></div></footer>
+    <script src="/js/layout/public-header.js?v=20261020-1" defer></script>
+    <script src="/js/pages/delivery/map.js" defer></script>
+    <script src="/js/pages/delivery/tracking.js" defer></script>
+    <script src="/js/layout/cart-sidebar.js?v=20261001" defer></script>
+    <script src="/js/layout/notifications.js?v=20261002" defer></script>
+</body>
+</html>
