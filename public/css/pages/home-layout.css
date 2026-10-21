@@ -170,13 +170,13 @@
 .home-page .footer { padding: 60px 0 24px; color: #786c59; background: #fffcf6; }
 .home-page .footer :is(h2, h3, a) { color: #463d31; }
 .home-page .footer .footer-logo { margin-bottom: 14px; color: #e95600; font-size: 25px; font-weight: 800; }
-.home-page .footer h3 { margin-bottom: 18px; font-size: 14px; }
-.home-page .footer p, .home-page .footer li { color: #786c59; font-size: 12px; line-height: 1.9; }
+.home-page .footer h3 { margin-bottom: 18px; font-size: 16px; }
+.home-page .footer p, .home-page .footer li { color: #786c59; font-size: 14px; line-height: 1.9; }
 .home-page .footer ul { display: grid; gap: 8px; }
 .home-page .footer a:hover { color: #e95600; }
 .home-page .footer-bottom { display: flex; justify-content: space-between; gap: 20px; margin-top: 35px; border-color: #eee4d1; }
-.home-page .footer-bottom p { margin: 0; }
-.home-page .footer-bottom div { display: flex; flex-wrap: wrap; gap: 20px; font-size: 11px; }
+.home-page .footer-bottom p { margin: 0; font-size: 13px; }
+.home-page .footer-bottom div { display: flex; flex-wrap: wrap; gap: 20px; font-size: 13px; }
 
 @media (min-width: 1550px) {
     .home-page .hero-content { padding-top: 235px; }
