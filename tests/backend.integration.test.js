@@ -3,6 +3,25 @@ const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const crypto = require("node:crypto");
+const { applyMigration } = require("../scripts/migrate");
+
+async function migrateTestSchema(pool) {
+    const client = await pool.connect();
+    try {
+        await client.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
+            nome VARCHAR(255) PRIMARY KEY,
+            checksum VARCHAR(64) NOT NULL,
+            aplicada_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )`);
+        const results = [];
+        for (const file of fs.readdirSync("database/sql").filter(f => f.endsWith(".sql")).sort()) {
+            results.push(await applyMigration(client, file, fs.readFileSync(`database/sql/${file}`, "utf8"), () => {}));
+        }
+        return results;
+    } finally {
+        client.release();
+    }
+}
 
 test("cadastro, confirmação, compra, webhook e estoque em PostgreSQL isolado", { skip: process.env.RUN_DB_TESTS !== "1" }, async () => {
     require("dotenv").config({ quiet: true });
@@ -19,9 +38,7 @@ test("cadastro, confirmação, compra, webhook e estoque em PostgreSQL isolado",
     try {
         await admin.query(`CREATE SCHEMA "${schema}"`);
         pool = new Pool({ ...options, options: `-c search_path=${schema}` });
-        for (const file of fs.readdirSync("database/sql").filter(f => f.endsWith(".sql")).sort()) {
-            await pool.query(fs.readFileSync(`database/sql/${file}`, "utf8"));
-        }
+        await migrateTestSchema(pool);
         process.env.JWT_SECRET = "isolated-integration-test-secret";
         process.env.JWT_EXPIRES_IN = "1h";
         process.env.PAGSEGURO_TOKEN = "isolated-test-token";
@@ -335,10 +352,9 @@ test("cadastro, confirmação, compra, webhook e estoque em PostgreSQL isolado",
         assert.equal((await pool.query("SELECT status FROM vendas WHERE id=$1",[order])).rows[0].status,"ENTREGUE");
         assert.equal(Number((await pool.query("SELECT quantidade FROM estoque WHERE produto_id=$1",[product])).rows[0].quantidade),8);
         assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM financeiro WHERE referencia_id=$1",[order])).rows[0].n,1);
-        // O migrador atual reaplica os SQL: o frete deve sobreviver a um segundo deploy.
-        for (const file of fs.readdirSync("database/sql").filter(f => f.endsWith(".sql")).sort()) {
-            await pool.query(fs.readFileSync(`database/sql/${file}`, "utf8"));
-        }
+        // Segundo deploy usa o histórico real e preserva migrações já aplicadas.
+        const repeatedMigrations = await migrateTestSchema(pool);
+        assert.ok(repeatedMigrations.every(result => !result.applied), "Segundo deploy ignora SQLs já registrados");
         assert.equal(Number((await pool.query("SELECT valor_final FROM vendas WHERE id=$1", [order])).rows[0].valor_final), 28.5);
         assert.equal((await pool.query("SELECT COUNT(*)::int n FROM notificacoes")).rows[0].n, noticeCount + 1, "Segundo deploy não duplica avisos; somente Entregue acrescenta um");
         const pagbank = require("../services/pagseguroService");

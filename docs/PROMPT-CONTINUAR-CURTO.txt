@@ -1,4 +1,6 @@
 Continue o site Nação Animal do estado atual, sem refazer o visual aprovado. Preferência atual: se o limite de uso estiver próximo, encerrar alterações, manter o servidor funcionando e salvar continuidade.
+
+Última correção: leia docs/CORRECAO-CI-2026-10-21.md. Usuário relatou deploy e pediu verificar GitHub. CI master/ef35cfd falhou somente em backend.integration.test.js ao repetir SQLs antigos sem histórico, rejeitando BOAS_VINDAS na constraint114. Correção LOCAL somente nesse teste usa applyMigration real com histórico/checksums e cliente dedicado no schema isolado; migrações de produção intactas. RUN_DB_TESTS=1 npm test:212/212; links38; audit0. Ainda NÃO houve commit/push nem nova execução remota. Pages publicou arquivos estáticos, mas não executa Node/PostgreSQL; plataforma da loja completa ainda não foi confirmada. Não afirmar que GitHub ficou verde sem nova execução com a correção.
 Pasta: C:\Users\andre\Desktop\gemini-cursos\front-end\tiger-tech\projetos\nacao-animal.
 Node/Express, HTML/CSS/JS e PostgreSQL local. Leia docs/CONTINUAR-RECONSTRUCAO-05.md e, para histórico visual, docs/CONTINUAR-RECONSTRUCAO-04.md. Site: http://localhost:4600/. Preserve o servidor já aberto; não iniciar duplicatas. O usuário retomou o trabalho, substituindo a antiga instrução de parar.
 
