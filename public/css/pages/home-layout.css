@@ -94,6 +94,8 @@
 .home-page .section-header h2 { position: relative; display: inline-block; margin: 0; padding-bottom: 17px; font-size: clamp(24px, 2.45vw, 34px); font-weight: 800; line-height: 1.2; letter-spacing: -1.1px; }
 .home-page .section-header h2::after { content: ""; position: absolute; bottom: 0; left: 50%; width: 70px; height: 3px; border-radius: 8px; background: var(--home-orange); transform: translateX(-50%); }
 .home-page .section-header p { margin: 14px 0 0; color: #6d6b64; font-size: 15px; }
+.home-page .home-products .section-header { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.home-page .home-products .section-header .text-link { margin-top: 0; max-width: 100%; }
 .home-page .featured-carousel { position: relative; margin-inline: 25px; }
 .home-page .products-grid { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 60px) / 4); grid-template-columns: none; gap: 20px; overflow-x: auto; overflow-y: hidden; padding: 4px 0 14px; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-inline: contain; }
 .home-page .products-grid::-webkit-scrollbar { display: none; }
