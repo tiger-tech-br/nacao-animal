@@ -1,0 +1,23 @@
+Continue o site Nação Animal (Node/Express, HTML/CSS/JS, PostgreSQL local).
+Pasta: C:\Users\andre\Desktop\gemini-cursos\front-end\tiger-tech\projetos\nacao-animal.
+Leia docs/CONTINUAR-RECONSTRUCAO-04.md se tiver acesso. Servidor: npm run dev; http://localhost:4600/. Preserve processos abertos.
+
+Visual aprovado: quarto layout amarelo/laranja em public/images/reference/layout-home.png, cachorro/gato em public/images/hero/nacao-animal-dog-cat.png e logo existente. Preserve a inicial. Sem Blog; hover laranja/sublinhado, sem caixa branca. Avatar + Entrar | Cadastrar no menu é link único /login, com abas Entrar/Criar cadastro. Sessão altera só span[data-customer-label], preservando SVG. Não recolocar Entrar no rodapé da home nem o parágrafo “Uma conta para acompanhar...” na lateral do login.
+
+Novas páginas prontas: /sobre, /contato, /ajuda, /categorias. Arquivos views/institutional/, views/categories/index.html; CSS institucional/category-directory.css. Contato usa dados reais da API /api/public/loja. Seis fotos novas de categorias: public/images/categories/{dogs,cats,birds,fish,rodents,accessories}-v2.jpg (1200x800, otimizadas); PNGs originais preservados. Home e detalhes usam as novas fotos.
+
+Carrossel de avisos na home entre benefícios e produtos, id home-promotions: banners passam SOZINHOS a cada 7 segundos, sem botão de pausa, com setas opcionais e indicadores. Hover/foco nos controles não travam; só foco dentro do slide ou aba oculta suspendem temporariamente. Movimento reduzido tira a transição, mas mantém autoplay. CSS/JS home-promo-carousel.*. O slide Dog Walker usa o mesmo banner original da página do serviço, sem crop. Avisos de catálogo, futuros cupons/newsletter e Dog Walker; não há cupom/desconto fictício ativo. Vitrine de produtos continua manual.
+
+/servicos/dog-walker-pet-sitter usa banner original inteiro images/services/dog-walker-pet-sitter.png. Thiago Turquetti, (11) 91571-2903, Sacadura Cabral — Santo André. Só Conversar no WhatsApp; botão Fale com o Thiago do topo removido.
+
+Usuário AUTORIZOU produtos aleatórios baratos. Seis itens [TESTE] já no banco LOCAL, R$ 6/R$ 10, cinco unidades cada, SKUs NA-TESTE-*: saquinhos cães, varinha gatos, poleiro aves, enfeite aquário, mordedor hamster, bolinha pets. Sem marcas inventadas. As seis imagens solicitadas depois já foram geradas por IA e vinculadas aos produtos; descrições identificam que são ilustrativas. scripts/seed-test-products.js: prévia padrão, --apply idempotente preserva preço/estoque sem duplicar/repor; já executado. Guia docs/CATALOGO-TESTES.md. Não semear novamente sem necessidade.
+
+Pagamentos DESATIVADOS, provider pending, ambiente sandbox. Compras com cobrança real dependem da integração/configuração/validação do provedor. Nenhuma compra/cobrança foi executada. Preserve sessão, forms, estoque, favoritos, frete, cupons, checkout e textos legais. Não restaurar módulos clínicos, não testar com pagamentos/e-mails/cadastros reais. Sem commit/push/deploy sem pedido; não expor .env.
+
+97 testes passaram; links de 37 páginas e quatro rotas novas conferidos. QA visual pendente por bloqueio de URL/protocolo; não contorne. Próximo: revisar responsividade, fotos e autoplay quando houver acesso legítimo. Tema storefront-theme.css v20261020-4; home-layout.css v20261020-5; public-header.js v20261020-3; category-detail.js v20261020-2. Preserve git status/diff e trabalho existente.
+
+Se não tiver acesso à pasta, peça só os arquivos necessários e forneça alterações para aplicação manual. Não finja acessar localhost ou editar o computador. Continue do estado atual sem refazer o aprovado.
+
+Último ajuste: sidebar mostra Meu carrinho e Seu carrinho está vazio, mantendo /sacola/checkout. cart-sidebar.js e cart.js v20261020-1; catalog.js v20261020-3; CSS/JS do carrossel v20261020-2. Após esses ajustes, 29 testes pertinentes e links das 37 páginas passaram. Não recolocar botão de pausa nem travar autoplay por hover/foco nos controles.
+
+Ponto de parada: concluímos as imagens de TODOS os seis produtos. JPEGs900x900 em public/images/products/test-{dog-waste-bags,cat-wand,bird-perch,aquarium-ornament,rodent-chew,pet-ball}.jpg; PNGs1254x1254 preservados. URLs no campo foto já gravadas no banco, mantendo preços/estoques/status. Guia e prompts: docs/IMAGENS-PRODUTOS.md. Oito páginas e seis fotos HTTP200. O usuário encerrou aqui no Codex para continuar no chat gratuito. Site continua local; se parar, abrir terminal na pasta e executar npm run dev. Não refazer imagens nem cadastrar novamente os produtos. Aguarde o próximo pedido do usuário.

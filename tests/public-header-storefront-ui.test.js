@@ -77,8 +77,10 @@ test("cabeçalho escolhe o novo menu sem Blog apenas para páginas migradas e ev
     const migrated = page();
     await migrated.init();
     assert.match(migrated.markup(), /class="header public-header storefront-header"/);
-    assert.match(migrated.markup(), /href="\/#sobre"/);
-    assert.match(migrated.markup(), /href="\/#benefits"/);
+    assert.match(migrated.markup(), /href="\/sobre"/);
+    assert.match(migrated.markup(), /href="\/contato"/);
+    assert.match(migrated.markup(), /href="\/servicos\/dog-walker-pet-sitter" class="menu-link" data-public-nav="services"/);
+    assert.match(migrated.markup(), /data-customer-label>Entrar \| Cadastrar<\/span>/);
     assert.doesNotMatch(migrated.markup(), />Blog<|href="[^\"]*blog/);
     assert.match(migrated.markup(), /href="\/\?favoritos=1#products"/);
     await migrated.init();

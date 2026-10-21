@@ -1,7 +1,7 @@
 "use strict";
 
 (function setupPetFlowPublicHeader() {
-    const HEADER_VERSION = "20261020-1";
+    const HEADER_VERSION = "20261020-3";
     const DEFAULT_LOGO = "/images/logo/nacao-animal-logo-transparent.png";
     let storeInfoRequest;
 
@@ -169,7 +169,8 @@
             search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
             cart: '<path d="M2 3h3l2.5 12h11L21 7H6"/><path d="M8 18h10"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/>',
             menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
-            close: '<path d="m6 6 12 12M18 6 6 18"/>'
+            close: '<path d="m6 6 12 12M18 6 6 18"/>',
+            user: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="9" r="3"/><path d="M5 19a7 7 0 0 1 14 0"/>'
         };
         return `<svg class="storefront-icon" viewBox="0 0 24 24" aria-hidden="true">${paths[name] || ""}</svg>`;
     }
@@ -185,17 +186,16 @@
                     <nav class="menu" id="menu" aria-label="Menu principal">
                         <ul class="menu-list">
                             <li class="menu-item"><a href="/#hero" class="menu-link" data-public-nav="home">Início</a></li>
-                            <li class="menu-item"><a href="/#sobre" class="menu-link">Sobre</a></li>
+                            <li class="menu-item"><a href="/sobre" class="menu-link" data-public-nav="about">Sobre</a></li>
                             <li class="menu-item"><a href="/#products" class="menu-link" data-public-nav="products">Produtos</a></li>
-                            <li class="menu-item"><a href="/#benefits" class="menu-link">Serviços</a></li>
-                            <li class="menu-item"><a href="/#localizacao" class="menu-link" data-public-nav="contact">Contato</a></li>
-                            <li class="menu-item menu-login-item"><a href="/login" class="menu-link menu-login-link">Entrar</a></li>
+                            <li class="menu-item"><a href="/servicos/dog-walker-pet-sitter" class="menu-link" data-public-nav="services">Serviços</a></li>
+                            <li class="menu-item"><a href="/contato" class="menu-link" data-public-nav="contact">Contato</a></li>
+                            <li class="menu-item menu-login-item"><a href="/login" class="menu-link menu-login-link" aria-label="Entrar ou cadastrar">${storefrontIcon("user")}<span data-customer-label>Entrar | Cadastrar</span></a></li>
                             <li class="menu-item menu-actions-item"><a href="/?favoritos=1#products" class="menu-action-link" aria-label="Abrir favoritos">Meus favoritos</a></li>
                         </ul>
                     </nav>
                     <div class="header-actions">
                         <button class="icon-badge customer-notification-button" type="button" aria-label="Notificações" aria-expanded="false" hidden><i class="fa-regular fa-bell" aria-hidden="true"></i></button>
-                        <a class="storefront-account" href="/login">Entrar</a>
                         <button class="storefront-search-toggle" type="button" aria-label="Abrir pesquisa" aria-controls="storefront-search" aria-expanded="false">${storefrontIcon("search")}</button>
                         <a class="icon-badge storefront-cart" href="/sacola" aria-label="Sacola" data-count="0">${storefrontIcon("cart")}</a>
                         <button class="menu-toggle" type="button" aria-label="Abrir menu" aria-controls="menu" aria-expanded="false">${storefrontIcon("menu")}</button>
@@ -287,7 +287,7 @@
             }
         });
         window.addEventListener("resize", () => {
-            if (window.innerWidth > 820) closeMenu();
+            if (window.innerWidth > 992) closeMenu();
         });
     }
 
@@ -326,6 +326,12 @@
             setActive(document.querySelector(".storefront-header") ? "products" : "categories");
         } else if (path.startsWith("/produtos")) {
             setActive("products");
+        } else if (path === "/servicos/dog-walker-pet-sitter") {
+            setActive("services");
+        } else if (path === "/sobre") {
+            setActive("about");
+        } else if (path === "/contato") {
+            setActive("contact");
         } else if (path === "/") {
             setActive("home");
         }
@@ -349,9 +355,10 @@
         document.querySelectorAll(".public-header [data-public-logout]").forEach(link => link.remove());
 
         document.querySelectorAll(".public-header a[href='/login'], .public-header a[href='/conta'], .public-header .menu-login-link").forEach(link => {
+            const label = link.querySelector("[data-customer-label]");
             if (token) {
                 link.href = "/conta";
-                link.textContent = firstName;
+                (label || link).textContent = firstName;
                 link.title = fullName;
                 link.classList.add("is-authenticated");
                 link.setAttribute("aria-label", "Abrir minha conta");
@@ -360,10 +367,10 @@
             }
 
             link.href = "/login";
-            link.textContent = "Entrar";
+            (label || link).textContent = label ? "Entrar | Cadastrar" : "Entrar";
             link.removeAttribute("title");
             link.classList.remove("is-authenticated");
-            link.setAttribute("aria-label", "Entrar na conta");
+            link.setAttribute("aria-label", label ? "Entrar ou cadastrar" : "Entrar na conta");
         });
     }
 

@@ -6,37 +6,37 @@ const CATEGORY_CONFIG = {
     caes: {
         title: "Produtos para cães",
         description: "Rações, petiscos, acessórios e cuidados selecionados para cachorros.",
-        image: "/images/categories/dogs.jpg",
+        image: "/images/categories/dogs-v2.jpg",
         keywords: ["cao", "caes", "cachorro", "canis", "bifinho", "coleira"]
     },
     gatos: {
         title: "Produtos para gatos",
         description: "Itens escolhidos para gatos, com foco em alimentação, conforto e rotina.",
-        image: "/images/categories/cats.jpg",
+        image: "/images/categories/cats-v2.jpg",
         keywords: ["gato", "gatos", "felis", "castrados"]
     },
     aves: {
         title: "Produtos para aves",
         description: "Alimentos, acessórios e cuidados para aves de estimação.",
-        image: "/images/categories/birds.jpg",
+        image: "/images/categories/birds-v2.jpg",
         keywords: ["ave", "aves", "passaro", "passaros", "calopsita", "periquito"]
     },
     peixes: {
         title: "Produtos para peixes",
         description: "Itens para aquários, alimentação, limpeza e bem-estar dos peixes.",
-        image: "/images/categories/fish.jpg",
+        image: "/images/categories/fish-v2.jpg",
         keywords: ["peixe", "peixes", "aquario", "aquarios"]
     },
     roedores: {
         title: "Produtos para roedores",
         description: "Produtos para hamster, porquinho-da-índia, coelhos e pequenos pets.",
-        image: "/images/categories/rodents.jpg",
+        image: "/images/categories/rodents-v2.jpg",
         keywords: ["roedor", "roedores", "hamster", "coelho", "porquinho"]
     },
     acessorios: {
         title: "Acessórios para pets",
         description: "Coleiras, brinquedos, camas, transporte e acessórios para a rotina do pet.",
-        image: "/images/categories/accessories.jpg",
+        image: "/images/categories/accessories-v2.jpg",
         keywords: ["acessorio", "acessorios", "coleira", "brinquedo", "cama", "mordedor"],
         fallbackCategories: ["Acessórios"]
     }

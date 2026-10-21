@@ -130,6 +130,26 @@ app.get("/", (request, response) => {
 
 });
 
+app.get("/servicos/dog-walker-pet-sitter", (request, response) => {
+    response.sendFile(path.join(__dirname, "views", "services", "dog-walker-pet-sitter.html"));
+});
+
+app.get("/sobre", (request, response) => {
+    response.sendFile(path.join(__dirname, "views", "institutional", "about.html"));
+});
+
+app.get("/contato", (request, response) => {
+    response.sendFile(path.join(__dirname, "views", "institutional", "contact.html"));
+});
+
+app.get("/ajuda", (request, response) => {
+    response.sendFile(path.join(__dirname, "views", "institutional", "help.html"));
+});
+
+app.get("/categorias", (request, response) => {
+    response.sendFile(path.join(__dirname, "views", "categories", "index.html"));
+});
+
 app.get("/login", (request, response) => {
 
     response.sendFile(path.join(__dirname, "views", "auth", "login.html"));

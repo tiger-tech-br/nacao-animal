@@ -180,7 +180,7 @@ function renderCart() {
     }
 
     if (!items.length) {
-        renderEmpty("Sua sacola está vazia.");
+        renderEmpty("Adicione produtos para começar sua compra.");
         renderTotals();
         return;
     }
@@ -441,7 +441,7 @@ function renderEmpty(message) {
     list.innerHTML = `
         <div class="empty-cart">
             <i class="fa-solid fa-bag-shopping"></i>
-            <strong>Sua sacola está vazia.</strong>
+            <strong>Seu carrinho está vazio.</strong>
             <p>${escapeHtml(message)}</p>
             <a class="btn-secondary" href="/#products">Ver produtos</a>
         </div>

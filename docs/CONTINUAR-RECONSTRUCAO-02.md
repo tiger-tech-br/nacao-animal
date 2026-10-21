@@ -1,5 +1,7 @@
 # Prompt de continuidade — etapa 2
 
+Atualização: para o estado mais recente e um prompt autossuficiente para copiar, use [CONTINUAR-RECONSTRUCAO-03.md](CONTINUAR-RECONSTRUCAO-03.md).
+
 Copie o texto abaixo para retomar o projeto em outro chat:
 
 > Continue o projeto Nação Animal em `C:\Users\andre\Desktop\gemini-cursos\front-end\tiger-tech\projetos\nacao-animal`. Primeiro leia este documento inteiro, confira `git status` e preserve as mudanças existentes. O trabalho está no checkout local, sem commit/push/deploy autorizados.

@@ -26,17 +26,23 @@
 
 /* O cabeçalho pertence visualmente ao mesmo fundo do banner. */
 .home-page .home-header { position: absolute; inset: 0 0 auto; z-index: 20; border: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
-.home-page .home-header .container { position: relative; display: grid; grid-template-columns: 230px 1fr auto; align-items: start; gap: 34px; min-height: 190px; padding: 0; }
+.home-page .home-header .container { position: relative; display: grid; grid-template-columns: 230px minmax(0, 1fr) auto; align-items: start; gap: 24px; min-height: 190px; padding: 0; }
 .home-page .logo { width: 230px; height: 185px; overflow: hidden; display: block; }
 .home-page .logo img { display: block; width: 230px; height: 230px; max-width: none; margin-top: -28px; object-fit: contain; filter: none; }
 .home-page .home-header .menu { grid-column: 2; grid-row: 1; display: block; width: auto; max-height: none; padding: 57px 0 0; overflow: visible; background: transparent; }
-.home-page .menu-list { display: flex; justify-content: center; gap: clamp(18px, 2.1vw, 32px); min-width: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.home-page .menu-list { display: flex; justify-content: center; gap: clamp(14px, 1.6vw, 22px); min-width: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .home-page .home-header .menu-item,
 .home-page .home-header .menu-item:is(:hover, :focus-within, .active) { padding: 0; border-radius: 0; color: inherit; background: transparent; box-shadow: none; transform: none; }
-.home-page .menu-link { position: relative; display: block; min-height: 40px; padding: 0 0 10px; border: 0; border-radius: 0; font-size: 15px; font-weight: 600; color: var(--home-ink); white-space: nowrap; background: transparent; box-shadow: none; text-decoration: underline; text-decoration-color: transparent; text-decoration-thickness: 2px; text-underline-offset: 8px; transition: color .16s ease, text-decoration-color .16s ease; }
+.home-page .menu-link { position: relative; display: block; min-height: 40px; padding: 0 0 10px; border: 0; border-radius: 0; font-size: 14px; font-weight: 600; color: var(--home-ink); white-space: nowrap; background: transparent; box-shadow: none; text-decoration: underline; text-decoration-color: transparent; text-decoration-thickness: 2px; text-underline-offset: 8px; transition: color .16s ease, text-decoration-color .16s ease; }
 .home-page .menu-link::before, .home-page .menu-link::after { content: none; display: none; }
 .home-page .menu-link:is(:hover, :focus-visible, .active) { color: var(--home-orange); background: transparent; box-shadow: none; text-decoration-color: currentColor; transform: none; }
-.home-page .home-header :is(.menu-login-item, .menu-actions-item) { display: none; }
+.home-page .home-header .menu-actions-item { display: none; }
+.home-page .home-header .menu-login-item { display: flex; align-items: start; gap: 10px; }
+.home-page .home-header .menu-login-link { display: flex; align-items: center; gap: 7px; width: auto; min-height: 30px; padding: 0 0 10px; color: var(--home-ink); background: transparent; box-shadow: none; font-size: 13px; }
+.home-page .home-header .menu-login-link .customer-avatar { width: 24px; height: 24px; margin-top: -3px; }
+.home-page .home-header [data-customer-label] { max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+.home-page .home-header .menu-login-item .public-logout-link { min-height: 30px; padding: 0 0 10px; color: #865017; background: transparent; box-shadow: none; font-size: 12px; }
+.home-page .home-header .menu-login-link:is(:hover, :focus-visible) { color: var(--home-orange); }
 .home-page .home-header .header-actions { grid-column: 3; grid-row: 1; display: flex; align-items: center; gap: 19px; padding-top: 48px; }
 .home-page :is(.header-icon, .home-header .icon-badge, .home-header .menu-toggle) { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 40px; min-width: 0; padding: 4px; border: 0; border-radius: 0; color: var(--home-ink); background: transparent; box-shadow: none; }
 .home-page .home-header .line-icon { width: 29px; height: 29px; }
@@ -120,7 +126,7 @@
 .home-page :is(.home-categories, .home-about, .home-blog, .store-location) { padding: 70px 0; }
 .home-page .categories-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
 .home-page .category-card { overflow: hidden; border: 1px solid #f3e8d9; border-radius: 20px; box-shadow: none; background: #fffcf7; }
-.home-page .category-card img { aspect-ratio: 1.2; object-fit: cover; background: #fff3dc; }
+.home-page .category-card img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; background: #fff3dc; }
 .home-page .category-card h3 { margin: 17px 10px; text-align: center; font-size: 16px; }
 .home-page .home-about { background: #fff8e9; }
 .home-page .about-content { display: grid; grid-template-columns: .55fr 1fr; align-items: center; gap: 80px; max-width: 1080px; }
@@ -203,8 +209,7 @@
     .home-page .about-content, .home-page .newsletter-content { gap: 40px; }
     .home-page .store-location-content { gap: 35px; }
 }
-@media (max-width: 820px) {
-    .home-page .container { width: calc(100% - 40px); }
+@media (max-width: 992px) {
     .home-page .home-header .container { grid-template-columns: 145px 1fr; gap: 12px; min-height: 140px; }
     .home-page .logo { width: 145px; height: 125px; }
     .home-page .logo img { width: 145px; height: 145px; margin-top: -13px; }
@@ -218,9 +223,16 @@
     .home-page .menu-link { text-underline-offset: 6px; }
     .home-page .menu-link:hover { background: transparent; }
     .home-page .home-header :is(.menu-login-item, .menu-actions-item) { display: block; padding: 8px 0 0 !important; margin: 5px 0 0; border-top: 1px solid #f4e4bf; }
+    .home-page .home-header .menu-login-link { min-height: 44px; padding: 10px 14px; font-size: 14px; }
+    .home-page .home-header .menu-login-link .customer-avatar { margin-top: 0; }
+    .home-page .home-header [data-customer-label] { max-width: none; white-space: normal; }
+    .home-page .home-header .menu-login-item .public-logout-link { min-height: 40px; padding: 10px 14px; font-size: 13px; }
     .home-page .menu-login-link, .home-page .menu-action-link { color: #b94e00; background: none; box-shadow: none; }
     .home-page .menu-actions-item a { display: block; padding: 10px 14px; font-size: 14px; }
     .home-page .home-header .search-form { top: 100px; width: 100%; }
+}
+@media (max-width: 820px) {
+    .home-page .container { width: calc(100% - 40px); }
     .home-page .hero-container { min-height: 480px; }
     .home-page .hero-content { width: 58%; padding-top: 172px; }
     .home-page .hero-content h1 { font-size: clamp(30px, 5.1vw, 42px); letter-spacing: -1.4px; }

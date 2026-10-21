@@ -1,0 +1,49 @@
+.home-page .home-promo { padding: 30px 0 38px; }
+.home-page .home-promo [data-promo-track] { position: relative; min-height: 350px; overflow: hidden; border: 1px solid #eeddbd; border-radius: 26px; background: #fff6dc; }
+.home-page .home-promo .promo-slide { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: center; min-height: 350px; padding: 32px 42px; gap: 28px; }
+.home-page .home-promo .promo-slide:not([hidden]) { animation: home-promo-appear .3s ease-out; }
+@keyframes home-promo-appear { from { opacity: .25; } to { opacity: 1; } }
+.home-page .home-promo [hidden] { display: none !important; }
+.home-page .home-promo .promo-orange { background: linear-gradient(110deg, #ffe78c, #ffcc43); }
+.home-page .home-promo .promo-coupon { background: linear-gradient(110deg, #fff7e4, #ffedc5); }
+.home-page .home-promo .promo-teal { background: linear-gradient(110deg, #e7f7f3, #bcdfda); }
+.home-page .home-promo .promo-copy { position: relative; z-index: 1; }
+.home-page .home-promo .promo-eyebrow { display: block; margin-bottom: 12px; color: #9f4900; font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; }
+.home-page .home-promo .promo-teal .promo-eyebrow { color: #076675; }
+.home-page .home-promo h2 { max-width: 620px; margin: 0 0 16px; color: #101b21; font-size: clamp(27px, 3vw, 42px); font-weight: 800; line-height: 1.14; letter-spacing: -1.3px; }
+.home-page .home-promo .promo-copy p { max-width: 560px; margin: 0 0 24px; color: #655333; font-size: 15px; line-height: 1.6; }
+.home-page .home-promo .promo-teal .promo-copy p { color: #3b635f; }
+.home-page .home-promo .promo-link { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 48px; padding: 12px 25px; border: 1px solid #f76510; border-radius: 999px; color: #fff; background: #ed5100; font-size: 14px; font-weight: 600; text-decoration: none; transition: background-color .18s; }
+.home-page .home-promo .promo-link:hover { color: #fff; background: #cf4600; }
+.home-page .home-promo .promo-art { display: grid; place-items: center; align-self: stretch; min-width: 0; min-height: 230px; }
+.home-page .home-promo .promo-art img { width: 100%; height: 270px; object-fit: contain; object-position: center; }
+.home-page .home-promo .promo-service-banner img { border-radius: 12px; object-fit: contain; }
+.home-page .home-promo .promo-art > svg { display: block; width: min(100%, 310px); max-height: 250px; color: #d95600; }
+.home-page .home-promo [data-promo-controls] { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.home-page .home-promo :is([data-promo-prev], [data-promo-next]) { display: inline-flex; align-items: center; justify-content: center; width: 40px; min-width: 40px; height: 40px; padding: 8px; border: 1px solid #ebdec4; border-radius: 50%; color: #684c26; background: #fff9ed; font-size: 16px; line-height: 1; }
+.home-page .home-promo :is([data-promo-prev], [data-promo-next]):hover { color: #d64c00; border-color: #e8bc77; background: #fff0d4; }
+.home-page .home-promo [data-promo-controls] .line-icon { width: 20px; height: 20px; }
+.home-page .home-promo :is(.promo-dots, .promo-indicators) { display: flex; align-items: center; gap: 0; }
+.home-page .home-promo [data-promo-go] { position: relative; width: 32px; height: 40px; padding: 0; border: 0; border-radius: 12px; background: transparent; }
+.home-page .home-promo [data-promo-go]::after { content: ""; position: absolute; top: 50%; left: 50%; width: 9px; height: 9px; border-radius: 999px; background: #d8c3a1; transform: translate(-50%, -50%); transition: width .18s, background-color .18s; }
+.home-page .home-promo [data-promo-go][aria-current="true"]::after { width: 23px; background: #ec5700; }
+@media (max-width: 1050px) {
+    .home-page .home-promo .promo-slide { gap: 22px; padding: 30px; }
+    .home-page .home-promo h2 { font-size: 31px; }
+    .home-page .home-promo .promo-copy p { font-size: 14px; }
+}
+@media (max-width: 650px) {
+    .home-page .home-promo { padding: 20px 0 28px; }
+    .home-page .home-promo [data-promo-track] { min-height: 560px; border-radius: 22px; }
+    .home-page .home-promo .promo-slide { grid-template-columns: 1fr; grid-template-rows: minmax(280px, auto) 190px; align-items: start; min-height: 560px; gap: 12px; padding: 26px 24px; }
+    .home-page .home-promo .promo-copy { align-self: center; }
+    .home-page .home-promo h2 { margin-bottom: 14px; font-size: 29px; letter-spacing: -.9px; }
+    .home-page .home-promo .promo-copy p { margin-bottom: 18px; }
+    .home-page .home-promo .promo-art { min-height: 0; height: 190px; }
+    .home-page .home-promo .promo-art img { height: 190px; }
+    .home-page .home-promo .promo-art > svg { width: min(100%, 240px); height: 180px; }
+    .home-page .home-promo .promo-link { min-height: 46px; padding: 11px 22px; font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .home-page .home-promo *, .home-page .home-promo *::after { animation: none !important; transition: none !important; }
+}

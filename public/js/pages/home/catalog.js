@@ -650,7 +650,7 @@ function renderCheckoutItems() {
     const items = getCartProducts();
 
     if (!items.length) {
-        list.innerHTML = `<div class="public-empty">Sua sacola está vazia.</div>`;
+        list.innerHTML = `<div class="public-empty">Seu carrinho está vazio.</div>`;
         total.textContent = currency(0);
         return;
     }
@@ -842,9 +842,10 @@ function setupCustomerHeader() {
     document.querySelectorAll("[data-public-logout]").forEach(link => link.remove());
 
     document.querySelectorAll("a[href='/login'], a[href='/conta'], .menu-login-link").forEach(link => {
+        const label = link.querySelector("[data-customer-label]");
         if (token) {
             link.href = "/conta";
-            link.textContent = firstName;
+            (label || link).textContent = firstName;
             link.title = fullName;
             link.classList.add("is-authenticated");
             link.setAttribute("aria-label", "Abrir minha conta");
@@ -853,10 +854,10 @@ function setupCustomerHeader() {
         }
 
         link.href = "/login";
-        link.textContent = "Entrar";
+        (label || link).textContent = label ? "Entrar | Cadastrar" : "Entrar";
         link.removeAttribute("title");
         link.classList.remove("is-authenticated");
-        link.setAttribute("aria-label", "Entrar na conta");
+        link.setAttribute("aria-label", label ? "Entrar ou cadastrar" : "Entrar na conta");
     });
 
     window.PetFlowNotifications?.refresh();

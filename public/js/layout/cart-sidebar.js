@@ -21,7 +21,7 @@
             dialog = document.createElement("dialog");
             dialog.className = "cart-sidebar";
             dialog.setAttribute("aria-labelledby", "cartSidebarTitle");
-            dialog.innerHTML = `<header class="cart-sidebar-heading"><h2 id="cartSidebarTitle">Minha sacola</h2><button type="button" aria-label="Fechar sacola" autofocus>×</button></header><iframe title="Produtos e resumo da sacola"></iframe>`;
+            dialog.innerHTML = `<header class="cart-sidebar-heading"><h2 id="cartSidebarTitle">Meu carrinho</h2><button type="button" aria-label="Fechar carrinho" autofocus>×</button></header><iframe title="Produtos e resumo do carrinho"></iframe>`;
             document.body.append(dialog);
             frame = dialog.querySelector("iframe");
             dialog.querySelector("button").addEventListener("click", closeCart);

@@ -77,7 +77,7 @@ test("menus publicos e administrativos nao divulgam modulos removidos", () => {
     const files = ["views/home/index.html", "public/js/layout/public-header.js", "public/js/layout/sidebar.js", "views/auth/account.html", "views/auth/orders.html", "admin/pages/dashboard/dashboard.html"];
     for (const file of files) {
         const source = fs.readFileSync(file, "utf8");
-        assert.doesNotMatch(source, /href=["'][^"']*(?:#services|\/servicos|\/agendamentos|\/meus-pets|\/pages\/pets)/, file);
+        assert.doesNotMatch(source, /href=["'][^"']*(?:#services|\/servicos(?!\/dog-walker-pet-sitter["'])|\/agendamentos|\/meus-pets|\/pages\/pets)/, file);
     }
 });
 
@@ -105,7 +105,19 @@ test("rotas removidas retornam 404 e paginas comerciais continuam acessiveis", a
         }
         const booking = await fetch(base + "/api/public/agendamentos", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
         assert.equal(booking.status, 404);
-        for (const route of ["/", "/login", "/conta", "/sacola", "/meus-pedidos", "/politica-de-privacidade", "/produtos/racao",
+        const service = await fetch(base + "/servicos/dog-walker-pet-sitter");
+        assert.equal(service.status, 200);
+        const serviceHtml = await service.text();
+        assert.match(serviceHtml, /<h1[^>]*>Dog Walker/);
+        assert.match(serviceHtml, /src="\/images\/services\/dog-walker-pet-sitter.png"/);
+        assert.match(serviceHtml, /https:\/\/wa.me\/5511915712903\?/);
+        const banner = await fetch(base + "/images/services/dog-walker-pet-sitter.png");
+        assert.equal(banner.status, 200);
+        assert.match(banner.headers.get("content-type"), /image\/png/);
+        const png = Buffer.from(await banner.arrayBuffer());
+        assert.equal(png.readUInt32BE(16), 1536);
+        assert.equal(png.readUInt32BE(20), 1024);
+        for (const route of ["/", "/sobre", "/contato", "/ajuda", "/categorias", "/login", "/conta", "/sacola", "/meus-pedidos", "/politica-de-privacidade", "/produtos/racao",
             "/admin/pages/dashboard/dashboard.html", "/admin/pages/produtos/produtos.html", "/admin/pages/vendas/vendas.html",
             "/admin/pages/cupons/cupons.html", "/admin/pages/usuarios/usuarios.html",
             "/admin/pages/auditoria/auditoria.html", "/admin/pages/atendimento/atendimento.html", "/admin/pages/lgpd/lgpd.html"]) {

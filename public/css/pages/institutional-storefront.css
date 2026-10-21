@@ -1,0 +1,122 @@
+/* Páginas institucionais com a identidade da inicial aprovada. */
+.institutional-page .institutional-eyebrow { display: block; margin-bottom: 12px; color: #b94700; font-size: 11px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; }
+.institutional-page .institutional-hero { display: grid; grid-template-columns: 1.04fr 1fr; align-items: center; min-height: 410px; overflow: hidden; border: 1px solid #f7d579; border-radius: 28px; background: linear-gradient(110deg, #fff0b4, #ffda61); }
+.institutional-page .institutional-hero-copy { position: relative; z-index: 1; padding: 42px 0 42px 42px; }
+.institutional-page .institutional-hero h1, .institutional-page .institutional-page-heading h1 { margin: 0 0 20px; font-size: clamp(33px, 4vw, 52px); font-weight: 800; letter-spacing: -1.8px; }
+.institutional-page .institutional-hero h1 span, .institutional-page .institutional-page-heading h1 span { color: #e55000; }
+.institutional-page .institutional-hero-copy > p { max-width: 520px; margin-bottom: 25px; color: #635431; font-size: 14px; line-height: 1.8; }
+.institutional-page .about-hero-image { position: relative; align-self: stretch; display: flex; align-items: end; padding-top: 25px; }
+.institutional-page .about-hero-image::before { content: ""; position: absolute; inset: 22% -6% -30% 8%; border-radius: 50%; background: #ffc22f; }
+.institutional-page .about-hero-image img { position: relative; width: 112%; max-width: none; height: auto; margin: 0 0 -20px -3%; }
+.institutional-page .about-hero-paw { position: absolute; top: 7%; right: 12%; color: #ff9700; font-size: 50px; transform: rotate(17deg); }
+.institutional-page .institutional-section { padding: 55px 0; }
+.institutional-page .institutional-section-heading { max-width: 670px; margin: 0 auto 30px; text-align: center; }
+.institutional-page .institutional-section-heading h2 { margin-bottom: 15px; font-size: clamp(25px, 2.6vw, 34px); letter-spacing: -.8px; }
+.institutional-page .institutional-section-heading p { margin: 0; color: var(--store-muted); font-size: 14px; }
+.institutional-page .institutional-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+.institutional-page .institutional-card { min-width: 0; padding: 30px; border: 1px solid var(--store-line); border-radius: 22px; background: #fff; }
+.institutional-page .institutional-icon { display: grid; place-items: center; width: 54px; height: 54px; margin-bottom: 20px; border-radius: 17px; color: #d84b00; background: #fff0de; font-size: 23px; }
+.institutional-page .institutional-icon-teal { color: #007b8c; background: #e9f7f7; }
+.institutional-page .institutional-icon-yellow { color: #a86b00; background: #fff5cc; }
+.institutional-page .institutional-card h3 { margin-bottom: 13px; font-size: 20px; }
+.institutional-page .institutional-card p { color: var(--store-muted); font-size: 13px; line-height: 1.8; }
+.institutional-page .about-values .institutional-card { display: flex; flex-direction: column; align-items: start; }
+.institutional-page .about-values .institutional-inline-link { margin-top: auto; padding-top: 5px; }
+.institutional-page .institutional-inline-link { color: #ba4400; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.institutional-page .institutional-inline-link:hover { color: #923500; text-decoration: underline; text-underline-offset: 4px; }
+.institutional-page .institutional-callout { display: flex; justify-content: space-between; align-items: center; gap: 30px; padding: 35px 40px; border: 1px solid #f3d78d; border-radius: 24px; background: #fff2ce; }
+.institutional-page .institutional-callout h2 { max-width: 670px; margin-bottom: 13px; font-size: clamp(24px, 2.4vw, 30px); letter-spacing: -.7px; }
+.institutional-page .institutional-callout p { margin: 0; color: #76633d; font-size: 14px; }
+.institutional-page .institutional-callout > a { flex-shrink: 0; }
+.institutional-page .institutional-page-heading { padding: 12px 0 33px; }
+.institutional-page .institutional-page-heading p { max-width: 700px; margin: 0; color: var(--store-muted); }
+.institutional-page .contact-layout { display: grid; grid-template-columns: 1.05fr 1fr; align-items: stretch; gap: 26px; margin-bottom: 35px; }
+.institutional-page .contact-location { overflow: hidden; padding: 0; }
+.institutional-page .contact-location-mark { display: flex; justify-content: center; align-items: center; gap: 15px; min-height: 140px; padding: 25px; color: #915d00; background: linear-gradient(120deg, #ffe9a2, #ffce4c); }
+.institutional-page .contact-location-mark > i { font-size: 42px; }
+.institutional-page .contact-location-mark > span { font-size: 28px; font-weight: 800; letter-spacing: -.9px; }
+.institutional-page .contact-location-copy { padding: 30px; }
+.institutional-page .contact-location h2 { margin-bottom: 17px; font-size: 28px; letter-spacing: -.6px; }
+.institutional-page .contact-location address { margin-bottom: 25px; color: var(--store-muted); font-size: 14px; font-style: normal; line-height: 1.9; overflow-wrap: anywhere; }
+.institutional-page .contact-channels { display: grid; gap: 18px; }
+.institutional-page .contact-channel { display: flex; align-items: start; gap: 20px; padding: 24px; }
+.institutional-page .contact-channel .institutional-icon { flex: 0 0 48px; width: 48px; height: 48px; margin: 0; font-size: 21px; border-radius: 15px; }
+.institutional-page .contact-channel > div { min-width: 0; }
+.institutional-page .contact-channel h2 { margin: 0 0 8px; font-size: 18px; }
+.institutional-page .contact-channel p { margin: 0; font-size: 12px; }
+.institutional-page .contact-channel .institutional-inline-link { display: inline-block; margin-top: 7px; }
+.institutional-page .contact-channel [hidden] { display: none; }
+.institutional-page .contact-service-note { display: flex; align-items: start; gap: 13px; max-width: 800px; margin: 25px auto 0; color: #806d50; }
+.institutional-page .contact-service-note > i { padding-top: 4px; color: #b85813; }
+.institutional-page .contact-service-note p { margin: 0; font-size: 12px; }
+.institutional-page .contact-service-note a { font-size: inherit; }
+.institutional-page .help-topics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 15px; margin-bottom: 38px; }
+.institutional-page .help-topics a { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 76px; padding: 17px; border: 1px solid #f0dfb8; border-radius: 17px; background: #fff7e5; font-size: 13px; font-weight: 600; text-align: center; }
+.institutional-page .help-topics a i { color: #cb5300; font-size: 20px; }
+.institutional-page .help-topics a:hover { border-color: #eab96a; background: #ffefca; }
+.institutional-page .help-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; align-items: start; gap: 35px; }
+.institutional-page .help-group { margin-bottom: 35px; scroll-margin-top: 24px; }
+.institutional-page .help-group h2 { margin-bottom: 20px; font-size: 25px; letter-spacing: -.5px; }
+.institutional-page .help-group details { margin-bottom: 12px; border: 1px solid var(--store-line); border-radius: 15px; background: #fff; }
+.institutional-page .help-group summary { position: relative; padding: 20px 48px 20px 22px; color: #433d32; font-size: 14px; font-weight: 600; cursor: pointer; list-style: none; }
+.institutional-page .help-group summary::-webkit-details-marker { display: none; }
+.institutional-page .help-group summary::after { content: "+"; position: absolute; top: 17px; right: 21px; color: #c34d00; font-size: 23px; font-weight: 400; }
+.institutional-page .help-group details[open] summary::after { content: "−"; }
+.institutional-page .help-group details[open] summary { color: #bd4800; }
+.institutional-page .help-group details p { margin: 0; padding: 0 22px 22px; color: var(--store-muted); font-size: 13px; line-height: 1.9; }
+.institutional-page .help-group details a { color: #b54400; text-decoration: underline; text-underline-offset: 3px; }
+.institutional-page .help-sidebar { position: sticky; top: 25px; padding: 26px; }
+.institutional-page .help-sidebar h2 { margin-bottom: 14px; font-size: 23px; letter-spacing: -.5px; }
+.institutional-page .help-sidebar .storefront-button { width: 100%; padding-inline: 16px; font-size: 12px; }
+.institutional-page .help-useful-links { display: grid; gap: 12px; padding-top: 24px; margin-top: 25px; border-top: 1px solid var(--store-line); font-size: 12px; }
+.institutional-page .help-useful-links h3 { margin: 0; font-size: 13px; }
+.institutional-page .help-useful-links > a { display: flex; justify-content: space-between; gap: 12px; color: #966747; }
+.institutional-page .help-useful-links > a:hover { color: #b54400; text-decoration: underline; }
+@media (max-width: 1000px) {
+    .institutional-page .institutional-hero-copy { padding: 32px 0 32px 30px; }
+    .institutional-page .institutional-hero { min-height: 370px; }
+    .institutional-page .institutional-card { padding: 24px; }
+    .institutional-page .contact-location { padding: 0; }
+    .institutional-page .institutional-cards { gap: 16px; }
+    .institutional-page .institutional-callout { padding: 30px; }
+    .institutional-page .help-layout { grid-template-columns: minmax(0, 1fr) 265px; gap: 24px; }
+    .institutional-page .help-topics { gap: 12px; }
+    .institutional-page .help-topics a { flex-direction: column; gap: 7px; font-size: 12px; }
+}
+@media (max-width: 760px) {
+    .institutional-page .institutional-hero { grid-template-columns: 1fr; }
+    .institutional-page .institutional-hero-copy { padding: 30px 30px 0; }
+    .institutional-page .institutional-hero-copy > p { max-width: none; }
+    .institutional-page .about-hero-image { width: min(460px, 100%); margin: 0 auto; }
+    .institutional-page .about-hero-image img { width: 100%; margin-inline: 0; }
+    .institutional-page .about-hero-paw { top: 5%; right: 0; font-size: 38px; }
+    .institutional-page .institutional-cards { grid-template-columns: 1fr; }
+    .institutional-page .institutional-card h3 { font-size: 21px; }
+    .institutional-page .institutional-callout { flex-direction: column; align-items: start; gap: 23px; }
+    .institutional-page .contact-layout { grid-template-columns: 1fr; }
+    .institutional-page .contact-channels { grid-template-columns: 1fr; }
+    .institutional-page .contact-channel { padding: 24px; }
+    .institutional-page .help-layout { grid-template-columns: 1fr; }
+    .institutional-page .help-sidebar { position: static; }
+    .institutional-page .help-sidebar .storefront-button { width: fit-content; }
+}
+@media (max-width: 540px) {
+    .institutional-page .institutional-hero { border-radius: 22px; }
+    .institutional-page .institutional-hero-copy { padding: 27px 24px 0; }
+    .institutional-page .institutional-hero h1, .institutional-page .institutional-page-heading h1 { letter-spacing: -1.2px; }
+    .institutional-page .institutional-hero-copy > p { font-size: 13px; }
+    .institutional-page .institutional-hero .storefront-button { padding-inline: 19px; font-size: 12px; }
+    .institutional-page .institutional-section { padding: 38px 0; }
+    .institutional-page .institutional-callout { padding: 26px 24px; }
+    .institutional-page .institutional-page-heading { padding: 5px 0 27px; }
+    .institutional-page .institutional-page-heading p { font-size: 14px; }
+    .institutional-page .contact-location-copy { padding: 25px 24px; }
+    .institutional-page .contact-location-copy .storefront-button { padding-inline: 18px; font-size: 12px; }
+    .institutional-page .contact-location-mark { min-height: 115px; }
+    .institutional-page .contact-location-mark > span { font-size: 25px; }
+    .institutional-page .contact-channel { gap: 16px; }
+    .institutional-page .help-topics { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 30px; }
+    .institutional-page .help-group h2 { font-size: 23px; }
+    .institutional-page .help-group summary { padding-left: 18px; font-size: 13px; }
+    .institutional-page .help-group details p { padding-inline: 18px; }
+}
