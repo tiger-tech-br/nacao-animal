@@ -5,9 +5,8 @@ const CUSTOMER_API = "/api/public";
 document.addEventListener("DOMContentLoaded", () => {
     clearLegacyPublicSession();
     setupTabs();
-    setupEmailVerificationFromUrl();
+    setupLegacyVerificationNotice();
     setupPublicLogin();
-    setupResendVerification();
     setupPublicRegister();
     setupPublicAccount();
     setupPublicOrders();
@@ -90,9 +89,10 @@ function setupPublicRegister() {
                 Object.fromEntries(new FormData(form).entries())
             );
 
-            setStatus(status, payload.message || "Cadastro criado. Verifique seu e-mail para ativar a conta.");
+            const message = payload.message || "Cadastro criado com sucesso. Você já pode entrar.";
+            setStatus(status, message);
             document.getElementById("loginEmail").value = form.elements.email.value;
-            setStatus(document.getElementById("loginStatus"), payload.message);
+            setStatus(document.getElementById("loginStatus"), message);
             form.reset();
             document.querySelector("[data-auth-tab='login']")?.click();
         } catch (error) {
@@ -101,42 +101,14 @@ function setupPublicRegister() {
     });
 }
 
-function setupResendVerification() {
-    document.querySelector("[data-resend-verification]")?.addEventListener("click", async event => {
-        event.preventDefault();
-        const status = document.getElementById("loginStatus");
-        const email = document.getElementById("loginEmail")?.value.trim();
-        if (!email) return setStatus(status, "Preencha seu e-mail para reenviar a confirmação.");
-        setStatus(status, "Solicitando confirmação...");
-        try {
-            const result = await request("/clientes/reenviar-confirmacao", "POST", { email });
-            setStatus(status, result.message);
-        } catch (error) { setStatus(status, error.message); }
-    });
-}
-
-async function setupEmailVerificationFromUrl() {
+function setupLegacyVerificationNotice() {
     const params = new URLSearchParams(window.location.search);
-    const token = params.get("verificar_email");
-
-    if (!token) {
-        return;
-    }
-
-    const status = document.getElementById("loginStatus");
-    setStatus(status, "Confirmando seu e-mail...");
-
-    try {
-        const payload = await request(
-            `/clientes/verificar-email?token=${encodeURIComponent(token)}`,
-            "GET"
-        );
-
-        setStatus(status, payload.message || "E-mail confirmado com sucesso. Você já pode entrar.");
-        window.history.replaceState({}, document.title, "/login");
-    } catch (error) {
-        setStatus(status, error.message || "Não foi possível confirmar o e-mail.");
-    }
+    if (!params.has("verificar_email")) return;
+    setStatus(document.getElementById("loginStatus"),
+        "A confirmação de e-mail não é necessária. Entre com seu e-mail e senha.");
+    params.delete("verificar_email");
+    const query = params.toString();
+    window.history.replaceState({}, document.title, `/login${query ? `?${query}` : ""}`);
 }
 
 async function setupPublicAccount() {
@@ -162,6 +134,7 @@ async function setupPublicAccount() {
     const originallyDisabled = new Map(controls.map(control => [control, control.disabled]));
     let accountLoaded = false;
     let accountLoading = false;
+    let deletingAccount = false;
 
     function allowAccountActions(available) {
         controls.forEach(control => {
@@ -240,10 +213,7 @@ async function setupPublicAccount() {
         }
     });
 
-    document.getElementById("publicLogout")?.addEventListener("click", () => {
-        clearPublicSession();
-        window.location.href = "/";
-    });
+    document.getElementById("publicLogout")?.addEventListener("click", handlePublicLogout);
 
     document.getElementById("publicExportData")?.addEventListener("click", async () => {
         if (!accountLoaded) return;
@@ -275,27 +245,37 @@ async function setupPublicAccount() {
     });
 
     document.getElementById("publicDeleteAccount")?.addEventListener("click", async () => {
-        if (!accountLoaded) return;
+        if (!accountLoaded || deletingAccount) return;
+        const sessionToken = getCustomerToken();
+        if (!sessionToken) return;
         const confirmed = window.confirm(
-            "Tem certeza que deseja excluir seu cadastro? Você perderá o acesso à área do cliente."
+            "Tem certeza que deseja excluir seu cadastro? Seu acesso e seus dados cadastrais serão removidos. Registros com obrigação de conservação poderão ser mantidos. Se houver pedidos em andamento, a solicitação será analisada antes da exclusão."
         );
 
-        if (!confirmed) {
+        if (!confirmed || sessionToken !== getCustomerToken()) {
             return;
         }
 
+        deletingAccount = true;
+        allowAccountActions(false);
         setStatus(status, "Excluindo cadastro...");
 
         try {
             const payload = await request("/clientes/me", "DELETE");
+            if (sessionToken !== getCustomerToken()) return;
             if (payload.pending) {
                 setStatus(status, `${payload.message} Protocolo: ${payload.protocolo}.`);
                 return;
             }
             clearPublicSession();
+            document.dispatchEvent(new CustomEvent("petflow:customer-logout"));
             window.location.href = "/";
         } catch (error) {
+            if (sessionToken !== getCustomerToken()) return;
             setStatus(status, error.message || "Não foi possível excluir o cadastro.");
+        } finally {
+            deletingAccount = false;
+            if (sessionToken === getCustomerToken()) allowAccountActions(accountLoaded);
         }
     });
     await loadAccount();
@@ -329,11 +309,28 @@ function formatDateTime(value) {
     return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString("pt-BR");
 }
 
+async function handlePublicLogout(event) {
+    event.preventDefault();
+    const token = getCustomerToken();
+    const confirmed = await window.NacaoAnimalLogoutDialog?.confirm(event.currentTarget || event.target);
+    if (!confirmed || !token || token !== getCustomerToken()) return;
+    fetch(`${CUSTOMER_API}/clientes/logout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        keepalive: true
+    }).catch(() => {});
+    clearPublicSession();
+    document.dispatchEvent(new CustomEvent("petflow:customer-logout"));
+    window.location.href = "/";
+}
+
 function clearPublicSession() {
     sessionStorage.removeItem("petflow_customer_token");
     sessionStorage.removeItem("petflow_customer_user");
     sessionStorage.removeItem("petflow_public_favorites");
     sessionStorage.removeItem("petflow_public_cart");
+    sessionStorage.removeItem("petflow_delivery_address");
+    sessionStorage.removeItem("petflow_cart_coupon");
     clearLegacyPublicSession();
     window.PetFlowPublicHeader?.update();
 }
@@ -343,6 +340,8 @@ function clearLegacyPublicSession() {
     localStorage.removeItem("petflow_customer_user");
     localStorage.removeItem("petflow_public_favorites");
     localStorage.removeItem("petflow_public_cart");
+    localStorage.removeItem("petflow_delivery_address");
+    localStorage.removeItem("petflow_cart_coupon");
 }
 
 async function setupPublicOrders() {
@@ -577,6 +576,10 @@ function renderContinuePayment(order) {
 }
 
 function renderOrderTimeline(status) {
+    if (status === "CANCELADA") {
+        return `<p class="order-timeline-state is-canceled"><strong>Pedido cancelado.</strong> O acompanhamento deste pedido foi encerrado.</p>`;
+    }
+
     const steps = [
         {
             status: "AGUARDANDO_PAGAMENTO",
@@ -600,16 +603,19 @@ function renderOrderTimeline(status) {
         }
     ];
 
-    const currentIndex = Math.max(
-        0,
-        steps.findIndex(step => step.status === status)
-    );
+    const currentIndex = status === "FINALIZADA"
+        ? steps.length - 1
+        : steps.findIndex(step => step.status === status);
+
+    if (currentIndex === -1) {
+        return `<p class="order-timeline-state">Andamento do pedido indisponível.</p>`;
+    }
 
     return `
-        <ol class="order-timeline" aria-label="Andamento do pedido">
+        <ol class="order-timeline" aria-label="${status === "FINALIZADA" ? "Andamento do pedido: finalizado" : "Andamento do pedido"}">
             ${steps.map((step, index) => `
-                <li class="${index <= currentIndex ? "is-done" : ""}">
-                    <span>${index <= currentIndex ? "✓" : ""}</span>
+                <li class="${index <= currentIndex ? "is-done" : ""}" aria-label="${escapeHtml(step.label)}: ${index <= currentIndex ? "concluído" : "aguardando"}">
+                    <span aria-hidden="true">${index <= currentIndex ? "✓" : ""}</span>
                     ${escapeHtml(step.label)}
                 </li>
             `).join("")}

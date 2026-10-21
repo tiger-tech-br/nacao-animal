@@ -23,7 +23,7 @@ async function migrateTestSchema(pool) {
     }
 }
 
-test("cadastro, confirmação, compra, webhook e estoque em PostgreSQL isolado", { skip: process.env.RUN_DB_TESTS !== "1" }, async () => {
+test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL isolado", { skip: process.env.RUN_DB_TESTS !== "1" }, async () => {
     require("dotenv").config({ quiet: true });
     const { Pool } = require("pg");
     const { buildDbOptions } = require("../config/dbOptions");
@@ -38,6 +38,12 @@ test("cadastro, confirmação, compra, webhook e estoque em PostgreSQL isolado",
     try {
         await admin.query(`CREATE SCHEMA "${schema}"`);
         pool = new Pool({ ...options, options: `-c search_path=${schema}` });
+        const isolation = (await pool.query(
+            "SELECT current_schema() AS schema, current_setting('search_path') AS search_path, current_database() AS database"
+        )).rows[0];
+        assert.equal(isolation.schema, schema, "Migrações restritas ao schema temporário criado pelo teste");
+        assert.equal(isolation.search_path, schema, "Não permite fallback para tabelas de produção");
+        assert.equal(isolation.database, "nacao-animal", "Mantém a restrição ao banco local esperado");
         await migrateTestSchema(pool);
         process.env.JWT_SECRET = "isolated-integration-test-secret";
         process.env.JWT_EXPIRES_IN = "1h";
@@ -66,15 +72,24 @@ test("cadastro, confirmação, compra, webhook e estoque em PostgreSQL isolado",
         require.cache[require.resolve("../config/db")] = { exports: { pool } };
         const email = require("../services/emailService");
         const sent = [];
-        let emailFailure = true;
-        email.assertEmailConfigured = () => {};
+        email.assertEmailConfigured = () => { throw new Error("Provedor indisponível"); };
         email.sendEmail = async payload => {
-            if (emailFailure) throw Object.assign(new Error("Provedor indisponível"), { status: 503 });
             sent.push(payload);
             return { id: "test-email" };
         };
         const optionalEmails = [];
-        email.sendOptionalEmail = async payload => { optionalEmails.push(payload); return { id: "test-optional" }; };
+        const welcomeAttempts = [];
+        email.sendOptionalEmail = async payload => {
+            if (payload.idempotencyKey?.startsWith("welcome/")) {
+                welcomeAttempts.push(payload);
+                const persisted = (await pool.query("SELECT id FROM clientes WHERE email=$1", [payload.to])).rows[0];
+                assert.ok(persisted, "Cadastro já está confirmado no banco antes de tentar as boas-vindas");
+                assert.equal(payload.idempotencyKey, `welcome/${persisted.id}`);
+                return null; // Simula falha opcional do provedor depois do commit.
+            }
+            optionalEmails.push(payload);
+            return { id: "test-optional" };
+        };
         let checkouts = 0;
         require("axios").create = () => ({
             post: async (url, checkout) => {
@@ -114,28 +129,102 @@ test("cadastro, confirmação, compra, webhook e estoque em PostgreSQL isolado",
         const customer = { nome: "Teste Isolado", cpf: "52998224725", telefone: "11999999999", email: "integration@example.invalid", senha: "Teste12345", cep: "01001000", endereco: "Rua de Teste", numero: "10", bairro: "Centro", cidade: "São Paulo", estado: "SP", aceite_privacidade: true };
         assert.equal((await request("/api/public/clientes/cadastro", "POST", { ...customer, aceite_privacidade: false })).status, 400,
             "Cadastro exige aceite expresso da politica de privacidade");
-        let res = await request("/api/public/clientes/cadastro", "POST", customer);
-        assert.equal(res.status, 503);
-        assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM clientes")).rows[0].n, 0, "Envio falhou: nenhum cliente órfão");
-        assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM usuarios_clientes")).rows[0].n, 0);
-        assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM notificacoes_admin")).rows[0].n, 0, "Cadastro revertido não deixa aviso órfão");
-        emailFailure = false;
-        res = await request("/api/public/clientes/cadastro", "POST", customer);
-        assert.equal(res.status, 201, JSON.stringify(res.body));
-        assert.equal(sent.length, 1);
-        assert.equal((await request("/api/public/clientes/login", "POST", customer)).status, 403);
-        await pool.query("UPDATE usuarios_clientes SET token_verificacao_expiracao = NOW() - INTERVAL '1 day'");
-        res = await request("/api/public/clientes/reenviar-confirmacao", "POST", { email: customer.email });
-        assert.equal(res.status, 200);
-        const verification = (await pool.query("SELECT token_verificacao_email FROM usuarios_clientes")).rows[0].token_verificacao_email;
-        assert.equal((await request("/api/public/clientes/verificar-email", "POST", { token: verification })).status, 200);
+        assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM clientes")).rows[0].n, 0);
+        assert.equal(welcomeAttempts.length, 0, "Cadastro sem aceite não envia boas-vindas");
+        const registrationAgent = "NacaoAnimal-Isolated-Integration/1.0";
+        let res = await request("/api/public/clientes/cadastro", "POST", customer, undefined, { "User-Agent": registrationAgent });
+        assert.equal(res.status, 201, "Falha no e-mail opcional não bloqueia cadastro concluído");
+        assert.doesNotMatch(res.body.message, /confirmação|confirmar/i);
+        assert.equal(sent.length, 0, "Cadastro não envia e-mail obrigatório de confirmação");
+        assert.equal(welcomeAttempts.length, 1);
+        const registered = (await pool.query(
+            "SELECT id,privacidade_versao,privacidade_aceita_em FROM clientes WHERE email=$1", [customer.email]
+        )).rows[0];
+        assert.equal(registered.privacidade_versao, "2026-10-19");
+        assert.ok(registered.privacidade_aceita_em && Number.isFinite(new Date(registered.privacidade_aceita_em).getTime()), "Persiste a data do aceite no cadastro");
+        const consents = (await pool.query(
+            "SELECT cliente_id,finalidade,versao,concedido,origem,ip_hash,user_agent_hash,created_at FROM lgpd_consentimentos WHERE cliente_id=$1",
+            [registered.id]
+        )).rows;
+        assert.equal(consents.length, 1, "Cadastro persiste exatamente um registro de aceite");
+        const consent = consents[0];
+        assert.equal(consent.cliente_id, registered.id);
+        assert.equal(consent.finalidade, "POLITICA_PRIVACIDADE");
+        assert.equal(consent.versao, registered.privacidade_versao);
+        assert.equal(consent.concedido, true);
+        assert.equal(consent.origem, "CADASTRO");
+        assert.ok(consent.created_at && Number.isFinite(new Date(consent.created_at).getTime()), "Persiste a data do evento de aceite");
+        assert.equal(consent.ip_hash, crypto.createHash("sha256").update("127.0.0.1").digest("hex"));
+        assert.equal(consent.user_agent_hash, crypto.createHash("sha256").update(registrationAgent).digest("hex"));
+        const account = (await pool.query(
+            "SELECT email_verificado,token_verificacao_email,token_verificacao_expiracao FROM usuarios_clientes WHERE cliente_id=$1", [registered.id]
+        )).rows[0];
+        assert.equal(account.email_verificado, false, "Não declara um endereço verificado sem verificação");
+        assert.equal(account.token_verificacao_email, null, "Novo cadastro não cria token de confirmação");
+        assert.equal(account.token_verificacao_expiracao, null);
         res = await request("/api/public/clientes/login", "POST", customer);
         assert.equal(res.status, 200);
+        const initialToken = res.body.data.token;
+        assert.equal((await request("/api/public/clientes/login", "POST", customer)).status, 200);
+        assert.equal(welcomeAttempts.length, 1, "Login repetido nunca reenvia boas-vindas");
+
+        await pool.query(
+            "UPDATE usuarios_clientes SET token_verificacao_email='legacy-verification',token_verificacao_expiracao=NOW()+INTERVAL '1 day' WHERE cliente_id=$1", [registered.id]
+        );
+        assert.equal((await request("/api/public/clientes/login", "POST", customer)).status, 200,
+            "Conta legada com email_verificado=FALSE e token antigo também pode entrar");
+        for (const [path, method, body] of [
+            ["/api/public/clientes/reenviar-confirmacao", "POST", { email: customer.email }],
+            ["/api/public/clientes/verificar-email", "POST", { token: "legacy-verification" }],
+            ["/api/public/clientes/verificar-email?token=legacy-verification", "GET", undefined]
+        ]) {
+            const legacy = await request(path, method, body);
+            assert.equal(legacy.status, 410);
+            assert.match(legacy.body.message, /confirmação de e-mail não é necessária/i);
+        }
+        assert.equal(sent.length, 0, "Endpoints legados de confirmação não enviam mensagens");
+        assert.equal(welcomeAttempts.length, 1);
+        const legacyAccount = (await pool.query(
+            "SELECT email_verificado,token_verificacao_email FROM usuarios_clientes WHERE cliente_id=$1", [registered.id]
+        )).rows[0];
+        assert.equal(legacyAccount.email_verificado, false);
+        assert.equal(legacyAccount.token_verificacao_email, "legacy-verification", "Endpoint antigo não modifica a conta");
+
+        assert.equal((await request("/api/public/clientes/esqueci-senha", "POST", { email: customer.email })).status, 200);
+        assert.equal(sent.length, 1, "Recuperação continua enviando um link por e-mail");
+        const recovery = (await pool.query(
+            "SELECT token_recuperacao,token_expiracao FROM usuarios_clientes WHERE cliente_id=$1", [registered.id]
+        )).rows[0];
+        assert.ok(new Date(recovery.token_expiracao).getTime() > Date.now());
+        assert.ok(new Date(recovery.token_expiracao).getTime() <= Date.now() + 31 * 60 * 1000);
+        assert.ok(sent[0].text.includes(`http://localhost/redefinir-senha?token=${recovery.token_recuperacao}`));
+        await pool.query("UPDATE usuarios_clientes SET token_expiracao=NOW()-INTERVAL '1 second' WHERE cliente_id=$1", [registered.id]);
+        const newPassword = "NovaSenhaIsolada123";
+        assert.equal((await request("/api/public/clientes/redefinir-senha", "POST", { token: recovery.token_recuperacao, senha: newPassword })).status, 400,
+            "Link de recuperação expirado não altera a senha");
+        assert.equal((await request("/api/public/clientes/login", "POST", customer)).status, 200);
+        assert.equal((await request("/api/public/clientes/esqueci-senha", "POST", { email: customer.email })).status, 200);
+        assert.equal(sent.length, 2);
+        const freshRecovery = (await pool.query("SELECT token_recuperacao FROM usuarios_clientes WHERE cliente_id=$1", [registered.id])).rows[0].token_recuperacao;
+        assert.notEqual(freshRecovery, recovery.token_recuperacao);
+        assert.ok(sent[1].text.includes(`http://localhost/redefinir-senha?token=${freshRecovery}`));
+        assert.equal((await request("/api/public/clientes/redefinir-senha", "POST", { token: freshRecovery, senha: newPassword })).status, 200);
+        assert.equal((await request("/api/public/clientes/login", "POST", customer)).status, 401, "Senha anterior é recusada após a recuperação");
+        assert.equal((await request("/api/public/clientes/redefinir-senha", "POST", { token: freshRecovery, senha: newPassword })).status, 400,
+            "Link de recuperação não pode ser reutilizado");
+        assert.equal((await request("/api/public/clientes/me", "GET", null, initialToken)).status, 401, "Recuperação invalida a sessão anterior");
+        customer.senha = newPassword;
+        res = await request("/api/public/clientes/login", "POST", customer);
+        assert.equal(res.status, 200);
+        assert.equal(welcomeAttempts.length, 1, "Recuperação e novos logins não reenviam boas-vindas");
         const token = res.body.data.token;
         const empresaId = res.body.data.user.empresaId;
         const adminId = (await pool.query("INSERT INTO usuarios(nome,email,senha_hash,perfil,empresa_id) VALUES ('Admin','admin@example.invalid','test','ADMIN',$1) RETURNING id", [empresaId])).rows[0].id;
         assert.equal((await request("/api/public/clientes/me", "GET", null, token)).status, 200);
         assert.equal((await request("/api/public/clientes/cadastro", "POST", customer)).status, 409);
+        assert.equal(welcomeAttempts.length, 1, "Tentativa duplicada de cadastro não envia boas-vindas");
+        assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM notificacoes WHERE cliente_id=$1 AND tipo='BOAS_VINDAS'", [registered.id])).rows[0].n, 1,
+            "Sino mantém uma única mensagem de boas-vindas depois de logins e recuperação");
         const categoria = (await pool.query("INSERT INTO categorias (empresa_id,nome) VALUES ($1,'Teste') RETURNING id", [empresaId])).rows[0].id;
         const product = (await pool.query("INSERT INTO produtos (empresa_id,categoria_id,nome,sku,preco,custo,preco_venda,preco_custo) VALUES ($1,$2,'Produto Teste','TEST',12.50,5,12.50,5) RETURNING id", [empresaId,categoria])).rows[0].id;
         await pool.query("INSERT INTO estoque (empresa_id,produto_id,quantidade) VALUES ($1,$2,10) ON CONFLICT (empresa_id,produto_id) DO UPDATE SET quantidade=10", [empresaId,product]);

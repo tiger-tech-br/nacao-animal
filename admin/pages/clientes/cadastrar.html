@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -8,8 +8,9 @@
 
     <link rel="stylesheet" href="/css/pages/admin-pages.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+<link rel="stylesheet" href="/css/layout/admin-theme.css?v=20261021-1">
 </head>
-<body>
+<body class="admin-brand">
     <div class="admin-layout">
         <aside class="sidebar">
             <a class="sidebar-brand" href="/admin/pages/dashboard/dashboard.html">
@@ -36,7 +37,7 @@
                 <a href="/admin/pages/financeiro/financeiro.html" data-active-page="financeiro"><i class="fa-solid fa-wallet"></i>Financeiro</a>
                 <a href="/admin/pages/configuracoes/configuracoes.html" data-active-page="configuracoes"><i class="fa-solid fa-gear"></i>Configurações</a>
             </nav>
-        </aside>
+        <a class="sidebar-store-link" href="/" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-store" aria-hidden="true"></i>Ver a loja <span class="sr-only">(abre em outra aba)</span></a></aside>
 
         <main class="main-content">
             <header class="topbar">
@@ -110,11 +111,11 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="cpf">CPF</label>
-                                    <input class="form-control" id="cpf" name="cpf" type="text" inputmode="numeric" placeholder="000.000.000-00" pattern="^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$" title="Use um CPF válido, com ou sem pontuação. Ex: 000.000.000-00">
+                                    <input class="form-control" id="cpf" name="cpf" type="text" inputmode="numeric" placeholder="000.000.000-00" pattern="^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$" title="Use um CPF válido, com ou sem pontuação. Ex: 000.000.000-00" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="email">Email</label>
-                                    <input class="form-control" id="email" name="email" type="email" placeholder="cliente@email.com">
+                                    <input class="form-control" id="email" name="email" type="email" placeholder="cliente@email.com" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="celularWhatsapp"><i class="fa-brands fa-whatsapp"></i> Celular (WhatsApp)</label>
@@ -189,6 +190,7 @@
 
     <script src="/js/utils/storage.js?v=20260928-1"></script>
     <script src="/js/services/api.js"></script>
+    <script src="/js/services/authService.js"></script>
     <script src="/js/pages/auth/authGuard.js"></script>
     <script>
         "use strict";
@@ -202,6 +204,24 @@
             const status = document.getElementById("statusLine");
             const toggle = document.querySelector(".admin-menu-toggle");
             const sidebar = document.querySelector(".sidebar");
+            const logoutLink = document.querySelector('a[href="/admin/index.html"]');
+
+            logoutLink?.addEventListener("click", async event => {
+                event.preventDefault();
+
+                try {
+                    if (getToken()) {
+                        await AuthService.logout();
+                    }
+                } catch {
+                    // Encerra o acesso local mesmo quando o servidor está indisponível.
+                } finally {
+                    removeToken();
+                    removeUser();
+                    window.location.href = "/admin/index.html";
+                }
+            });
+
             const validationRules = {
                 nome: {
                     regex: /^[A-Za-zÀ-ÿ]+(?:\s+[A-Za-zÀ-ÿ]+)+$/,
@@ -271,6 +291,12 @@
                 });
 
                 overlay.addEventListener("click", closeSidebar);
+
+                window.addEventListener("resize", () => {
+                    if (window.innerWidth > 1024) {
+                        closeSidebar();
+                    }
+                });
             }
 
             Object.entries(validationRules).forEach(([name, rule]) => {
@@ -380,6 +406,9 @@
                 data.estado = data.estado?.toUpperCase() || "";
                 data.cep = formatCep(data.cep || "");
                 data.endereco = updateFullAddress();
+                data.whatsapp = onlyDigits(data.celularWhatsapp);
+                data.telefone = onlyDigits(data.telefone) || data.whatsapp;
+                delete data.celularWhatsapp;
 
                 try {
                     await apiPost("/clientes", data);

@@ -17,6 +17,8 @@ let automaticShippingTimer = null;
 let cepLookupTimer = null;
 let cepLookupController = null;
 let cepRevision = 0;
+let customerRevision = 0;
+let customerProfileController = null;
 const deliveryFields = { cep: "deliveryCep", endereco: "deliveryStreet", numero: "deliveryNumber", complemento: "deliveryComplement", bairro: "deliveryDistrict", cidade: "deliveryCity", estado: "deliveryState" };
 const embeddedCart = window.parent !== window && new URLSearchParams(location.search).get("sidebar") === "1";
 if (embeddedCart) document.body.classList.add("cart-embedded");
@@ -27,10 +29,31 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 document.addEventListener("petflow:customer-logout", async () => {
+    clearTimeout(automaticShippingTimer);
+    clearTimeout(cepLookupTimer);
+    cepLookupController?.abort();
+    customerProfileController?.abort();
+    cepLookupController = null;
+    customerProfileController = null;
+    ++shippingRevision;
+    ++cepRevision;
+    ++couponRevision;
+    ++customerRevision;
     cart = {};
+    customer = null;
     shippingQuote = null;
     selectedCoupon = "";
+    appliedCoupon = null;
+    couponSubtotal = null;
+    couponLoading = false;
     sessionStorage.removeItem("petflow_cart_coupon");
+    sessionStorage.removeItem("petflow_delivery_address");
+    for (const id of Object.values(deliveryFields)) document.getElementById(id).value = "";
+    document.getElementById("couponCode").value = "";
+    document.getElementById("cepStatus").textContent = "";
+    document.getElementById("shippingStatus").textContent = "";
+    document.getElementById("calculateShipping").disabled = false;
+    setCepLookupBusy(false);
     persistCart();
     renderCart();
     await renderCustomer();
@@ -469,6 +492,9 @@ function renderEmpty(message) {
 }
 
 async function renderCustomer() {
+    const revision = ++customerRevision;
+    customerProfileController?.abort();
+    customerProfileController = null;
     if (window.NacaoAnimalCartSandbox?.isActive()) {
         renderTotals();
         return;
@@ -499,11 +525,13 @@ async function renderCustomer() {
     }
 
     try {
-        customer = await fetchCustomerProfile();
+        const profile = await fetchCustomerProfile(token, revision);
+        if (revision !== customerRevision || getToken() !== token) return;
         if (window.NacaoAnimalCartSandbox?.isActive()) {
             renderTotals();
             return;
         }
+        customer = profile;
         const addressComplete = hasDeliveryAddress(customer);
         const contact = [customer.telefone, customer.email].filter(Boolean).join(" - ");
 
@@ -521,6 +549,7 @@ async function renderCustomer() {
             </div>
         `;
     } catch {
+        if (revision !== customerRevision || getToken() !== token) return;
         if (window.NacaoAnimalCartSandbox?.isActive()) {
             renderTotals();
             return;
@@ -701,21 +730,29 @@ async function startPayment(vendaId, token, status) {
     }
 }
 
-async function fetchCustomerProfile() {
-    const response = await fetch(`${CART_API}/clientes/me`, {
-        headers: {
-            Authorization: `Bearer ${getToken()}`
+async function fetchCustomerProfile(token = getToken(), revision = customerRevision) {
+    const controller = new AbortController();
+    customerProfileController = controller;
+    try {
+        const response = await fetch(`${CART_API}/clientes/me`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            },
+            signal: controller.signal
+        });
+        const payload = await response.json();
+        if (revision !== customerRevision || getToken() !== token) return null;
+
+        if (!response.ok) {
+            throw new Error(payload.message || "Cliente não autenticado.");
         }
-    });
-    const payload = await response.json();
 
-    if (!response.ok) {
-        throw new Error(payload.message || "Cliente não autenticado.");
+        sessionStorage.setItem("petflow_customer_user", JSON.stringify(payload.data));
+        window.PetFlowPublicHeader?.update();
+        return payload.data;
+    } finally {
+        if (customerProfileController === controller) customerProfileController = null;
     }
-
-    sessionStorage.setItem("petflow_customer_user", JSON.stringify(payload.data));
-    window.PetFlowPublicHeader?.update();
-    return payload.data;
 }
 
 function getCartItems() {

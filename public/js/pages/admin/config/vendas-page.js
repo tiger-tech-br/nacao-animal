@@ -136,7 +136,7 @@ window.PetFlowAdminPage = {
             status: "ENTREGUE",
             label: "Entregue",
             value: "0",
-            note: "Pedidos concluídos hoje",
+            note: "Entrega confirmada",
             icon: "fa-circle-check"
         }
     ]

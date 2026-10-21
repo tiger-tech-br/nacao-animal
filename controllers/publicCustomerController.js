@@ -20,8 +20,8 @@ const {
 const {
     sendEmail,
     sendOptionalEmail,
-    assertEmailConfigured,
-    emailVerificationTemplate,
+    welcomeTemplate,
+    accountDeletedTemplate,
     passwordResetTemplate
 } = require("../services/emailService");
 
@@ -50,21 +50,12 @@ async function register(request, response, next) {
             });
         }
 
-        assertEmailConfigured();
         client = await db.connect();
         await client.query("BEGIN");
 
         const senhaHash = await bcrypt.hash(
             data.senha,
             10
-        );
-
-        const verificationToken = crypto
-            .randomBytes(32)
-            .toString("hex");
-
-        const verificationExpiresAt = new Date(
-            Date.now() + 1000 * 60 * 60 * 24
         );
 
         const empresaIdResult = await client.query(
@@ -272,8 +263,6 @@ async function register(request, response, next) {
                     email,
                     senha_hash,
                     email_verificado,
-                    token_verificacao_email,
-                    token_verificacao_expiracao,
                     ativo
                 )
                 VALUES (
@@ -281,17 +270,13 @@ async function register(request, response, next) {
                     $2,
                     $3,
                     FALSE,
-                    $4,
-                    $5,
                     TRUE
                 )
             `,
             [
                 clienteId,
                 data.email.toLowerCase(),
-                senhaHash,
-                verificationToken,
-                verificationExpiresAt
+                senhaHash
             ]
         );
 
@@ -308,34 +293,27 @@ async function register(request, response, next) {
             tipo: "BOAS_VINDAS"
         }, client);
 
-        const verificationUrl = `${APP_URL}/login?verificar_email=${verificationToken}`;
-
-        const template = emailVerificationTemplate({
-            name: profile.nome,
-            verifyUrl: verificationUrl
-        });
-
-        await sendEmail({
-            to: profile.email,
-            subject: template.subject,
-            html: template.html,
-            text: template.text,
-            idempotencyKey: `verification/${verificationToken}`
-        });
-
         await client.query("COMMIT");
         committed = true;
+        client.release();
+        client = null;
+
+        await sendOptionalEmail({
+            to: profile.email,
+            ...welcomeTemplate({ name: profile.nome }),
+            idempotencyKey: `welcome/${clienteId}`
+        });
 
         return response.status(201).json({
             success: true,
-            message: "Cadastro criado. Enviamos um link de confirmação para seu e-mail."
+            message: "Cadastro criado com sucesso. Você já pode entrar na sua conta."
         });
 
     } catch (error) {
 
         if (error.code === "23505") {
             error.status = 409;
-            error.message = "Já existe um cadastro com esses dados. Entre ou reenvie a confirmação de e-mail.";
+            error.message = "Já existe um cadastro com esses dados. Entre na sua conta ou recupere sua senha.";
         }
         return next(error);
 
@@ -368,7 +346,6 @@ async function login(request, response, next) {
                 SELECT
                     c.*,
                     uc.senha_hash,
-                    uc.email_verificado,
                     uc.sessao_versao,
                     uc.ativo AS usuario_ativo
                 FROM clientes c
@@ -409,15 +386,6 @@ async function login(request, response, next) {
             return response.status(401).json({
                 success: false,
                 message: "E-mail ou senha inválidos."
-            });
-
-        }
-
-        if (!cliente.email_verificado) {
-
-            return response.status(403).json({
-                success: false,
-                message: "Confirme seu e-mail antes de entrar. Verifique sua caixa de entrada."
             });
 
         }
@@ -568,89 +536,18 @@ async function forgotPassword(request, response, next) {
 
 }
 
-async function resendVerification(request, response, next) {
-    try {
-        const email = String(request.body?.email || "").trim().toLowerCase();
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            return response.status(400).json({ success: false, message: "Informe um e-mail válido." });
-        }
-        assertEmailConfigured();
-        await db.transaction(async client => {
-            const { rows } = await client.query(`
-                SELECT uc.cliente_id, uc.token_verificacao_email, uc.token_verificacao_expiracao, c.nome
-                FROM usuarios_clientes uc JOIN clientes c ON c.id = uc.cliente_id
-                WHERE LOWER(uc.email) = $1 AND NOT uc.email_verificado
-                  AND uc.ativo = TRUE AND c.ativo = TRUE
-                FOR UPDATE OF uc
-            `, [email]);
-            if (!rows[0]) return;
-            const account = rows[0];
-            const token = account.token_verificacao_email && new Date(account.token_verificacao_expiracao) > new Date()
-                ? account.token_verificacao_email : crypto.randomBytes(32).toString("hex");
-            await client.query(`UPDATE usuarios_clientes
-                SET token_verificacao_email = $1, token_verificacao_expiracao = NOW() + INTERVAL '24 hours'
-                WHERE cliente_id = $2`, [token, account.cliente_id]);
-            const template = emailVerificationTemplate({ name: account.nome, verifyUrl: `${APP_URL}/login?verificar_email=${token}` });
-            await sendEmail({ to: email, ...template, idempotencyKey: `verification-resend/${token}/${Math.floor(Date.now() / 900000)}` });
-        });
-        return response.json({ success: true, message: "Se houver uma conta aguardando confirmação, enviaremos o link para esse e-mail." });
-    } catch (error) { return next(error); }
+async function resendVerification(request, response) {
+    return response.status(410).json({
+        success: false,
+        message: "A confirmação de e-mail não é necessária. Entre na sua conta ou use a recuperação de senha."
+    });
 }
 
-async function verifyEmail(request, response, next) {
-
-    try {
-
-        const token = String(
-            request.query?.token ||
-            request.body?.token ||
-            ""
-        ).trim();
-
-        if (!token) {
-
-            return response.status(400).json({
-                success: false,
-                message: "Link de confirmação inválido."
-            });
-
-        }
-
-        const { rowCount } = await db.query(
-            `
-                UPDATE usuarios_clientes
-                SET
-                    email_verificado = TRUE,
-                    token_verificacao_email = NULL,
-                    token_verificacao_expiracao = NULL,
-                    updated_at = NOW()
-                WHERE token_verificacao_email = $1
-                  AND token_verificacao_expiracao > NOW()
-                  AND ativo = TRUE
-            `,
-            [token]
-        );
-
-        if (!rowCount) {
-
-            return response.status(400).json({
-                success: false,
-                message: "Link de confirmação inválido ou expirado."
-            });
-
-        }
-
-        return response.status(200).json({
-            success: true,
-            message: "E-mail confirmado com sucesso. Você já pode entrar."
-        });
-
-    } catch (error) {
-
-        return next(error);
-
-    }
-
+async function verifyEmail(request, response) {
+    return response.status(410).json({
+        success: false,
+        message: "A confirmação de e-mail não é necessária. Entre na sua conta ou use a recuperação de senha."
+    });
 }
 
 async function resetPassword(request, response, next) {
@@ -878,7 +775,8 @@ async function update(request, response, next) {
 
 async function remove(request, response, next) {
 
-    const client = await db.connect();
+    let client;
+    let committed = false;
 
     try {
 
@@ -893,11 +791,18 @@ async function remove(request, response, next) {
 
         }
 
+        client = await db.connect();
         await client.query("BEGIN");
+        const locked = await client.query("SELECT id FROM clientes WHERE id=$1 AND empresa_id=$2 FOR UPDATE", [customer.id, customer.empresaId]);
+        if (!locked.rows[0]) {
+            await client.query("ROLLBACK");
+            return response.status(401).json({ success: false, message: "Cadastro não está mais disponível." });
+        }
 
         const profile = await getProfileById(
             customer.id,
-            customer.empresaId
+            customer.empresaId,
+            client
         );
 
         const activeOrders = await client.query(
@@ -914,6 +819,7 @@ async function remove(request, response, next) {
                 [protocoloPendente, customer.empresaId, customer.id, profile?.email || customer.email || null]
             );
             await client.query("COMMIT");
+            committed = true;
             return response.status(202).json({ success: true, pending: true, protocolo: protocoloPendente,
                 message: "Solicitação registrada. A conta será analisada após a conclusão dos pedidos em andamento." });
         }
@@ -922,9 +828,9 @@ async function remove(request, response, next) {
         await client.query(
             `INSERT INTO lgpd_solicitacoes
              (protocolo,empresa_id,cliente_id,email_referencia,tipo,status,detalhes,resposta,atendida_em)
-             VALUES ($1,$2,$3,$4,'EXCLUSAO','ATENDIDA','Exclusão solicitada pela área autenticada.',
+             VALUES ($1,$2,$3,NULL,'EXCLUSAO','ATENDIDA','Exclusão solicitada pela área autenticada.',
              'Conta removida e dados operacionais não obrigatórios eliminados.',NOW())`,
-            [protocolo, customer.empresaId, customer.id, profile?.email || customer.email || null]
+            [protocolo, customer.empresaId, customer.id]
         );
 
         await client.query(
@@ -942,11 +848,62 @@ async function remove(request, response, next) {
 
 
         await client.query(
+            `UPDATE lgpd_solicitacoes
+             SET email_referencia=NULL,detalhes='Conteúdo pessoal removido após exclusão do cadastro.',
+                 resposta=CASE WHEN resposta IS NULL THEN NULL ELSE 'Conteúdo pessoal removido após exclusão do cadastro.' END
+             WHERE empresa_id=$1 AND (cliente_id=$2 OR LOWER(email_referencia)=LOWER($3))`,
+            [customer.empresaId, customer.id, profile.email]
+        );
+        await client.query(
+            `UPDATE solicitacoes_consumidor
+             SET email_referencia=NULL,motivo='Conteúdo pessoal removido após exclusão do cadastro.',
+                 resposta=CASE WHEN resposta IS NULL THEN NULL ELSE 'Conteúdo pessoal removido após exclusão do cadastro.' END
+             WHERE empresa_id=$1 AND (cliente_id=$2 OR LOWER(email_referencia)=LOWER($3))`,
+            [customer.empresaId, customer.id, profile.email]
+        );
+        await client.query(
+            "UPDATE lgpd_consentimentos SET ip_hash=NULL,user_agent_hash=NULL WHERE empresa_id=$1 AND cliente_id=$2",
+            [customer.empresaId, customer.id]
+        );
+        await client.query(
+            `DELETE FROM notificacoes_admin WHERE empresa_id=$1 AND
+             (cliente_id=$2 OR venda_id IN (SELECT id FROM vendas WHERE empresa_id=$1 AND cliente_id=$2))`,
+            [customer.empresaId, customer.id]
+        );
+        await client.query(
+            `UPDATE auditoria_admin SET descricao='Registro operacional anonimizado após exclusão do cadastro.',
+             dados_anteriores=NULL,dados_novos=NULL
+             WHERE empresa_id=$1 AND ((entidade='CLIENTE' AND entidade_id=$2::text) OR
+             (entidade='VENDA' AND entidade_id IN (SELECT id::text FROM vendas WHERE empresa_id=$1 AND cliente_id=$2)))`,
+            [customer.empresaId, customer.id]
+        );
+        await client.query(
+            `UPDATE financeiro SET descricao='Pedido #' || referencia_id::text,observacoes=NULL
+             WHERE empresa_id=$1 AND origem='VENDA'
+               AND referencia_id IN (SELECT id FROM vendas WHERE empresa_id=$1 AND cliente_id=$2)`,
+            [customer.empresaId, customer.id]
+        );
+        await client.query(
+            "DELETE FROM entrega_rastreamento WHERE venda_id IN (SELECT id FROM vendas WHERE empresa_id=$1 AND cliente_id=$2)",
+            [customer.empresaId, customer.id]
+        );
+
+        await client.query(
             `
                 UPDATE vendas
                 SET
                     cliente_id = NULL,
                     endereco_entrega = jsonb_build_object('anonimizado', TRUE),
+                    observacoes = NULL,
+                    cancelamento_motivo = NULL,
+                    pagseguro_checkout_url = NULL,
+                    pagseguro_qr_code = NULL,
+                    pagseguro_qr_code_text = NULL,
+                    pagseguro_response = CASE
+                        WHEN pagseguro_response #>> '{charges,0,payment_method,type}' IN ('CREDIT_CARD','DEBIT_CARD','PIX')
+                        THEN jsonb_build_object('charges',jsonb_build_array(jsonb_build_object('payment_method',
+                            jsonb_build_object('type',pagseguro_response #>> '{charges,0,payment_method,type}'))))
+                        ELSE NULL END,
                     updated_at = NOW()
                 WHERE empresa_id = $1
                   AND cliente_id = $2
@@ -980,6 +937,15 @@ async function remove(request, response, next) {
         );
 
         await client.query("COMMIT");
+        committed = true;
+        client.release();
+        client = null;
+
+        await sendOptionalEmail({
+            to: profile.email,
+            ...accountDeletedTemplate({ name: profile.nome }),
+            idempotencyKey: `account-deleted/${customer.id}`
+        });
 
         return response.status(200).json({
             success: true,
@@ -989,12 +955,12 @@ async function remove(request, response, next) {
 
     } catch (error) {
 
-        await client.query("ROLLBACK");
+        if (client && !committed) await client.query("ROLLBACK");
         return next(error);
 
     } finally {
 
-        client.release();
+        if (client) client.release();
 
     }
 
@@ -1715,7 +1681,7 @@ function duplicateCustomerMessage(field) {
         cpf: "Esse CPF já está cadastrado.",
         telefone: "Esse telefone já está cadastrado.",
         whatsapp: "Esse celular já está cadastrado.",
-        email: "Esse e-mail já está cadastrado. Entre ou use Reenviar confirmação de e-mail."
+        email: "Esse e-mail já está cadastrado. Entre na sua conta ou recupere sua senha."
     };
 
     return messages[field] || messages.email;

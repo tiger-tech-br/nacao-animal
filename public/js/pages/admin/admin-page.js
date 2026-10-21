@@ -14,6 +14,7 @@
     let records = [];
     let editingId = null;
     let selectedSaleId = null;
+    let saleDetailsRevision = 0;
     let currentPage = 1;
     const pageSize = 25;
 
@@ -33,6 +34,7 @@
         buildForm();
         applyReadOnlyLayout();
         applySalesLayout();
+        setupSalesFilters();
 
         if (!isSalesPage) {
             populateRemoteSelects();
@@ -243,9 +245,9 @@
 
         const pipeline = document.createElement("section");
         pipeline.className = "order-pipeline";
-        pipeline.setAttribute("aria-label", "Etapas dos pedidos");
+        pipeline.setAttribute("aria-label", isSalesPage ? "Filtrar pedidos por etapa" : "Etapas dos pedidos");
         pipeline.innerHTML = config.pipeline.map((step, index) => `
-            <article
+            <${isSalesPage ? 'button type="button" aria-pressed="false"' : "article"}
                 class="pipeline-step"
                 data-pipeline-index="${index}"
                 data-pipeline-status="${escapeHtml(step.status || "")}">
@@ -254,16 +256,73 @@
                 </div>
 
                 <div>
-                    <span>Etapa ${index + 1}</span>
+                    <span>${isSalesPage ? "Filtrar por" : `Etapa ${index + 1}`}</span>
                     <strong>${escapeHtml(step.label || "")}</strong>
                     <small>${escapeHtml(step.note || "")}</small>
                 </div>
 
                 <b data-pipeline-value>${escapeHtml(step.value || "0")}</b>
-            </article>
+            </${isSalesPage ? "button" : "article"}>
         `).join("");
 
         anchor.insertAdjacentElement("afterend", pipeline);
+    }
+
+    function readSalesFilters() {
+        return {
+            query: document.getElementById("pageSearch")?.value || "",
+            status: document.getElementById("orderStatusFilter")?.value || "",
+            from: document.getElementById("orderDateFrom")?.value || "",
+            to: document.getElementById("orderDateTo")?.value || ""
+        };
+    }
+
+    function getFilteredRecords() {
+        if (isSalesPage && window.NacaoAnimalOrderFilters) {
+            return window.NacaoAnimalOrderFilters.filter(records, readSalesFilters());
+        }
+        const search = normalizeSearch(document.getElementById("pageSearch")?.value || "");
+        return records.filter(record => normalizeSearch(JSON.stringify(record)).includes(search));
+    }
+
+    function setupSalesFilters() {
+        const form = document.getElementById("orderFilters");
+        if (!isSalesPage || !form) return;
+        const apply = () => { currentPage = 1; renderTable(); };
+        form.addEventListener("submit", event => { event.preventDefault(); apply(); });
+        for (const id of ["orderStatusFilter", "orderDateFrom", "orderDateTo"]) {
+            document.getElementById(id)?.addEventListener("change", apply);
+        }
+        document.getElementById("clearOrderFilters")?.addEventListener("click", () => {
+            form.reset();
+            const search = document.getElementById("pageSearch");
+            if (search) search.value = "";
+            apply();
+        });
+        document.querySelectorAll("button[data-pipeline-status]").forEach(button => {
+            button.addEventListener("click", () => {
+                const select = document.getElementById("orderStatusFilter");
+                if (!select) return;
+                select.value = select.value === button.dataset.pipelineStatus ? "" : button.dataset.pipelineStatus;
+                apply();
+            });
+        });
+    }
+
+    function syncSalesFilterState(count) {
+        if (!isSalesPage) return;
+        const filters = readSalesFilters();
+        const error = window.NacaoAnimalOrderFilters?.validateRange(filters.from, filters.to) || "";
+        const status = document.getElementById("orderFilterError");
+        if (status) { status.textContent = error; status.hidden = !error; }
+        document.getElementById("orderDateTo")?.setCustomValidity(error);
+        const exportButton = document.querySelector("[data-export-csv]");
+        if (exportButton) exportButton.disabled = Boolean(error);
+        setText("orderFilterSummary", error ? "Ajuste o período para consultar os pedidos." :
+            `${count} de ${records.length} ${records.length === 1 ? "pedido exibido" : "pedidos exibidos"}.`);
+        document.querySelectorAll("button[data-pipeline-status]").forEach(button => {
+            button.setAttribute("aria-pressed", String(filters.status === button.dataset.pipelineStatus));
+        });
     }
 
 
@@ -928,16 +987,11 @@
             return;
         }
 
-        const search = normalizeSearch(
-            document.getElementById("pageSearch")?.value || ""
-        );
-
         const columns = config.columns || [];
         const showActions = config.mode !== "single" && (!isReadOnlyPage || config.allowDelete === true) &&
             (config.allowEdit !== false || config.allowDelete !== false || config.key === "compras");
-        const filtered = records.filter(record =>
-            normalizeSearch(JSON.stringify(record)).includes(search)
-        );
+        const filtered = getFilteredRecords();
+        syncSalesFilterState(filtered.length);
         const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
         currentPage = Math.min(currentPage, totalPages);
         const paged = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -1026,16 +1080,18 @@
         head.innerHTML = "";
 
         if (!filtered.length) {
+            const filters = readSalesFilters();
+            const invalidRange = window.NacaoAnimalOrderFilters?.validateRange(filters.from, filters.to);
             body.innerHTML = `
                 <tr>
                     <td>
                         <div class="empty-state">
                             <i class="fa-regular fa-folder-open"></i>
 
-                            <strong>Nenhum pedido encontrado</strong>
+                            <strong>${invalidRange ? "Confira o período selecionado" : "Nenhum pedido encontrado"}</strong>
 
                             <span>
-                                Não existem pedidos para exibir.
+                                ${invalidRange ? "Ajuste as datas acima para consultar os pedidos." : records.length ? "Nenhum pedido corresponde aos filtros. Você pode limpar a seleção para ver todos." : "Os pedidos recebidos pela loja aparecerão aqui."}
                             </span>
                         </div>
                     </td>
@@ -1180,8 +1236,11 @@
     }
 
     function exportCsv() {
-        const search = normalizeSearch(document.getElementById("pageSearch")?.value || "");
-        const list = records.filter(record => normalizeSearch(JSON.stringify(record)).includes(search));
+        if (isSalesPage) {
+            const filters = readSalesFilters();
+            if (window.NacaoAnimalOrderFilters?.validateRange(filters.from, filters.to)) return;
+        }
+        const list = getFilteredRecords();
         const columns = config.columns || [];
         const quote = value => {
             const text = String(value ?? "");
@@ -1203,7 +1262,9 @@
     }
 
     function renderSaleEmptyState(container) {
+        ++saleDetailsRevision;
         selectedSaleId = null;
+        container.setAttribute("aria-busy", "false");
         setText("formTitle", "Detalhes do pedido");
 
         container.innerHTML = `
@@ -1227,6 +1288,8 @@
         }
 
         selectedSaleId = id;
+        const revision = ++saleDetailsRevision;
+        form.setAttribute("aria-busy", "true");
         setText("formTitle", "Detalhes do pedido");
 
         form.innerHTML = `
@@ -1243,12 +1306,14 @@
 
         try {
             const sale = await apiGet(`${config.endpoint}/${id}`);
+            if (revision !== saleDetailsRevision || selectedSaleId !== id) return;
             renderSaleDetails(form, sale);
             form.closest(".panel")?.scrollIntoView({
                 behavior: "smooth",
                 block: "start"
             });
         } catch (error) {
+            if (revision !== saleDetailsRevision || selectedSaleId !== id) return;
             form.innerHTML = `
                 <div class="empty-state">
                     <i class="fa-solid fa-triangle-exclamation"></i>
@@ -1262,6 +1327,8 @@
                     </span>
                 </div>
             `;
+        } finally {
+            if (revision === saleDetailsRevision) form.setAttribute("aria-busy", "false");
         }
     }
 
@@ -1577,7 +1644,7 @@
             });
 
             await loadData();
-            await showSaleDetails(id);
+            if (selectedSaleId === id) await showSaleDetails(id);
             setStatus("Status do pedido atualizado com sucesso.");
         } catch (error) {
             setStatus(error.message || "Não foi possível atualizar o status.");
@@ -1645,6 +1712,14 @@
             return "Data não informada";
         }
 
+        if (isSalesPage && window.NacaoAnimalOrderFilters) {
+            const day = window.NacaoAnimalOrderFilters.dateKey(value);
+            if (!day) return "Data inválida";
+            if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
+                return day.split("-").reverse().join("/");
+            }
+        }
+
         const date = new Date(value);
 
         if (Number.isNaN(date.getTime())) {
@@ -1652,6 +1727,7 @@
         }
 
         return date.toLocaleString("pt-BR", {
+            ...(isSalesPage ? { timeZone: "America/Sao_Paulo" } : {}),
             day: "2-digit",
             month: "2-digit",
             year: "numeric",
@@ -1909,6 +1985,7 @@
     }
 
     function formatDateKey(value) {
+        if (isSalesPage && window.NacaoAnimalOrderFilters) return window.NacaoAnimalOrderFilters.dateKey(value);
         if (!value) {
             return "";
         }

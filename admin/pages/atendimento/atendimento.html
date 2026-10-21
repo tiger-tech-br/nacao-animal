@@ -8,8 +8,9 @@
     <link rel="stylesheet" href="/css/pages/admin-pages.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
+<link rel="stylesheet" href="/css/layout/admin-theme.css?v=20261021-1">
 </head>
-<body>
+<body class="admin-brand">
 <div class="admin-layout">
     <aside class="sidebar">
         <a class="sidebar-brand" href="/admin/pages/dashboard/dashboard.html"><img src="/images/logo/nacao-animal-logo-transparent.png" alt="Logo da Nação Animal" width="52" height="52"><div><strong>Nação Animal</strong><span>Painel administrativo</span></div></a>
@@ -20,7 +21,7 @@
             <a href="/admin/pages/vendas/vendas.html" data-active-page="vendas"><i class="fa-solid fa-box-open"></i>Pedidos</a>
             <a href="/admin/pages/financeiro/financeiro.html" data-active-page="financeiro"><i class="fa-solid fa-wallet"></i>Financeiro</a>
         </nav>
-    </aside>
+    <a class="sidebar-store-link" href="/" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-store" aria-hidden="true"></i>Ver a loja <span class="sr-only">(abre em outra aba)</span></a></aside>
     <main class="main-content">
         <header class="topbar"><div class="topbar-title"><span>Gestão da loja</span><h1 id="moduleTitle">Atendimento</h1></div><a class="btn" href="/admin/index.html">Sair</a></header>
         <section class="page-content">
@@ -34,7 +35,7 @@
 <script src="/js/utils/storage.js?v=20260928-1"></script>
 <script src="/js/services/api.js?v=20261003-1"></script>
 <script src="/js/pages/auth/authGuard.js"></script>
-<script src="/js/pages/admin/admin-page.js?v=20261003-3"></script>
+<script src="/js/pages/admin/admin-page.js?v=20261021-1"></script>
 <script src="/js/layout/notifications.js?v=20261002"></script>
 </body>
 </html>

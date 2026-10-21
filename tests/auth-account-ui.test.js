@@ -15,13 +15,18 @@ const customer = {
 const response = (status, payload) => ({
     ok: status >= 200 && status < 300, status, json: async () => payload
 });
+const customerKeys = [
+    "petflow_customer_token", "petflow_customer_user", "petflow_public_cart",
+    "petflow_public_favorites", "petflow_delivery_address", "petflow_cart_coupon"
+];
 function deferred() {
     let resolve;
-    const promise = new Promise(done => { resolve = done; });
-    return { promise, resolve };
+    let reject;
+    const promise = new Promise((done, fail) => { resolve = done; reject = fail; });
+    return { promise, resolve, reject };
 }
 
-function accountPage(fetch) {
+function accountPage(fetch, { confirm = () => true } = {}) {
     const elements = new Map();
     function element(id, extra = {}) {
         const value = {
@@ -64,15 +69,38 @@ function accountPage(fetch) {
         ["petflow_customer_token", "original-token"],
         ["petflow_customer_user", JSON.stringify({ nome: "Perfil já salvo" })],
         ["petflow_public_cart", JSON.stringify({ product: 2 })],
-        ["petflow_public_favorites", JSON.stringify(["product"])]
+        ["petflow_public_favorites", JSON.stringify(["product"])],
+        ["petflow_delivery_address", JSON.stringify({ cep: "00000000" })],
+        ["petflow_cart_coupon", JSON.stringify({ codigo: "TESTE" })],
+        ["token", "staff-token"], ["user", JSON.stringify({ nome: "Equipe" })], ["theme", "dark"]
     ]);
-    const legacy = new Map([["petflow_public_cart", "legacy-cart"]]);
+    const legacy = new Map([
+        ...customerKeys.map(key => [key, `legado-${key}`]),
+        ["token", "legacy-staff-token"], ["user", JSON.stringify({ nome: "Equipe antiga" })], ["theme", "light"]
+    ]);
     const requests = [];
-    const window = { location: { href: "/conta" }, PetFlowPublicHeader: { update() {} } };
+    const confirmationCalls = [];
+    const deletionConfirmations = [];
+    const confirmation = deferred();
+    const emittedEvents = [];
+    const documentListeners = new Map();
+    const window = {
+        location: { href: "/conta" }, PetFlowPublicHeader: { update() {} },
+        confirm(message) { deletionConfirmations.push(message); return confirm(message); },
+        NacaoAnimalLogoutDialog: { confirm(trigger) { confirmationCalls.push(trigger); return confirmation.promise; } }
+    };
     const document = {
-        addEventListener() {},
+        addEventListener(name, callback) {
+            const listeners = documentListeners.get(name) || [];
+            listeners.push(callback);
+            documentListeners.set(name, listeners);
+        },
+        dispatchEvent(event) {
+            emittedEvents.push(event.type);
+            for (const callback of documentListeners.get(event.type) || []) callback(event);
+        },
         getElementById: id => elements.get(id) || null,
-        querySelector: selector => selector.includes("submit") ? save : null,
+        querySelector: selector => selector.includes("submit") ? save : selector === ".account-container" ? form : null,
         querySelectorAll: () => []
     };
     const storageApi = map => ({
@@ -89,6 +117,7 @@ function accountPage(fetch) {
     }
     const context = vm.createContext({
         window, document, AbortController, AbortSignal, URLSearchParams, console, FormData: FormDataStub,
+        CustomEvent: class CustomEvent { constructor(type) { this.type = type; } },
         sessionStorage: storageApi(storage), localStorage: storageApi(legacy),
         fetch: async (url, options) => {
             requests.push({ url, ...options });
@@ -97,12 +126,13 @@ function accountPage(fetch) {
     });
     vm.runInContext(source, context);
     return {
-        context, form, save, retry, window, storage, legacy, requests,
+        context, form, save, retry, window, storage, legacy, requests, confirmationCalls, deletionConfirmations, emittedEvents,
+        answerConfirmation: value => confirmation.resolve(value),
         get: id => elements.get(id),
         blocked: () => fields.disabled || save.disabled,
         init: () => context.setupPublicAccount(),
         async click(target) {
-            await Promise.all((target.listeners.get("click") || []).map(callback => callback({ preventDefault() {}, target })));
+            await Promise.all((target.listeners.get("click") || []).map(callback => callback({ preventDefault() {}, target, currentTarget: target })));
         },
         async submit() {
             await Promise.all((form.listeners.get("submit") || []).map(callback => callback({ preventDefault() {}, target: form })));
@@ -178,7 +208,7 @@ for (const status of [401, 403]) {
         const page = accountPage(async () => response(status, { message: "Sessão inválida." }));
         await page.init();
         assert.equal(page.window.location.href, "/login");
-        for (const key of ["petflow_customer_token", "petflow_customer_user", "petflow_public_cart", "petflow_public_favorites"]) {
+        for (const key of customerKeys) {
             assert.equal(page.storage.has(key), false);
         }
     });
@@ -214,3 +244,174 @@ test("resposta pendente não restaura o perfil depois de encerrar a sessão", as
     assert.equal(page.storage.has("petflow_customer_user"), false);
     assert.equal(page.blocked(), true);
 });
+
+test("Minha conta aguarda confirmação e cancelar mantém dados e página atual", async () => {
+    const page = accountPage(async () => response(200, { data: customer }));
+    await page.init();
+    const before = [new Map(page.storage), new Map(page.legacy)];
+    const logout = page.get("publicLogout");
+    const leaving = page.click(logout);
+    assert.deepEqual(page.confirmationCalls, [logout]);
+    assert.equal(page.requests.filter(item => item.url.endsWith("/logout")).length, 0);
+    assert.deepEqual(page.storage, before[0]);
+    assert.equal(page.window.location.href, "/conta");
+    page.answerConfirmation(false);
+    await leaving;
+    assert.deepEqual(page.storage, before[0]);
+    assert.deepEqual(page.legacy, before[1]);
+    assert.equal(page.window.location.href, "/conta");
+    assert.equal(page.requests.filter(item => item.url.endsWith("/logout")).length, 0);
+    assert.deepEqual(page.emittedEvents, []);
+});
+
+for (const revocation of ["sucesso", "erro de rede", "HTTP 503"]) {
+    test(`Minha conta confirma saída e limpa somente dados do cliente após ${revocation}`, async () => {
+        const page = accountPage(async (url, options) => {
+            if (url === "/api/public/clientes/me" && options.method === "GET") return response(200, { data: customer });
+            assert.equal(url, "/api/public/clientes/logout");
+            assert.equal(options.method, "POST");
+            if (revocation === "erro de rede") throw new TypeError("Failed to fetch");
+            return response(revocation === "HTTP 503" ? 503 : 200, {});
+        });
+        await page.init();
+        const preserved = [page.storage, page.legacy].map(store => new Map(
+            [...store].filter(([key]) => !customerKeys.includes(key))
+        ));
+        const leaving = page.click(page.get("publicLogout"));
+        assert.equal(page.storage.get("petflow_customer_token"), "original-token");
+        assert.equal(page.window.location.href, "/conta");
+        page.answerConfirmation(true);
+        await leaving;
+        for (const [index, store] of [page.storage, page.legacy].entries()) {
+            for (const key of customerKeys) assert.equal(store.has(key), false, key);
+            assert.deepEqual(store, preserved[index], "Preserva token/user administrativos e preferências");
+        }
+        const logouts = page.requests.filter(item => item.url.endsWith("/logout"));
+        assert.equal(logouts.length, 1);
+        assert.equal(logouts[0].headers.Authorization, "Bearer original-token");
+        assert.equal(logouts[0].keepalive, true);
+        assert.deepEqual(page.emittedEvents, ["petflow:customer-logout"]);
+        assert.equal(page.window.location.href, "/");
+    });
+}
+
+test("Minha conta não encerra outra sessão aberta enquanto o diálogo aguarda", async () => {
+    const page = accountPage(async () => response(200, { data: customer }));
+    await page.init();
+    const leaving = page.click(page.get("publicLogout"));
+    page.storage.set("petflow_customer_token", "another-account-token");
+    page.storage.set("petflow_customer_user", JSON.stringify({ nome: "Outro cliente" }));
+    page.storage.set("petflow_delivery_address", JSON.stringify({ cep: "11111111" }));
+    const before = [new Map(page.storage), new Map(page.legacy)];
+    page.answerConfirmation(true);
+    await leaving;
+    assert.deepEqual(page.storage, before[0]);
+    assert.deepEqual(page.legacy, before[1]);
+    assert.equal(page.window.location.href, "/conta");
+    assert.equal(page.requests.filter(item => item.url.endsWith("/logout")).length, 0);
+    assert.deepEqual(page.emittedEvents, []);
+});
+
+test("exclusão usa confirmação nativa explicativa e cancelar mantém o cadastro", async () => {
+    const page = accountPage(async () => response(200, { data: customer }), { confirm: () => false });
+    await page.init();
+    const before = [new Map(page.storage), new Map(page.legacy)];
+    await page.click(page.get("publicDeleteAccount"));
+    assert.equal(page.deletionConfirmations.length, 1);
+    const message = page.deletionConfirmations[0];
+    assert.match(message, /Tem certeza que deseja excluir seu cadastro/);
+    assert.match(message, /acesso e seus dados cadastrais serão removidos/);
+    assert.match(message, /obrigação de conservação poderão ser mantidos/);
+    assert.match(message, /pedidos em andamento.*analisada antes da exclusão/);
+    assert.deepEqual(page.confirmationCalls, [], "Exclusão mantém a confirmação nativa própria");
+    assert.equal(page.requests.filter(item => item.method === "DELETE").length, 0);
+    assert.deepEqual(page.storage, before[0]);
+    assert.deepEqual(page.legacy, before[1]);
+    assert.equal(page.window.location.href, "/conta");
+    assert.equal(page.blocked(), false);
+    assert.deepEqual(page.emittedEvents, []);
+});
+
+test("exclusão pendente retorna protocolo e mantém sessão e dados", async () => {
+    const page = accountPage(async (_url, options) => options.method === "DELETE"
+        ? response(202, { pending: true, message: "Solicitação em análise.", protocolo: "PROTO-TESTE-202" })
+        : response(200, { data: customer }));
+    await page.init();
+    const before = [new Map(page.storage), new Map(page.legacy)];
+    await page.click(page.get("publicDeleteAccount"));
+    assert.deepEqual(page.storage, before[0]);
+    assert.deepEqual(page.legacy, before[1]);
+    assert.equal(page.get("accountStatus").textContent, "Solicitação em análise. Protocolo: PROTO-TESTE-202.");
+    const deletion = page.requests.find(item => item.method === "DELETE");
+    assert.equal(deletion.url, "/api/public/clientes/me");
+    assert.equal(deletion.headers.Authorization, "Bearer original-token");
+    assert.equal(page.window.location.href, "/conta");
+    assert.equal(page.blocked(), false);
+    assert.equal(page.get("publicDeleteAccount").disabled, false);
+    assert.equal(page.get("email").disabled, true);
+    assert.deepEqual(page.emittedEvents, []);
+});
+
+test("exclusão concluída limpa cliente, preserva administrador e encerra a página", async () => {
+    const page = accountPage(async (_url, options) => options.method === "DELETE"
+        ? response(200, { success: true, message: "Cadastro excluído." })
+        : response(200, { data: customer }));
+    await page.init();
+    const preserved = [page.storage, page.legacy].map(store => new Map(
+        [...store].filter(([key]) => !customerKeys.includes(key))
+    ));
+    await page.click(page.get("publicDeleteAccount"));
+    for (const [index, store] of [page.storage, page.legacy].entries()) {
+        for (const key of customerKeys) assert.equal(store.has(key), false, key);
+        assert.deepEqual(store, preserved[index]);
+    }
+    assert.equal(page.requests.filter(item => item.method === "DELETE").length, 1);
+    assert.deepEqual(page.emittedEvents, ["petflow:customer-logout"]);
+    assert.equal(page.window.location.href, "/");
+});
+
+test("exclusão em andamento bloqueia duplo clique e reabilita ações após protocolo", async () => {
+    const pending = deferred();
+    const page = accountPage(async (_url, options) => options.method === "DELETE"
+        ? pending.promise : response(200, { data: customer }));
+    await page.init();
+    const deleting = page.click(page.get("publicDeleteAccount"));
+    assert.equal(page.get("publicDeleteAccount").disabled, true);
+    assert.equal(page.save.disabled, true);
+    assert.equal(page.get("publicLogout").disabled, false);
+    await page.click(page.get("publicDeleteAccount"));
+    assert.equal(page.requests.filter(item => item.method === "DELETE").length, 1);
+    assert.equal(page.deletionConfirmations.length, 1);
+    pending.resolve(response(202, { pending: true, message: "Em análise.", protocolo: "PROTO-TESTE" }));
+    await deleting;
+    assert.equal(page.get("publicDeleteAccount").disabled, false);
+    assert.equal(page.save.disabled, false);
+    assert.equal(page.get("email").disabled, true);
+    assert.equal(page.storage.get("petflow_customer_token"), "original-token");
+});
+
+for (const result of ["sucesso", "HTTP 503", "erro de rede"]) {
+    test(`exclusão antiga com ${result} não altera outra sessão`, async () => {
+        const pending = deferred();
+        const page = accountPage(async (_url, options) => options.method === "DELETE"
+            ? pending.promise : response(200, { data: customer }));
+        await page.init();
+        const deleting = page.click(page.get("publicDeleteAccount"));
+        page.storage.set("petflow_customer_token", "new-account-token");
+        page.storage.set("petflow_customer_user", JSON.stringify({ nome: "Nova conta" }));
+        page.storage.set("petflow_delivery_address", JSON.stringify({ cep: "22222222" }));
+        page.get("accountStatus").textContent = "Estado da nova sessão";
+        const before = [new Map(page.storage), new Map(page.legacy)];
+        const disabled = page.form.elements.map(control => control.disabled);
+        if (result === "erro de rede") pending.reject(new TypeError("Failed to fetch"));
+        else pending.resolve(response(result === "HTTP 503" ? 503 : 200,
+            result === "HTTP 503" ? { message: "Falha antiga" } : { success: true }));
+        await deleting;
+        assert.deepEqual(page.storage, before[0]);
+        assert.deepEqual(page.legacy, before[1]);
+        assert.deepEqual(page.form.elements.map(control => control.disabled), disabled);
+        assert.equal(page.get("accountStatus").textContent, "Estado da nova sessão");
+        assert.equal(page.window.location.href, "/conta");
+        assert.deepEqual(page.emittedEvents, []);
+    });
+}

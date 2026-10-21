@@ -8,10 +8,11 @@ function cartHarness(fetch) {
     const timers = new Map();
     const elements = new Map();
     const storage = new Map();
+    const documentListeners = new Map();
     let timerId = 0;
     const document = {
         activeElement: null,
-        addEventListener() {},
+        addEventListener(event, callback) { documentListeners.set(event, callback); },
         getElementById: get,
         querySelector: () => get("buy"),
         querySelectorAll: () => []
@@ -45,13 +46,19 @@ function cartHarness(fetch) {
             getItem: key => storage.get(key) ?? null,
             setItem: (key, value) => storage.set(key, String(value)),
             removeItem: key => storage.delete(key)
-        }
+        },
+        localStorage: { removeItem() {} }
     });
     const run = code => vm.runInContext(code, context);
     run(fs.readFileSync("public/js/pages/cart/cart.js", "utf8"));
     run('cartProducts=[{id:"product",preco:6,nome:"Produto"}];cart={product:1};setupCartEvents();');
     return {
         get, run, document, storage, timers,
+        async logout() {
+            storage.delete("petflow_customer_token");
+            storage.delete("petflow_customer_user");
+            await documentListeners.get("petflow:customer-logout")();
+        },
         input(id, value) {
             const element = get(id);
             element.value = value;
@@ -221,3 +228,115 @@ test("cotação aguarda uma UF válida antes de enviar o endereço", async () =>
     assert.equal(h.run("shippingQuote"), null);
     assert.match(h.get("shippingStatus").textContent, /CEP|endereço|UF|estado/i);
 });
+
+const personalAddress = { ...address, numero: "123", complemento: "Casa 2" };
+const customerProfile = { ...personalAddress, nome: "Cliente anterior", telefone: "11999999999", email: "anterior@example.invalid" };
+
+function fillPersonalAddress(h) {
+    h.storage.set("petflow_customer_token", "old-token");
+    h.storage.set("petflow_customer_user", JSON.stringify(customerProfile));
+    h.storage.set("petflow_delivery_address", JSON.stringify(personalAddress));
+    h.run(`customer=${JSON.stringify(customerProfile)};`);
+    h.run(`for (const [field,id] of Object.entries(deliveryFields)) document.getElementById(id).value=${JSON.stringify(personalAddress)}[field];`);
+}
+
+function assertLoggedOutAddress(h) {
+    for (const id of h.run("Object.values(deliveryFields)")) assert.equal(h.get(id).value, "", id);
+    assert.equal(h.storage.has("petflow_delivery_address"), false);
+    assert.equal(h.storage.has("petflow_cart_coupon"), false);
+    assert.equal(h.storage.has("petflow_customer_user"), false);
+    assert.equal(h.run("customer"), null);
+    assert.equal(h.run("shippingQuote"), null);
+    assert.equal(h.run("appliedCoupon"), null);
+    assert.equal(h.run("couponSubtotal"), null);
+    assert.equal(h.run("couponLoading"), false);
+    assert.equal(h.run("selectedCoupon"), "");
+    assert.equal(h.get("couponCode").value, "");
+    assert.equal(h.get("lookupCep").disabled, false);
+    assert.equal(h.get("calculateShipping").disabled, false);
+}
+
+test("sair limpa endereço pessoal, cupom e consultas automáticas ainda agendadas", async () => {
+    const h = cartHarness(async () => { throw new Error("Requisição inesperada"); });
+    fillPersonalAddress(h);
+    h.input("deliveryNumber", "124");
+    assert.equal(h.timers.size, 1, "Há uma cotação automática agendada");
+    h.run('shippingQuote={valor:3};selectedCoupon="ANTERIOR";appliedCoupon={codigo:"ANTERIOR",desconto:1};couponSubtotal=6;couponLoading=true;');
+    h.storage.set("petflow_cart_coupon", "ANTERIOR");
+    h.get("couponCode").value = "ANTERIOR";
+    await h.logout();
+    assert.equal(h.timers.size, 0);
+    assertLoggedOutAddress(h);
+
+    h.input("deliveryCep", address.cep);
+    assert.equal(h.timers.size, 1, "Há uma busca de CEP agendada");
+    await h.logout();
+    assert.equal(h.timers.size, 0);
+    assertLoggedOutAddress(h);
+});
+
+test("resposta de CEP concluída depois de sair não restaura endereço ou armazenamento", async () => {
+    const pending = deferred();
+    let signal;
+    const h = cartHarness((_url, options) => { signal = options.signal; return pending.promise; });
+    fillPersonalAddress(h);
+    const lookup = h.run("lookupDeliveryCep()");
+    assert.equal(h.get("lookupCep").disabled, true);
+    await h.logout();
+    assert.equal(signal.aborted, true);
+    pending.resolve(response(address));
+    await lookup;
+    assertLoggedOutAddress(h);
+    assert.equal(h.get("cepStatus").textContent, "");
+});
+
+for (const operation of ["calculateShipping()", 'refreshCoupons("ANTERIOR")']) {
+    test(`${operation}: resposta anterior à saída não restaura frete ou cupom`, async () => {
+        const pending = deferred();
+        const h = cartHarness(() => pending.promise);
+        fillPersonalAddress(h);
+        const request = h.run(operation);
+        await h.logout();
+        pending.resolve(response({
+            valor: 3, distanciaMetros: 1500, token: "old-quote", produtos: 6,
+            cupom: { codigo: "ANTERIOR", desconto: 1 }, disponiveis: []
+        }));
+        await request;
+        assertLoggedOutAddress(h);
+        assert.equal(h.get("shippingStatus").textContent, "");
+        assert.equal(h.get("couponStatus").textContent, "");
+    });
+}
+
+test("perfil pendente após sair não volta ao cache, resumo ou formulário", async () => {
+    const pending = deferred();
+    let signal;
+    const h = cartHarness((_url, options) => { signal = options.signal; return pending.promise; });
+    fillPersonalAddress(h);
+    const profile = h.run("renderCustomer()");
+    await h.logout();
+    assert.equal(signal.aborted, true);
+    pending.resolve(response(customerProfile));
+    await profile;
+    h.run("restoreDeliveryAddress()");
+    assertLoggedOutAddress(h);
+    assert.doesNotMatch(h.get("cartCustomer").innerHTML, /Cliente anterior|anterior@example/);
+});
+
+for (const status of [200, 401]) {
+    test(`perfil antigo com resposta ${status} não altera cache nem sessão de outro cliente`, async () => {
+        const pending = deferred();
+        const h = cartHarness(() => pending.promise);
+        fillPersonalAddress(h);
+        const profile = h.run("renderCustomer()");
+        h.storage.set("petflow_customer_token", "new-token");
+        h.storage.set("petflow_customer_user", "new-customer");
+        h.get("cartCustomer").innerHTML = "Cliente atual";
+        pending.resolve({ ok: status === 200, status, json: async () => ({ data: customerProfile }) });
+        await profile;
+        assert.equal(h.storage.get("petflow_customer_token"), "new-token");
+        assert.equal(h.storage.get("petflow_customer_user"), "new-customer");
+        assert.equal(h.get("cartCustomer").innerHTML, "Cliente atual");
+        assert.equal(h.run("customer"), null);
+    });
+}

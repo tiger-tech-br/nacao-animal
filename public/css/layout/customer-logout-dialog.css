@@ -1,0 +1,142 @@
+.customer-logout-dialog {
+    position: fixed;
+    width: min(480px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    margin: auto;
+    padding: 0;
+    overflow: auto;
+    border: 1px solid #ecdfca;
+    border-radius: 24px;
+    color: #101b21;
+    background: #fffaf1;
+    font-family: "Poppins", Arial, sans-serif;
+    box-shadow: 0 24px 80px #101b213d;
+}
+
+.customer-logout-dialog::backdrop {
+    background: #101b217a;
+    backdrop-filter: blur(3px);
+}
+
+.customer-logout-dialog,
+.customer-logout-dialog * {
+    box-sizing: border-box;
+}
+
+.customer-logout-dialog .customer-logout-dialog__content {
+    padding: 32px;
+}
+
+.customer-logout-dialog .customer-logout-dialog__close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 50%;
+    color: #5f5446;
+    background: transparent;
+    font: 28px/1 Arial, sans-serif;
+    cursor: pointer;
+}
+
+.customer-logout-dialog .customer-logout-dialog__close:hover {
+    color: #101b21;
+    background: #f7ecd8;
+}
+
+.customer-logout-dialog .customer-logout-dialog__emblem {
+    width: 54px;
+    height: 54px;
+    display: grid;
+    place-items: center;
+    margin: 0 0 20px;
+    border-radius: 17px;
+    color: #101b21;
+    background: #ffda61;
+    font-size: 27px;
+    font-weight: 800;
+}
+
+.customer-logout-dialog h2 {
+    margin: 0 0 12px;
+    color: #101b21;
+    font-size: clamp(23px, 5vw, 27px);
+    font-weight: 800;
+    line-height: 1.25;
+    letter-spacing: -.7px;
+}
+
+.customer-logout-dialog p {
+    margin: 0;
+    color: #635d54;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.customer-logout-dialog .customer-logout-dialog__actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 26px;
+}
+
+.customer-logout-dialog .customer-logout-dialog__actions button {
+    flex: 1;
+    min-width: 0;
+    min-height: 46px;
+    padding: 10px 14px;
+    border: 1px solid #e1d1b6;
+    border-radius: 12px;
+    color: #101b21;
+    background: #fff;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.4;
+    cursor: pointer;
+}
+
+.customer-logout-dialog .customer-logout-dialog__cancel:hover {
+    border-color: #c7a878;
+    background: #fff4df;
+}
+
+.customer-logout-dialog .customer-logout-dialog__actions .customer-logout-dialog__confirm {
+    border-color: #ff5a00;
+    background: #ff5a00;
+}
+
+.customer-logout-dialog .customer-logout-dialog__actions .customer-logout-dialog__confirm:hover {
+    border-color: #ff7429;
+    background: #ff7429;
+}
+
+.customer-logout-dialog button:focus-visible {
+    outline: 3px solid #ac3e00;
+    outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+    .customer-logout-dialog {
+        border-radius: 20px;
+    }
+
+    .customer-logout-dialog .customer-logout-dialog__content {
+        padding: 28px 22px;
+    }
+
+    .customer-logout-dialog .customer-logout-dialog__actions {
+        flex-direction: column;
+    }
+
+    .customer-logout-dialog .customer-logout-dialog__actions button {
+        width: 100%;
+        min-height: 48px;
+    }
+}

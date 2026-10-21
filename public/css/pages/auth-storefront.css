@@ -108,6 +108,8 @@
 .auth-orders .order-timeline li span { border-color: #e7d8ba; }
 .auth-orders .order-timeline li.is-done { border-color: #ffcf9d; color: #b74d00; background: #fff3e0; }
 .auth-orders .order-timeline li.is-done span { border-color: #ff6b00; background: #ff6b00; }
+.auth-orders .order-card > .order-timeline-state { padding: 15px 17px; border: 1px solid #eee2ce; border-radius: 13px; color: #6e604b; background: #fffaf0; line-height: 1.6; overflow-wrap: anywhere; }
+.auth-orders .order-card > .order-timeline-state.is-canceled { border-color: #ebc3b9; color: #9b291a; background: #fff8f5; }
 .auth-orders .order-note { gap: 8px; padding: 17px; border-color: #eee2ce; border-radius: 15px; background: #fffaf0; font-size: 12px; }
 .auth-orders .order-actions { flex-wrap: wrap; padding-top: 18px; border-color: #f0e5d3; }
 .auth-orders .order-actions span { color: #8a7b66; font-size: 11px; font-weight: 400; }

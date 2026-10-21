@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-BR">
 
@@ -25,9 +25,11 @@
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
 <link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
+<link rel="stylesheet" href="/css/layout/admin-theme.css?v=20261021-1">
+<link rel="stylesheet" href="/css/pages/admin-orders.css?v=20261021-1">
 </head>
 
-<body>
+<body class="admin-brand admin-orders-page">
 
 <div class="admin-layout">
 
@@ -126,7 +128,7 @@
 
         </nav>
 
-    </aside>
+    <a class="sidebar-store-link" href="/" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-store" aria-hidden="true"></i>Ver a loja <span class="sr-only">(abre em outra aba)</span></a></aside>
 
     <main class="main-content">
 
@@ -175,9 +177,40 @@
                     <input
                         id="pageSearch"
                         type="search"
-                        placeholder="Pesquisar pedidos">
+                        aria-label="Buscar pedido por número, cliente ou pagamento"
+                        placeholder="Buscar pedido, cliente ou pagamento">
                 </div>
             </div>
+
+            <form id="orderFilters" class="sales-filters" aria-label="Filtrar pedidos">
+                <div class="sales-filter-field">
+                    <label for="orderStatusFilter">Status do pedido</label>
+                    <select id="orderStatusFilter" name="status" class="form-control">
+                        <option value="">Todos os status</option>
+                        <option value="AGUARDANDO_PAGAMENTO">Aguardando pagamento</option>
+                        <option value="PAGAMENTO_APROVADO">Pedido recebido</option>
+                        <option value="EM_SEPARACAO">Preparando</option>
+                        <option value="SAIU_PARA_ENTREGA">Saiu para entrega</option>
+                        <option value="ENTREGUE">Entregue</option>
+                        <option value="FINALIZADA">Finalizado</option>
+                        <option value="CANCELADA">Cancelado</option>
+                    </select>
+                </div>
+                <div class="sales-filter-field">
+                    <label for="orderDateFrom">Data inicial do pedido</label>
+                    <input id="orderDateFrom" name="from" type="date" class="form-control" aria-describedby="orderPeriodHint orderFilterError">
+                </div>
+                <div class="sales-filter-field">
+                    <label for="orderDateTo">Data final do pedido</label>
+                    <input id="orderDateTo" name="to" type="date" class="form-control" aria-describedby="orderPeriodHint orderFilterError">
+                </div>
+                <button id="clearOrderFilters" class="btn" type="button">Limpar filtros</button>
+                <div class="sales-filter-feedback">
+                    <p id="orderPeriodHint">Período pela data do pedido, no horário de Brasília. Os cartões acima mostram o total de cada etapa.</p>
+                    <p id="orderFilterError" role="alert" hidden></p>
+                    <p id="orderFilterSummary" role="status" aria-live="polite"></p>
+                </div>
+            </form>
 
             <div class="content-grid">
 
@@ -222,11 +255,12 @@
 
 </div>
 
-<script src="/js/pages/admin/config/vendas-page.js?v=20260928-1"></script>
+<script src="/js/pages/admin/config/vendas-page.js?v=20261021-1"></script>
 <script src="/js/utils/storage.js?v=20260928-1"></script>
 <script src="/js/services/api.js"></script>
 <script src="/js/pages/auth/authGuard.js"></script>
-<script src="/js/pages/admin/admin-page.js?v=20261003-3"></script>
+<script src="/js/pages/admin/order-filters.js?v=20261021-1"></script>
+<script src="/js/pages/admin/admin-page.js?v=20261021-1"></script>
 
 <script src="/js/layout/notifications.js?v=20261002"></script>
 </body>

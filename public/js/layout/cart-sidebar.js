@@ -13,8 +13,25 @@
     }
 
     function closeCart() {
-        if (!busy) dialog?.close();
+        if (!busy && dialog?.open) dialog.close();
     }
+
+    document.addEventListener("petflow:customer-logout", event => {
+        if (frame) {
+            try {
+                frame.contentDocument?.dispatchEvent(new CustomEvent("petflow:customer-logout", { detail: event.detail }));
+            } catch (_error) {
+                // Um documento de outra origem ainda precisa ser descartado.
+            }
+            frame.src = "about:blank";
+        }
+        busy = false;
+        if (dialog) {
+            dialog.querySelector("button").disabled = false;
+            if (dialog.open) dialog.close();
+        }
+        document.documentElement.classList.remove("cart-sidebar-open");
+    });
 
     function openCart() {
         if (!dialog) {
@@ -37,7 +54,7 @@
                 syncCart();
             });
             window.addEventListener("message", event => {
-                if (event.origin !== location.origin || event.source !== frame.contentWindow) return;
+                if (!dialog.open || event.origin !== location.origin || event.source !== frame.contentWindow) return;
                 if (event.data?.type === "petflow:cart-changed") syncCart();
                 if (event.data?.type === "petflow:close-cart") closeCart();
                 if (event.data?.type === "petflow:cart-busy") {

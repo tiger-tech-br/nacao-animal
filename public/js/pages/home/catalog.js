@@ -862,7 +862,7 @@ function setupCustomerHeader() {
         const label = link.querySelector("[data-customer-label]");
         if (token) {
             link.href = "/conta";
-            (label || link).textContent = firstName;
+            (label || link).textContent = `Olá, ${firstName}!`;
             link.title = fullName;
             link.classList.add("is-authenticated");
             link.setAttribute("aria-label", "Abrir minha conta");
@@ -891,13 +891,16 @@ function insertLogoutLink(accountLink) {
     logout.dataset.publicLogout = "true";
     logout.textContent = "Sair";
     logout.setAttribute("aria-label", "Sair da conta");
+    logout.setAttribute("aria-haspopup", "dialog");
     logout.addEventListener("click", handleCustomerLogout);
     accountLink.insertAdjacentElement("afterend", logout);
 }
 
-function handleCustomerLogout(event) {
+async function handleCustomerLogout(event) {
     event.preventDefault();
-    const token = sessionStorage.getItem("petflow_customer_token") || localStorage.getItem("petflow_customer_token");
+    const token = getCustomerToken();
+    const confirmed = await window.NacaoAnimalLogoutDialog?.confirm(event.currentTarget || event.target);
+    if (!confirmed || !token || token !== getCustomerToken()) return;
     if (token) {
         fetch("/api/public/clientes/logout", {
             method: "POST",
@@ -912,6 +915,7 @@ function handleCustomerLogout(event) {
     renderFavoritesItems();
     renderCheckoutItems();
     renderCheckoutCustomer();
+    document.dispatchEvent(new CustomEvent("petflow:customer-logout"));
 }
 
 function clearCustomerSession() {
@@ -919,10 +923,14 @@ function clearCustomerSession() {
     sessionStorage.removeItem("petflow_customer_user");
     sessionStorage.removeItem("petflow_public_favorites");
     sessionStorage.removeItem("petflow_public_cart");
+    sessionStorage.removeItem("petflow_delivery_address");
+    sessionStorage.removeItem("petflow_cart_coupon");
     localStorage.removeItem("petflow_customer_token");
     localStorage.removeItem("petflow_customer_user");
     localStorage.removeItem("petflow_public_favorites");
     localStorage.removeItem("petflow_public_cart");
+    localStorage.removeItem("petflow_delivery_address");
+    localStorage.removeItem("petflow_cart_coupon");
     publicCustomer = null;
     publicFavorites = new Set();
     publicCart = {};
@@ -931,7 +939,7 @@ function clearCustomerSession() {
 
 function getFirstName(name) {
     const firstName = String(name || "Cliente").trim().split(/\s+/)[0] || "Cliente";
-    return firstName.length > 12 ? `${firstName.slice(0, 11)}...` : firstName;
+    return firstName;
 }
 
 async function renderCheckoutCustomer() {

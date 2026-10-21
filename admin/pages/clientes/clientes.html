@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -8,13 +8,14 @@
     <link rel="stylesheet" href="/css/pages/admin-pages.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 <link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
+<link rel="stylesheet" href="/css/layout/admin-theme.css?v=20261021-1">
 </head>
-<body>
+<body class="admin-brand">
     <div class="admin-layout">
         <aside class="sidebar">
             <a class="sidebar-brand" href="/admin/pages/dashboard/dashboard.html"><img src="/images/logo/nacao-animal-logo-transparent.png" alt="Logo da Nação Animal" width="52" height="52"><div><strong>Nação Animal</strong><span>Painel administrativo</span></div></a>
             <nav class="sidebar-nav" aria-label="Menu administrativo"><a href="/admin/pages/dashboard/dashboard.html" data-active-page="dashboard"><i class="fa-solid fa-house"></i>Painel da Loja</a><a href="/admin/pages/clientes/clientes.html" data-active-page="clientes"><i class="fa-solid fa-users"></i>Clientes</a><a href="/admin/pages/categorias/categorias.html" data-active-page="categorias"><i class="fa-solid fa-tags"></i>Categorias</a><a href="/admin/pages/produtos/produtos.html" data-active-page="produtos"><i class="fa-solid fa-box"></i>Produtos</a><a href="/admin/pages/estoque/estoque.html" data-active-page="estoque"><i class="fa-solid fa-boxes-stacked"></i>Estoque</a><a href="/admin/pages/fornecedores/fornecedores.html" data-active-page="fornecedores"><i class="fa-solid fa-truck-field"></i>Fornecedores</a><a href="/admin/pages/compras/compras.html" data-active-page="compras"><i class="fa-solid fa-bag-shopping"></i>Compras</a><a href="/admin/pages/vendas/vendas.html" data-active-page="vendas"><i class="fa-solid fa-box-open"></i>Pedidos</a><a href="/admin/pages/financeiro/financeiro.html" data-active-page="financeiro"><i class="fa-solid fa-wallet"></i>Financeiro</a><a href="/admin/pages/configuracoes/configuracoes.html" data-active-page="configuracoes"><i class="fa-solid fa-gear"></i>Configurações</a></nav>
-        </aside>
+        <a class="sidebar-store-link" href="/" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-store" aria-hidden="true"></i>Ver a loja <span class="sr-only">(abre em outra aba)</span></a></aside>
         <main class="main-content">
             <header class="topbar"><div class="topbar-title"><span>Gestão da loja</span><h1 id="moduleTitle">Clientes</h1></div><a class="btn" href="/admin/index.html">Sair</a></header>
             <section class="page-content">
@@ -25,7 +26,7 @@
         </main>
     </div>
 <script>window.PetFlowAdminPage={"key":"clientes","title":"Clientes","subtitle":"Consulte os clientes cadastrados na loja pública, seus contatos e endereço.","endpoint":"/clientes","icon":"fa-users","tableTitle":"Clientes cadastrados","formTitle":"Novo cliente","readOnly":true,"allowEdit":false,"allowDelete":true,"deleteLabel":"Excluir acesso","deleteConfirmation":"Deseja excluir o acesso deste cliente? Pedidos e registros obrigatórios serão preservados. Esta ação encerra todas as sessões do cliente.","insights":[{"key":"active","label":"Ativos","value":"0","note":"clientes cadastrados","icon":"fa-users"},{"key":"new_month","label":"Novos","value":"0","note":"entraram este mês","icon":"fa-user-plus"},{"key":"inactive","label":"Inativos","value":"0","note":"cadastros removidos ou pausados","icon":"fa-user-slash"}],"columns":[{"key":"nome","label":"Nome"},{"key":"cpf","label":"CPF"},{"key":"whatsapp","label":"Celular (WhatsApp)"},{"key":"email","label":"E-mail"},{"key":"endereco_completo","label":"Endereço"},{"key":"status","label":"Status","type":"status"}],"fields":[]};</script>
-    <script src="/js/utils/storage.js?v=20260928-1"></script><script src="/js/services/api.js"></script><script src="/js/pages/auth/authGuard.js"></script><script src="/js/pages/admin/admin-page.js?v=20261003-3"></script>
+    <script src="/js/utils/storage.js?v=20260928-1"></script><script src="/js/services/api.js"></script><script src="/js/pages/auth/authGuard.js"></script><script src="/js/pages/admin/admin-page.js?v=20261021-1"></script>
 <script src="/js/layout/notifications.js?v=20261002"></script>
 </body>
 </html>

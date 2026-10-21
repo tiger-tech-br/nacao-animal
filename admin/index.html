@@ -42,17 +42,56 @@
 
     <link
         rel="stylesheet"
+        href="/css/pages/admin-login-brand.css?v=20261021-1">
+
+    <link
+        rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
 </head>
 
-<body>
+<body class="admin-login-page">
+
+    <header class="admin-login-topbar">
+
+        <a class="admin-login-back" href="/">
+            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+            Voltar para a loja
+        </a>
+
+        <span>Equipe Nação Animal</span>
+
+    </header>
 
     <!-- ==================================================
          MAIN
     ================================================== -->
 
     <main class="login-container">
+
+        <section class="login-brand" aria-labelledby="login-brand-title">
+
+            <span class="login-brand-kicker">
+                <i class="fa-solid fa-paw" aria-hidden="true"></i>
+                Nosso jeito de cuidar
+            </span>
+
+            <h2 id="login-brand-title">Carinho por eles.<br>Cuidado com a loja.</h2>
+
+            <p>A mesma dedicação, em cada detalhe do seu dia a dia.</p>
+
+            <div class="login-brand-art">
+                <img
+                    src="/images/hero/nacao-animal-dog-cat.png"
+                    alt="Um cão e um gato juntos"
+                    width="1477"
+                    height="1065"
+                    decoding="async">
+            </div>
+
+            <span class="login-brand-signature">Nação Animal <span aria-hidden="true">♥</span></span>
+
+        </section>
 
         <!-- ==========================================
              LOGIN
@@ -74,15 +113,17 @@
                     width="110"
                     height="110">
 
+                <span class="login-eyebrow">Área da equipe</span>
+
                 <h1 id="login-title">
 
-                    Nação Animal
+                    Vamos cuidar da loja?
 
                 </h1>
 
                 <p>
 
-                    Área da loja. Acesso exclusivo para a equipe.
+                    Entre com seu e-mail e senha para acessar o painel administrativo.
 
                 </p>
 
@@ -181,6 +222,11 @@
                 </div>
 
             </form>
+
+            <p class="login-access-note">
+                <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                Acesso exclusivo para a equipe Nação Animal.
+            </p>
 
         </section>
 

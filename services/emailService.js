@@ -75,35 +75,37 @@ async function sendOptionalEmail(options) {
 }
 
 function welcomeTemplate({ name }) {
-    const safeName = escapeHtml(firstName(name) || "cliente");
-    const message = `${safeName}, seu cadastro foi criado com sucesso. Agora você pode comprar, favoritar produtos e acompanhar seus pedidos.`;
+    const customerName = firstName(name) || "cliente";
+    const message = `${customerName}, seu cadastro foi criado com sucesso. Agora você pode comprar, favoritar produtos e acompanhar seus pedidos.`;
+    const loginUrl = `${APP_URL}/login`;
 
     return {
-        subject: "Cadastro criado na Nação Animal",
-        text: message,
+        subject: "Bem-vindo à Nação Animal",
+        text: `Bem-vindo à Nação Animal!\n\n${message}\n\nEntre na sua conta: ${loginUrl}`,
         html: baseEmail(`
             <h1>Bem-vindo à Nação Animal</h1>
-            <p>${message}</p>
+            <p>${escapeHtml(message)}</p>
+            <p>
+                <a href="${escapeHtml(loginUrl)}" style="display:inline-block;background:#04766d;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700">
+                    Entrar na minha conta
+                </a>
+            </p>
         `)
     };
 }
 
-function emailVerificationTemplate({ name, verifyUrl }) {
-    const safeName = escapeHtml(firstName(name) || "cliente");
+function accountDeletedTemplate({ name }) {
+    const customerName = firstName(name) || "cliente";
+    const message = `${customerName}, seu cadastro e seu acesso à Nação Animal foram excluídos.`;
+    const retention = "Mantemos somente os registros mínimos necessários para cumprir obrigações legais e preservar o histórico obrigatório dos pedidos, pelo prazo aplicável.";
 
     return {
-        subject: "Confirme seu e-mail na Nação Animal",
-        text: `Olá, ${safeName}. Confirme seu e-mail para ativar sua conta na Nação Animal: ${verifyUrl}`,
+        subject: "Exclusão de cadastro na Nação Animal",
+        text: `${message}\n\n${retention}`,
         html: baseEmail(`
-            <h1>Confirme seu e-mail</h1>
-            <p>Olá, ${safeName}.</p>
-            <p>Recebemos seu cadastro na Nação Animal. Para ativar sua conta e poder comprar, confirme seu e-mail pelo botão abaixo.</p>
-            <p>
-                <a href="${escapeHtml(verifyUrl)}" style="display:inline-block;background:#04766d;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700">
-                    Confirmar e-mail
-                </a>
-            </p>
-            <p style="color:#647481;font-size:13px">Se você não fez este cadastro, ignore este e-mail.</p>
+            <h1>Cadastro excluído</h1>
+            <p>${escapeHtml(message)}</p>
+            <p>${retention}</p>
         `)
     };
 }
@@ -301,7 +303,7 @@ module.exports = {
     sendEmail,
     sendOptionalEmail,
     welcomeTemplate,
-    emailVerificationTemplate,
+    accountDeletedTemplate,
     passwordResetTemplate,
     orderReceivedTemplate,
     paymentApprovedTemplate,

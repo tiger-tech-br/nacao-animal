@@ -1,0 +1,90 @@
+.admin-brand.admin-orders-page .sales-filters {
+    display: grid;
+    grid-template-columns: minmax(190px, 1.35fr) repeat(2, minmax(150px, 1fr)) auto;
+    align-items: end;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 20px;
+    border: 1px solid var(--admin-line);
+    border-radius: 18px;
+    background: #fff;
+}
+
+.admin-brand.admin-orders-page .sales-filter-field {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+
+.admin-brand.admin-orders-page .sales-filter-field label {
+    color: var(--admin-ink);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.admin-brand.admin-orders-page .sales-filter-field .form-control {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+}
+
+.admin-brand.admin-orders-page #clearOrderFilters {
+    min-height: 44px;
+}
+
+.admin-brand.admin-orders-page .sales-filter-feedback {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 6px;
+    color: var(--admin-muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.admin-brand.admin-orders-page .sales-filter-feedback p {
+    margin: 0;
+}
+
+.admin-brand.admin-orders-page #orderFilterError {
+    color: #a62a21;
+    font-weight: 600;
+}
+
+.admin-brand.admin-orders-page #orderFilterSummary {
+    color: var(--admin-ink);
+    font-weight: 600;
+}
+
+.admin-brand.admin-orders-page button.pipeline-step {
+    appearance: none;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+.admin-brand.admin-orders-page button.pipeline-step:hover,
+.admin-brand.admin-orders-page button.pipeline-step[aria-pressed="true"] {
+    border-color: #df741f;
+    background: #fff3df;
+}
+
+@media (max-width: 1100px) {
+    .admin-brand.admin-orders-page .sales-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 720px) {
+    .admin-brand.admin-orders-page .sales-filters {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 16px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-brand.admin-orders-page button.pipeline-step {
+        transition: none;
+    }
+}
