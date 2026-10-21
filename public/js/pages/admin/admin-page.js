@@ -372,7 +372,7 @@
         const contentGrid = document.querySelector(".content-grid");
 
         formPanel?.remove();
-        contentGrid?.classList.add("content-grid-wide");
+        contentGrid?.classList.add("content-grid-list");
     }
 
     function applySalesLayout() {
@@ -1035,7 +1035,7 @@
         body.innerHTML = paged.map(record => `
             <tr>
                 ${columns.map(column => `
-                    <td>
+                    <td data-label="${escapeHtml(column.label)}">
                         ${formatValue(
                             getRecordValue(record, column.key),
                             column
@@ -1044,7 +1044,7 @@
                 `).join("")}
 
                 ${showActions ? `
-                    <td>
+                    <td data-label="Ações">
                         <div class="row-actions">
                             ${buildRowActions(record)}
                         </div>
@@ -2140,7 +2140,7 @@
         const row = document.createElement("div");
         row.className = "items-builder-row";
         row.innerHTML = `
-            <select class="form-control" data-item-product required>
+            <select class="form-control" data-item-product aria-label="Produto" required>
                 <option value="">Selecione</option>
                 ${options.map(option => `
                     <option
@@ -2159,6 +2159,7 @@
                 step="1"
                 value="${escapeHtml(quantity)}"
                 data-item-quantity
+                aria-label="Quantidade"
                 required>
 
             <input
@@ -2168,6 +2169,7 @@
                 step="0.01"
                 value="${escapeHtml(price)}"
                 data-item-price
+                aria-label="Valor unitário"
                 required>
 
             <button

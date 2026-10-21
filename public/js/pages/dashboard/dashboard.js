@@ -239,19 +239,7 @@ function renderSuppliers(lowStock, purchases) {
 
 function updateProfileName() {
     const profile = document.querySelector(".admin-profile span");
-
-    try {
-        const user = JSON.parse(sessionStorage.getItem("user") || "null");
-        const name = user?.nome || "Admin";
-
-        if (profile) {
-            profile.textContent = `Olá, ${name}!`;
-        }
-    } catch {
-        if (profile) {
-            profile.textContent = "Olá, Admin!";
-        }
-    }
+    if (profile) profile.textContent = "Olá, Admin!";
 }
 
 async function apiGet(endpoint) {

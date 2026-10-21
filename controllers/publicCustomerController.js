@@ -874,7 +874,7 @@ async function remove(request, response, next) {
             `UPDATE auditoria_admin SET descricao='Registro operacional anonimizado após exclusão do cadastro.',
              dados_anteriores=NULL,dados_novos=NULL
              WHERE empresa_id=$1 AND ((entidade='CLIENTE' AND entidade_id=$2::text) OR
-             (entidade='VENDA' AND entidade_id IN (SELECT id::text FROM vendas WHERE empresa_id=$1 AND cliente_id=$2)))`,
+             (entidade='VENDA' AND entidade_id IN (SELECT id::text FROM vendas WHERE empresa_id=$1 AND cliente_id=$2::uuid)))`,
             [customer.empresaId, customer.id]
         );
         await client.query(

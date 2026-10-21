@@ -107,6 +107,55 @@ body.admin-brand {
 .admin-brand .notification-list i { border-radius: 11px; color: #b34500; background: #fff0da; }
 .admin-brand .sales-list article, .admin-brand .supplier-list article { border-bottom-color: #f0e7d9; }
 
+/* Listas e formulários usam a largura disponível sem painéis cortados. */
+.admin-brand .main-content,
+.admin-brand .content-grid > .panel,
+.admin-brand :is(.form, .form-group, .items-builder, .items-builder-list) { min-width: 0; }
+.admin-brand .content-grid { grid-template-columns: minmax(0, 1fr); }
+.admin-brand .content-grid > aside > .form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.admin-brand .content-grid > aside > .form > :is(.form-actions, .items-builder, .empty-state, .sale-details) { grid-column: 1 / -1; }
+.admin-brand .data-table { min-width: 0; width: 100%; table-layout: fixed; }
+.admin-brand .data-table :is(th, td) { white-space: normal; overflow-wrap: anywhere; }
+.admin-brand .table-wrap { overflow-x: visible; }
+.admin-brand .items-builder-header { flex-wrap: wrap; }
+.admin-brand .items-builder :is(.items-builder-columns, .items-builder-row) { grid-template-columns: minmax(0, 1fr) 76px 112px 38px; }
+.admin-brand .items-builder-row > * { min-width: 0; max-width: 100%; }
+.admin-brand .admin-profile { min-width: 0; gap: 10px; padding: 8px 12px 8px 8px; align-items: center; }
+.admin-brand .admin-avatar { flex: 0 0 40px; width: 40px; height: 40px; min-width: 40px; min-height: 40px; padding: 0; margin: 0; border: 1px solid #f0cc70; border-radius: 50%; line-height: 1; font-size: 17px; }
+.admin-brand .admin-profile > div:last-child { min-width: 0; }
+.admin-brand .admin-profile span { white-space: normal; line-height: 1.35; }
+
+@media (max-width: 1100px) {
+    .admin-brand .data-table:not(.sales-list-table),
+    .admin-brand .data-table:not(.sales-list-table) :is(tbody, tr, td) { display: block; width: 100%; }
+    .admin-brand .data-table:not(.sales-list-table) thead { display: none; }
+    .admin-brand .data-table:not(.sales-list-table) tbody { display: grid; gap: 14px; padding: 16px; }
+    .admin-brand .data-table:not(.sales-list-table) tr { border: 1px solid var(--admin-line); border-radius: 13px; overflow: hidden; }
+    .admin-brand .data-table:not(.sales-list-table) td[data-label] { display: grid; grid-template-columns: minmax(100px, .65fr) minmax(0, 1fr); gap: 12px; align-items: start; padding: 12px 14px; }
+    .admin-brand .data-table:not(.sales-list-table) td[data-label]::before { content: attr(data-label); color: #79654b; font-size: 11px; font-weight: 700; }
+    .admin-brand .data-table:not(.sales-list-table) td:last-child { border-bottom: 0; }
+    .admin-brand .data-table .row-actions { flex-wrap: wrap; }
+}
+
+@media (max-width: 720px) {
+    .admin-brand .content-grid > aside > .form { grid-template-columns: minmax(0, 1fr); }
+    .admin-brand .items-builder .items-builder-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 38px; }
+    .admin-brand .items-builder .items-builder-row select { grid-column: 1 / -1; }
+    .admin-brand .dashboard-topbar-actions { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; }
+    .admin-brand .dashboard-topbar-actions .notification-menu { justify-self: end; width: 48px; }
+    .admin-brand .dashboard-topbar-actions .notification-button { width: 48px; height: 48px; }
+    .admin-brand .dashboard-topbar-actions .admin-profile { width: 100%; min-height: 64px; padding: 10px; gap: 9px; }
+    .admin-brand .admin-profile a { display: inline-block; min-height: 28px; padding-top: 4px; }
+    .admin-brand .admin-pagination { flex-wrap: wrap; gap: 12px; }
+    .admin-brand .admin-pagination > div { display: flex; gap: 8px; width: 100%; }
+}
+
+@media (max-width: 380px) {
+    .admin-brand .dashboard-topbar-actions .admin-profile { grid-column: 1 / -1; justify-content: center; }
+    .admin-brand .dashboard-topbar-actions .notification-menu { grid-column: 1 / -1; justify-self: center; }
+    .admin-brand .data-table:not(.sales-list-table) td[data-label] { grid-template-columns: minmax(0, 1fr); gap: 5px; }
+}
+
 @media (max-width: 1180px) {
     .admin-brand .dashboard-hero { padding: 25px; }
 }

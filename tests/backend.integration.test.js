@@ -79,6 +79,7 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         };
         const optionalEmails = [];
         const welcomeAttempts = [];
+        const deletionAttempts = [];
         email.sendOptionalEmail = async payload => {
             if (payload.idempotencyKey?.startsWith("welcome/")) {
                 welcomeAttempts.push(payload);
@@ -86,6 +87,12 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
                 assert.ok(persisted, "Cadastro já está confirmado no banco antes de tentar as boas-vindas");
                 assert.equal(payload.idempotencyKey, `welcome/${persisted.id}`);
                 return null; // Simula falha opcional do provedor depois do commit.
+            }
+            if (payload.idempotencyKey?.startsWith("account-deleted/")) {
+                deletionAttempts.push(payload);
+                assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM clientes WHERE email=$1", [payload.to])).rows[0].n, 0,
+                    "Exclusão já foi confirmada no banco antes do e-mail");
+                return null; // Falha de entrega não pode restaurar cadastro excluído.
             }
             optionalEmails.push(payload);
             return { id: "test-optional" };
@@ -483,6 +490,40 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         } finally {
             pagbank.cancelarCobranca = originalRefund;
         }
+        const beforeDeletion = deletionAttempts.length;
+        const pendingOrder = await saleService.finalizarVenda(empresaId,
+            { cliente_id: customerId, formaPagamento: "PAGBANK" }, [{ produtoId: product, quantidade: 1 }]);
+        const pendingRemoval = await request("/api/public/clientes/me", "DELETE", null, token);
+        assert.equal(pendingRemoval.status, 202, JSON.stringify(pendingRemoval.body));
+        assert.equal(pendingRemoval.body.pending, true);
+        assert.match(pendingRemoval.body.protocolo, /^LGPD-/);
+        assert.equal(deletionAttempts.length, beforeDeletion, "Pedido de exclusão pendente não informa conta já excluída");
+        assert.equal((await request("/api/public/clientes/me", "GET", null, token)).status, 200);
+        await saleService.cancelarPedido(empresaId, pendingOrder.venda.id);
+        await pool.query("UPDATE vendas SET observacoes='Contato pessoal',cancelamento_motivo='Contato pessoal' WHERE cliente_id=$1", [customerId]);
+        await pool.query("UPDATE lgpd_solicitacoes SET detalhes='Contato pessoal',resposta='Contato pessoal' WHERE cliente_id=$1", [customerId]);
+        await pool.query("UPDATE solicitacoes_consumidor SET motivo='Contato pessoal',resposta='Contato pessoal' WHERE cliente_id=$1", [customerId]);
+        const removed = await Promise.all([1, 2].map(() => request("/api/public/clientes/me", "DELETE", null, token)));
+        assert.equal(removed.filter(item => item.status === 200).length, 1, JSON.stringify(removed));
+        assert.ok(removed.every(item => [200, 401].includes(item.status)), JSON.stringify(removed));
+        assert.equal(deletionAttempts.length, beforeDeletion + 1, "Exclusões concorrentes enviam um único aviso após o commit");
+        assert.equal(deletionAttempts.at(-1).idempotencyKey, `account-deleted/${customerId}`);
+        assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM usuarios_clientes WHERE cliente_id=$1", [customerId])).rows[0].n, 0);
+        assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM notificacoes WHERE cliente_id=$1", [customerId])).rows[0].n, 0);
+        assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM notificacoes_admin WHERE cliente_id=$1", [customerId])).rows[0].n, 0);
+        assert.equal((await request("/api/public/clientes/me", "GET", null, token)).status, 401, "Sessões anteriores perdem acesso após exclusão");
+        assert.equal((await request("/api/public/clientes/login", "POST", customer)).status, 401);
+        assert.equal((await request("/api/public/clientes/me", "DELETE", null, token)).status, 401);
+        assert.equal(deletionAttempts.length, beforeDeletion + 1);
+        assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM lgpd_solicitacoes WHERE email_referencia=$1", [customer.email])).rows[0].n, 0);
+        assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM solicitacoes_consumidor WHERE email_referencia=$1", [customer.email])).rows[0].n, 0);
+        const retainedOrder = (await pool.query("SELECT cliente_id,endereco_entrega,observacoes,cancelamento_motivo FROM vendas WHERE id=$1", [order])).rows[0];
+        assert.equal(retainedOrder.cliente_id, null);
+        assert.deepEqual(retainedOrder.endereco_entrega, { anonimizado: true });
+        assert.equal(retainedOrder.observacoes, null);
+        assert.equal(retainedOrder.cancelamento_motivo, null);
+        assert.equal(Number((await pool.query("SELECT valor_final FROM vendas WHERE id=$1", [order])).rows[0].valor_final), 28.5,
+            "Preserva valores do histórico comercial sem o cadastro pessoal");
         console.log("Fluxo completo aprovado com PostgreSQL real e provedores simulados.");
     } finally {
         global.fetch = originalFetch;
