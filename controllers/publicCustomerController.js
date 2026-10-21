@@ -305,7 +305,7 @@ async function register(request, response, next) {
             clienteId,
             titulo: "Bem-vindo à Nação Animal",
             mensagem: `${firstName(profile.nome)}, seu cadastro foi criado com sucesso. Agora você pode comprar, favoritar produtos e acompanhar seus pedidos.`,
-            tipo: "SISTEMA"
+            tipo: "BOAS_VINDAS"
         }, client);
 
         const verificationUrl = `${APP_URL}/login?verificar_email=${verificationToken}`;
@@ -1733,6 +1733,7 @@ async function createCustomerNotification({ clienteId, titulo, mensagem, tipo },
                 tipo
             )
             VALUES ($1, $2, $3, $4)
+            ON CONFLICT DO NOTHING
         `,
         [
             clienteId,

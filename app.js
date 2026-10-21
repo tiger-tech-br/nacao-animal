@@ -224,6 +224,10 @@ app.get("/categorias/:slug", (request, response) => {
 
 });
 
+app.get("/produtos", (request, response) => {
+    response.sendFile(path.join(__dirname, "views", "products", "index.html"));
+});
+
 app.get("/produtos/:slug", (request, response) => {
 
     response.sendFile(path.join(__dirname, "views", "products", "detail.html"));

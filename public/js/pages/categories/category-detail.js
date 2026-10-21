@@ -3,6 +3,12 @@
 const CATEGORY_API = "/api/public";
 
 const CATEGORY_CONFIG = {
+    todas: {
+        title: "Todos os produtos",
+        description: "Explore o catálogo da Nação Animal e encontre o que seu melhor amigo precisa.",
+        image: "/images/categories/accessories-v2.jpg",
+        all: true
+    },
     caes: {
         title: "Produtos para cães",
         description: "Rações, petiscos, acessórios e cuidados selecionados para cachorros.",
@@ -153,6 +159,9 @@ function renderCategoryHeader(config) {
     setText("categoryTitle", config.title);
     setText("categoryDescription", config.description);
     setText("categoryBreadcrumb", config.title);
+    setText("productsTitle", config.all ? "Catálogo completo" : "Produtos da categoria");
+    const search = document.getElementById("categorySearch");
+    if (search) search.placeholder = config.all ? "Buscar no catálogo" : "Buscar nesta categoria";
     document.querySelectorAll("[data-category-link]").forEach(link => {
         if (link.dataset.categoryLink === currentSlug) link.setAttribute("aria-current", "page");
         else link.removeAttribute("aria-current");
@@ -182,6 +191,7 @@ function renderUnknownCategory() {
 }
 
 function filterByPetCategory(products, config) {
+    if (config.all) return [...products];
     const matches = products.filter(product => {
         const words = productHaystack(product).split(/[^a-z0-9]+/);
         return config.keywords.some(keyword => words.includes(keyword) || words.includes(`${keyword}s`));
@@ -217,12 +227,12 @@ function renderProducts(products, config, query = "") {
         return;
     }
 
-    setText("categoryResults", `${products.length} ${products.length === 1 ? "produto encontrado" : "produtos encontrados"}${query ? " nesta busca" : " na categoria"}.`);
+    setText("categoryResults", `${products.length} ${products.length === 1 ? "produto encontrado" : "produtos encontrados"}${query ? " nesta busca" : config.all ? " no catálogo" : " na categoria"}.`);
 
     if (!products.length) {
         const message = query
             ? `Nenhum produto encontrado para "${query}" em ${config.title.toLowerCase()}.`
-            : `Ainda não há produtos cadastrados para ${config.title.toLowerCase()}.`;
+            : config.all ? "Ainda não há produtos cadastrados no catálogo." : `Ainda não há produtos cadastrados para ${config.title.toLowerCase()}.`;
 
         renderEmpty(message, query ? "Vamos tentar outra busca?" : "Novidades chegando por aqui");
         return;
@@ -234,6 +244,7 @@ function renderProducts(products, config, query = "") {
         const inCart = Boolean(readCart()[id]);
         const favorite = publicFavorites.has(id);
         const available = stockAvailable(product);
+        const hasPrice = hasValidPrice(product);
 
         return `
             <article class="product-card" data-product-id="${escapeHtml(id)}">
@@ -247,8 +258,8 @@ function renderProducts(products, config, query = "") {
                     <span class="product-category">${escapeHtml(product.categoria || "Nação Animal")}</span>
                     <h3 class="product-title"><a href="${escapeHtml(href)}">${escapeHtml(product.nome)}</a></h3>
                     <div class="product-footer">
-                        <strong class="product-price">${currency(product.preco)}</strong>
-                        <button class="cart-action ${inCart ? "is-active" : ""}" type="button" data-add-cart="${escapeHtml(id)}" aria-label="${escapeHtml(product.nome)}: ${available <= 0 ? "esgotado" : inCart ? "na sacola" : "adicionar à sacola"}" aria-pressed="${inCart}" ${available <= 0 ? "disabled" : ""}>
+                        <strong class="product-price">${hasPrice ? currency(product.preco) : "Preço indisponível"}</strong>
+                        <button class="cart-action ${inCart ? "is-active" : ""}" type="button" data-add-cart="${escapeHtml(id)}" aria-label="${escapeHtml(product.nome)}: ${available <= 0 ? "esgotado" : !hasPrice ? "preço indisponível" : inCart ? "na sacola" : "adicionar à sacola"}" aria-pressed="${inCart}" ${available <= 0 || !hasPrice ? "disabled" : ""}>
                             <i class="fa-solid ${available <= 0 ? "fa-ban" : inCart ? "fa-check" : "fa-cart-shopping"}" aria-hidden="true"></i>
                         </button>
                     </div>
@@ -263,6 +274,12 @@ function renderProducts(products, config, query = "") {
 function stockAvailable(product) {
     if (!product || product.estoque_disponivel == null) return Number.POSITIVE_INFINITY;
     return Math.max(0, Number(product.estoque_disponivel) || 0);
+}
+
+function hasValidPrice(product) {
+    return (typeof product?.preco === "number" || typeof product?.preco === "string")
+        && String(product.preco).trim() !== ""
+        && Number.isFinite(Number(product.preco)) && Number(product.preco) >= 0;
 }
 
 function renderEmpty(message, title = "Categoria em atualização") {
@@ -287,10 +304,10 @@ function bindCartButtons() {
         button.addEventListener("click", () => {
             const id = button.dataset.addCart;
             const product = allProducts.find(item => String(item.id || item.sku || item.nome) === id);
-            if (!product || stockAvailable(product) <= 0) return;
+            if (!product || stockAvailable(product) <= 0 || !hasValidPrice(product)) return;
             const cart = readCart();
 
-            cart[id] = 1;
+            cart[id] = Math.max(1, Number(cart[id]) || 0);
             sessionStorage.setItem("petflow_public_cart", JSON.stringify(cart));
 
             button.classList.add("is-active");
@@ -328,7 +345,7 @@ function productSlug(product) {
 }
 
 function updateUrl(slug) {
-    const nextPath = `/categorias/${slug}`;
+    const nextPath = slug === "todas" ? "/produtos" : `/categorias/${slug}`;
 
     if (window.location.pathname !== nextPath) {
         window.history.pushState({}, "", nextPath);
@@ -355,6 +372,7 @@ function readFavorites() {
 }
 
 function getCurrentSlug() {
+    if (window.location.pathname.replace(/\/+$/, "") === "/produtos") return "todas";
     return window.location.pathname.split("/").filter(Boolean).pop() || "caes";
 }
 

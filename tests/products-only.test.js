@@ -117,7 +117,7 @@ test("rotas removidas retornam 404 e paginas comerciais continuam acessiveis", a
         const png = Buffer.from(await banner.arrayBuffer());
         assert.equal(png.readUInt32BE(16), 1536);
         assert.equal(png.readUInt32BE(20), 1024);
-        for (const route of ["/", "/sobre", "/contato", "/ajuda", "/categorias", "/login", "/conta", "/sacola", "/meus-pedidos", "/politica-de-privacidade", "/produtos/racao",
+        for (const route of ["/", "/sobre", "/contato", "/ajuda", "/categorias", "/produtos", "/login", "/conta", "/sacola", "/meus-pedidos", "/politica-de-privacidade", "/produtos/racao",
             "/admin/pages/dashboard/dashboard.html", "/admin/pages/produtos/produtos.html", "/admin/pages/vendas/vendas.html",
             "/admin/pages/cupons/cupons.html", "/admin/pages/usuarios/usuarios.html",
             "/admin/pages/auditoria/auditoria.html", "/admin/pages/atendimento/atendimento.html", "/admin/pages/lgpd/lgpd.html"]) {

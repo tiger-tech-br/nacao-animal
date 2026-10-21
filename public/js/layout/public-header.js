@@ -1,7 +1,7 @@
 "use strict";
 
 (function setupPetFlowPublicHeader() {
-    const HEADER_VERSION = "20261020-3";
+    const HEADER_VERSION = "20261021-1";
     const DEFAULT_LOGO = "/images/logo/nacao-animal-logo-transparent.png";
     let storeInfoRequest;
 
@@ -107,7 +107,7 @@
                                 <a href="/#categories" class="menu-link" data-public-nav="categories">Categorias</a>
                             </li>
                             <li class="menu-item">
-                                <a href="/#products" class="menu-link" data-public-nav="products">Produtos</a>
+                                <a href="/produtos" class="menu-link" data-public-nav="products">Produtos</a>
                             </li>
                             <li class="menu-item">
 
@@ -187,7 +187,7 @@
                         <ul class="menu-list">
                             <li class="menu-item"><a href="/#hero" class="menu-link" data-public-nav="home">Início</a></li>
                             <li class="menu-item"><a href="/sobre" class="menu-link" data-public-nav="about">Sobre</a></li>
-                            <li class="menu-item"><a href="/#products" class="menu-link" data-public-nav="products">Produtos</a></li>
+                            <li class="menu-item"><a href="/produtos" class="menu-link" data-public-nav="products">Produtos</a></li>
                             <li class="menu-item"><a href="/servicos/dog-walker-pet-sitter" class="menu-link" data-public-nav="services">Serviços</a></li>
                             <li class="menu-item"><a href="/contato" class="menu-link" data-public-nav="contact">Contato</a></li>
                             <li class="menu-item menu-login-item"><a href="/login" class="menu-link menu-login-link" aria-label="Entrar ou cadastrar">${storefrontIcon("user")}<span data-customer-label>Entrar | Cadastrar</span></a></li>

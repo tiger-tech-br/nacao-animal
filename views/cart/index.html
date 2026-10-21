@@ -12,10 +12,10 @@
     <link rel="stylesheet" href="/css/pages/public-cart.css?v=20261001-cupons">
     <link rel="stylesheet" href="/css/pages/public-cart-sandbox.css?v=20261019-1">
     <link rel="stylesheet" href="/css/layout/cart-sidebar.css?v=20261001">
-<link rel="stylesheet" href="/css/layout/notifications.css?v=20261002">
+<link rel="stylesheet" href="/css/layout/notifications.css?v=20261021-1">
     <link rel="stylesheet" href="/css/layout/copyright.css">
     <link rel="stylesheet" href="/css/layout/storefront-theme.css?v=20261020-4">
-    <link rel="stylesheet" href="/css/pages/cart-storefront.css?v=20261020-1">
+    <link rel="stylesheet" href="/css/pages/cart-storefront.css?v=20261021-1">
 </head>
 <body class="storefront-page cart-storefront">
     <main class="cart-page storefront-container">
@@ -48,7 +48,7 @@
                     <form id="shippingForm" class="shipping-form">
                         <label for="deliveryCep">CEP</label>
                         <div class="coupon-input-row">
-                            <input class="form-control" id="deliveryCep" name="cep" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000" required>
+                            <input class="form-control" id="deliveryCep" name="cep" inputmode="numeric" autocomplete="postal-code" maxlength="9" pattern="[0-9]{5}-?[0-9]{3}" placeholder="00000-000" aria-describedby="cepStatus" required>
                             <button class="btn-secondary" id="lookupCep" type="button">Buscar CEP</button>
                         </div>
                         <p id="cepStatus" class="cart-status" role="status"></p>
@@ -148,10 +148,10 @@
     </main>
     <footer class="storefront-footer"><div class="storefront-container"><div class="footer-inner"><a class="footer-brand" href="/">Nação Animal</a><nav class="footer-links" aria-label="Links do rodapé"><a href="/#products">Continuar comprando</a><a href="/meus-pedidos">Meus pedidos</a><a href="/politica-de-privacidade">Privacidade</a><a href="/termos-de-uso">Termos de uso</a></nav></div><p>© 2026 Nação Animal. O melhor para o seu pet, sempre!</p></div></footer>
 
-    <script src="/js/layout/public-header.js?v=20261020-3"></script>
+    <script src="/js/layout/public-header.js?v=20261021-1"></script>
     <script src="/js/pages/cart/rede-sandbox-cart.js?v=20261019-1"></script>
-    <script src="/js/pages/cart/cart.js?v=20261020-1"></script>
+    <script src="/js/pages/cart/cart.js?v=20261021-1"></script>
     <script src="/js/layout/cart-sidebar.js?v=20261020-1"></script>
-<script src="/js/layout/notifications.js?v=20261002"></script>
+<script src="/js/layout/notifications.js?v=20261021-1"></script>
 </body>
 </html>

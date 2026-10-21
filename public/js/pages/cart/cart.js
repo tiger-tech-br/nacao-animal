@@ -83,6 +83,13 @@ async function setupCartPage() {
 }
 
 function setupCartEvents() {
+    document.getElementById("cartItems").addEventListener("error", event => {
+        if (event.target.tagName !== "IMG") return;
+        const placeholder = document.createElement("span");
+        placeholder.className = "cart-product-placeholder";
+        placeholder.textContent = "Sem foto";
+        event.target.replaceWith(placeholder);
+    }, true);
     document.getElementById("toggleCoupons").addEventListener("click", () => {
         const panel = document.getElementById("couponPanel");
         panel.hidden = !panel.hidden;
@@ -115,11 +122,11 @@ function setupCartEvents() {
         });
     }
     document.getElementById("shippingForm").addEventListener("submit", event => { event.preventDefault(); calculateShipping(); });
-    document.getElementById("lookupCep").addEventListener("click", lookupDeliveryCep);
+    document.getElementById("lookupCep").addEventListener("click", () => lookupDeliveryCep({ focus: true }));
     document.getElementById("deliveryCep").addEventListener("keydown", event => {
         if (event.key === "Enter") {
             event.preventDefault();
-            lookupDeliveryCep();
+            lookupDeliveryCep({ focus: true });
         }
     });
     document.getElementById("shippingForm").addEventListener("input", event => {
@@ -130,8 +137,10 @@ function setupCartEvents() {
             const digits = event.target.value.replace(/\D/g, "").slice(0, 8);
             event.target.value = digits.replace(/^(\d{5})(\d)/, "$1-$2");
             ++cepRevision;
+            setCepLookupBusy(false);
+            document.getElementById("cepStatus").textContent = digits.length && digits.length < 8 ? "Digite os 8 dígitos do CEP." : "";
             for (const id of ["deliveryStreet", "deliveryDistrict", "deliveryCity", "deliveryState"]) document.getElementById(id).value = "";
-            if (digits.length === 8) cepLookupTimer = setTimeout(lookupDeliveryCep, 600);
+            if (digits.length === 8) cepLookupTimer = setTimeout(() => lookupDeliveryCep(), 600);
         }
         invalidateShipping();
         sessionStorage.setItem("petflow_delivery_address", JSON.stringify(readDeliveryAddress()));
@@ -193,7 +202,7 @@ function renderCart() {
 
         return `
             <article class="cart-item">
-                <img src="${escapeHtml(product.foto || "/images/products/petflow-prime-racao.jpg")}" alt="${escapeHtml(product.nome)}">
+                ${product.foto ? `<img src="${escapeHtml(product.foto)}" alt="${escapeHtml(product.nome)}">` : '<span class="cart-product-placeholder">Sem foto</span>'}
                 <div>
                     <strong>${escapeHtml(product.nome)}</strong>
                     <span>${currency(product.preco)}</span>
@@ -313,7 +322,7 @@ async function calculateShipping({ retry = 0 } = {}) {
     const address = readDeliveryAddress();
     const button = document.getElementById("calculateShipping");
     const status = document.getElementById("shippingStatus");
-    if (!hasDeliveryAddress(address) || !/^\d{8}$/.test(address.cep)) {
+    if (!hasDeliveryAddress(address) || !/^\d{8}$/.test(address.cep) || !/^[A-Z]{2}$/.test(address.estado)) {
         status.textContent = "Confira o CEP e preencha o endereço e o número para consultar a entrega.";
         document.getElementById("shippingForm").reportValidity();
         return;
@@ -395,7 +404,13 @@ function invalidateShipping() {
     renderTotals();
 }
 
-async function lookupDeliveryCep() {
+function setCepLookupBusy(busy) {
+    const button = document.getElementById("lookupCep");
+    button.disabled = busy;
+    button.textContent = busy ? "Buscando..." : "Buscar CEP";
+}
+
+async function lookupDeliveryCep({ focus = false } = {}) {
     if (submitting) return;
     clearTimeout(cepLookupTimer);
     const cep = document.getElementById("deliveryCep").value.replace(/\D/g, "");
@@ -406,6 +421,7 @@ async function lookupDeliveryCep() {
     cepLookupController = controller;
     const timeout = setTimeout(() => controller.abort(), 15000);
     const revision = ++cepRevision;
+    setCepLookupBusy(true);
     status.textContent = "Buscando endereço...";
     try {
         const response = await fetch(`${CART_API}/frete/cep/${cep}`, { signal: controller.signal });
@@ -415,10 +431,13 @@ async function lookupDeliveryCep() {
         for (const [field, id] of Object.entries(deliveryFields)) {
             if (field !== "numero" && field !== "complemento") document.getElementById(id).value = payload.data[field] || "";
         }
+        document.getElementById("deliveryCep").value = cep.replace(/^(\d{5})(\d{3})$/, "$1-$2");
         invalidateShipping();
         sessionStorage.setItem("petflow_delivery_address", JSON.stringify(readDeliveryAddress()));
         status.textContent = payload.data.endereco ? "Endereço encontrado. Confira e informe o número." : "CEP encontrado. Complete a rua, o bairro e o número.";
-        document.getElementById(payload.data.endereco ? "deliveryNumber" : "deliveryStreet").focus();
+        if (focus || document.activeElement === document.getElementById("deliveryCep")) {
+            document.getElementById(payload.data.endereco ? "deliveryNumber" : "deliveryStreet").focus();
+        }
         scheduleAutomaticShipping();
     } catch (error) {
         if (revision === cepRevision) status.textContent = error.name === "AbortError"
@@ -427,6 +446,7 @@ async function lookupDeliveryCep() {
     } finally {
         clearTimeout(timeout);
         if (cepLookupController === controller) cepLookupController = null;
+        if (revision === cepRevision) setCepLookupBusy(false);
     }
 }
 
