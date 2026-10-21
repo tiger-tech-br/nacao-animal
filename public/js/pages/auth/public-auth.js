@@ -142,7 +142,7 @@ async function setupEmailVerificationFromUrl() {
 async function setupPublicAccount() {
     const form = document.getElementById("publicAccountForm");
 
-    if (!form) {
+    if (!form || form.dataset.accountReady) {
         return;
     }
 
@@ -153,22 +153,71 @@ async function setupPublicAccount() {
         return;
     }
 
+    form.dataset.accountReady = "true";
     const status = document.getElementById("accountStatus");
+    const retryButton = document.getElementById("publicAccountRetry");
+    const lgpdForm = document.getElementById("publicLgpdForm");
+    const controls = [...form.querySelectorAll("input, select, textarea, button"),
+        ...(lgpdForm?.querySelectorAll("input, select, textarea, button") || [])];
+    const originallyDisabled = new Map(controls.map(control => [control, control.disabled]));
+    let accountLoaded = false;
+    let accountLoading = false;
 
-    try {
-        const payload = await request("/clientes/me", "GET");
-        fillForm(form, payload.data);
-        sessionStorage.setItem("petflow_customer_user", JSON.stringify(payload.data));
-        window.PetFlowPublicHeader?.update();
-        await loadLgpdRequests();
-    } catch {
-        clearPublicSession();
-        window.location.href = "/login";
-        return;
+    function allowAccountActions(available) {
+        controls.forEach(control => {
+            if (control.id !== "publicLogout" && control !== retryButton) {
+                control.disabled = !available || originallyDisabled.get(control);
+            }
+        });
     }
 
+    async function loadAccount() {
+        if (accountLoading) return;
+        const sessionToken = getCustomerToken();
+        if (!sessionToken) { window.location.href = "/login"; return; }
+        accountLoading = true;
+        accountLoaded = false;
+        allowAccountActions(false);
+        form.setAttribute("aria-busy", "true");
+        if (retryButton) { retryButton.hidden = true; retryButton.disabled = true; }
+        setStatus(status, "Carregando seus dados...");
+        try {
+            const payload = await request("/clientes/me", "GET", undefined,
+                { signal: AbortSignal.timeout(10000), cache: "no-store" });
+            if (sessionToken !== getCustomerToken()) return;
+            if (!payload.data || typeof payload.data !== "object" || Array.isArray(payload.data)) {
+                throw new Error("Dados da conta indisponíveis.");
+            }
+            fillForm(form, payload.data);
+            sessionStorage.setItem("petflow_customer_user", JSON.stringify(payload.data));
+            window.PetFlowPublicHeader?.update();
+            accountLoaded = true;
+            allowAccountActions(true);
+            setStatus(status, "");
+            void loadLgpdRequests();
+        } catch (error) {
+            if (sessionToken !== getCustomerToken()) return;
+            if (error.status === 401 || error.status === 403) {
+                clearPublicSession();
+                window.location.href = "/login";
+                return;
+            }
+            setStatus(status, error.name === "TimeoutError" || error.name === "AbortError"
+                ? "A consulta demorou mais que o esperado. Tente novamente para carregar seus dados."
+                : "Não foi possível carregar seus dados agora. Tente novamente. Seu acesso foi mantido.");
+            if (retryButton) retryButton.hidden = false;
+        } finally {
+            accountLoading = false;
+            form.setAttribute("aria-busy", "false");
+            if (retryButton) retryButton.disabled = false;
+        }
+    }
+
+    allowAccountActions(false);
+    retryButton?.addEventListener("click", loadAccount);
     form.addEventListener("submit", async event => {
         event.preventDefault();
+        if (!accountLoaded) return;
 
         if (!validateCpfInput(form.elements.cpf, status)) {
             return;
@@ -197,6 +246,7 @@ async function setupPublicAccount() {
     });
 
     document.getElementById("publicExportData")?.addEventListener("click", async () => {
+        if (!accountLoaded) return;
         setStatus(status, "Preparando seus dados...");
         try {
             const data = await request("/clientes/me/dados", "GET");
@@ -210,9 +260,9 @@ async function setupPublicAccount() {
         } catch (error) { setStatus(status, error.message || "Não foi possível gerar seus dados."); }
     });
 
-    const lgpdForm = document.getElementById("publicLgpdForm");
     lgpdForm?.addEventListener("submit", async event => {
         event.preventDefault();
+        if (!accountLoaded) return;
         const lgpdStatus = document.getElementById("lgpdStatus");
         setStatus(lgpdStatus, "Registrando solicitação...");
         try {
@@ -225,6 +275,7 @@ async function setupPublicAccount() {
     });
 
     document.getElementById("publicDeleteAccount")?.addEventListener("click", async () => {
+        if (!accountLoaded) return;
         const confirmed = window.confirm(
             "Tem certeza que deseja excluir seu cadastro? Você perderá o acesso à área do cliente."
         );
@@ -247,6 +298,7 @@ async function setupPublicAccount() {
             setStatus(status, error.message || "Não foi possível excluir o cadastro.");
         }
     });
+    await loadAccount();
 }
 
 async function loadLgpdRequests() {
@@ -634,33 +686,70 @@ function currency(value) {
 
 function setupCepLookup() {
     document.querySelectorAll("input[name='cep']").forEach(input => {
+        if (input.dataset.cepReady) return;
+        input.dataset.cepReady = "true";
+        const form = input.closest("form");
+        const status = form?.querySelector("[data-cep-status]");
+        const fields = ["endereco", "bairro", "cidade", "estado"];
+        const manualFields = new Set();
         let lookupTimer = null;
         let lastLoadedCep = "";
+        let controller = null;
+        let pendingCep = "";
+        let revision = 0;
+
+        fields.forEach(name => form?.elements[name]?.addEventListener("input", () => manualFields.add(name)));
 
         const lookup = async () => {
+            window.clearTimeout(lookupTimer);
             const cep = input.value.replace(/\D/g, "");
-
-            if (cep.length !== 8 || cep === lastLoadedCep) {
+            if (cep.length !== 8) {
+                if (cep) setStatus(status, "Informe um CEP com 8 dígitos ou preencha o endereço manualmente.");
                 return;
             }
-
+            if (cep === lastLoadedCep || (controller && pendingCep === cep)) return;
+            controller?.abort();
+            const activeController = new AbortController();
+            controller = activeController;
+            pendingCep = cep;
+            const currentRevision = ++revision;
+            const values = Object.fromEntries(fields.map(name => [name, form?.elements[name]?.value || ""]));
+            const timeout = window.setTimeout(() => activeController.abort(), 15000);
+            input.setAttribute("aria-busy", "true");
+            setStatus(status, "Buscando endereço pelo CEP...");
             try {
-                const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-                const data = await response.json();
-
-                if (data.erro) {
-                    return;
+                const response = await fetch(`${CUSTOMER_API}/frete/cep/${cep}`,
+                    { signal: activeController.signal, cache: "no-store" });
+                const payload = await response.json();
+                if (currentRevision !== revision || input.value.replace(/\D/g, "") !== cep) return;
+                if (!response.ok || payload.success === false) {
+                    throw Object.assign(new Error(payload.message || "Não foi possível consultar o CEP."), { status: response.status });
                 }
-
+                const data = payload.data;
+                if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error();
+                let preserved = false;
+                fields.forEach(name => {
+                    const field = form?.elements[name];
+                    if (!field || !data[name]) return;
+                    if (manualFields.has(name) || field.value !== values[name]) { preserved = true; return; }
+                    setField(form, name, data[name]);
+                });
                 lastLoadedCep = cep;
-                const form = input.closest("form");
-                setField(form, "endereco", data.logradouro);
-                setField(form, "bairro", data.bairro);
-                setField(form, "cidade", data.localidade);
-                setField(form, "estado", data.uf);
-                form?.elements.numero?.focus();
-            } catch {
-                // CEP manual continua permitido.
+                input.value = `${cep.slice(0, 5)}-${cep.slice(5)}`;
+                setStatus(status, preserved
+                    ? "CEP encontrado. Mantivemos os campos que você editou; confira o endereço e o número."
+                    : data.endereco ? "Endereço encontrado. Confira os dados e informe o número."
+                        : "CEP encontrado. Complete ou confira a rua, o bairro e o número.");
+            } catch (error) {
+                if (currentRevision !== revision || input.value.replace(/\D/g, "") !== cep) return;
+                setStatus(status, activeController.signal.aborted
+                    ? "A consulta do CEP demorou demais. Tente novamente ou preencha o endereço manualmente."
+                    : error.status ? `${error.message} Você pode preencher o endereço manualmente.`
+                        : "Não foi possível consultar o CEP. Tente novamente ou preencha o endereço manualmente.");
+            } finally {
+                window.clearTimeout(timeout);
+                if (controller === activeController) { controller = null; pendingCep = ""; }
+                if (currentRevision === revision) input.setAttribute("aria-busy", "false");
             }
         };
 
@@ -671,10 +760,29 @@ function setupCepLookup() {
                 : digits;
 
             window.clearTimeout(lookupTimer);
-            lookupTimer = window.setTimeout(lookup, 350);
+            controller?.abort();
+            controller = null;
+            pendingCep = lastLoadedCep = "";
+            ++revision;
+            input.setAttribute("aria-busy", "false");
+            setStatus(status, "");
+            if (digits.length === 8) lookupTimer = window.setTimeout(lookup, 350);
         });
 
         input.addEventListener("blur", lookup);
+        input.addEventListener("keydown", event => {
+            if (event.key === "Enter") { event.preventDefault(); void lookup(); }
+        });
+        form?.addEventListener("reset", () => {
+            window.clearTimeout(lookupTimer);
+            controller?.abort();
+            controller = null;
+            pendingCep = lastLoadedCep = "";
+            ++revision;
+            manualFields.clear();
+            input.setAttribute("aria-busy", "false");
+            setStatus(status, "");
+        });
     });
 }
 
@@ -834,9 +942,10 @@ async function requestPasswordReset(type, body) {
     return payload;
 }
 
-async function request(endpoint, method = "GET", body) {
+async function request(endpoint, method = "GET", body, options = {}) {
     const token = getCustomerToken();
     const response = await fetch(`${CUSTOMER_API}${endpoint}`, {
+        ...options,
         method,
         headers: {
             "Content-Type": "application/json",
@@ -845,10 +954,12 @@ async function request(endpoint, method = "GET", body) {
         ...(body ? { body: JSON.stringify(body) } : {})
     });
 
-    const payload = await response.json();
+    const payload = await response.json().catch(() => {
+        throw Object.assign(new Error("Não foi possível ler a resposta do servidor."), { status: response.status });
+    });
 
     if (!response.ok) {
-        throw new Error(payload.message || `Erro ${response.status}`);
+        throw Object.assign(new Error(payload.message || `Erro ${response.status}`), { status: response.status });
     }
 
     return payload;

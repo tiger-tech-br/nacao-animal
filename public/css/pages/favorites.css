@@ -1,0 +1,5 @@
+.category-storefront .favorites-toolbar { grid-template-columns: minmax(0, 2fr) minmax(160px, 1fr); }
+
+@media (max-width: 720px) {
+    .category-storefront .favorites-toolbar { grid-template-columns: minmax(0, 1fr); }
+}

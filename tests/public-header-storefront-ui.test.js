@@ -17,6 +17,7 @@ function element(...names) {
         setAttribute(name, value) { this.attributes[name] = value; },
         removeAttribute(name) { delete this.attributes[name]; },
         focus() { this.focusCount++; },
+        contains(target) { return target === this; },
         addEventListener(type, callback) { if (!events.has(type)) events.set(type, []); events.get(type).push(callback); },
         emit(type, event = {}) { for (const callback of events.get(type) || []) callback({ preventDefault() {}, ...event }); },
         querySelectorAll: () => []
@@ -67,7 +68,7 @@ function page({ storefront = true, category = false } = {}) {
     context.window = context;
     vm.runInNewContext(fs.readFileSync("public/js/layout/public-header.js", "utf8"), context);
     return {
-        context, header, menu, menuToggle, toggle, close, input, form, categorySearch, products,
+        context, document, header, menu, menuToggle, toggle, close, input, form, categorySearch, products,
         init: () => context.PetFlowPublicHeader.init(),
         markup: () => markup, inserted: () => inserted, requests: () => requests, inputEvents: () => inputEvents
     };
@@ -79,10 +80,10 @@ test("cabeçalho escolhe o novo menu sem Blog apenas para páginas migradas e ev
     assert.match(migrated.markup(), /class="header public-header storefront-header"/);
     assert.match(migrated.markup(), /href="\/sobre"/);
     assert.match(migrated.markup(), /href="\/contato"/);
-    assert.match(migrated.markup(), /href="\/servicos\/dog-walker-pet-sitter" class="menu-link" data-public-nav="services"/);
+    assert.match(migrated.markup(), /href="\/servicos" class="menu-link" data-public-nav="services"/);
     assert.match(migrated.markup(), /data-customer-label>Entrar \| Cadastrar<\/span>/);
     assert.doesNotMatch(migrated.markup(), />Blog<|href="[^\"]*blog/);
-    assert.match(migrated.markup(), /href="\/\?favoritos=1#products"/);
+    assert.match(migrated.markup(), /href="\/favoritos"/);
     await migrated.init();
     assert.equal(migrated.inserted(), 1);
     assert.equal(migrated.requests(), 1);
@@ -118,6 +119,21 @@ test("lupa e menu são exclusivos; Escape restaura foco e estado acessível", as
     assert.equal(ui.form.hidden, true);
     assert.equal(ui.toggle.attributes["aria-expanded"], "false");
     assert.equal(ui.toggle.focusCount, 1);
+});
+
+test("menu das páginas internas fecha ao tocar fora e preserva clique no próprio painel", async () => {
+    const ui = page();
+    await ui.init();
+    ui.menuToggle.emit("click");
+    ui.document.emit("click", { target: ui.menu });
+    assert.equal(ui.menu.classList.contains("active"), true);
+    ui.document.emit("click", { target: ui.menuToggle });
+    assert.equal(ui.menu.classList.contains("active"), true);
+    ui.document.emit("click", { target: element() });
+    assert.equal(ui.menu.classList.contains("active"), false);
+    assert.equal(ui.menuToggle.attributes["aria-expanded"], "false");
+    assert.equal(ui.menuToggle.attributes["aria-label"], "Abrir menu");
+    assert.equal(ui.menuToggle.focusCount, 0);
 });
 
 test("busca de produto usa URL canônica na página nova e preserva endereço antigo nas demais", async () => {

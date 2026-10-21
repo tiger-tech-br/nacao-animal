@@ -27,6 +27,7 @@ function setupHomeSearch() {
         }
         menu?.classList.remove("active");
         menuToggle?.setAttribute("aria-expanded", "false");
+        menuToggle?.setAttribute("aria-label", "Abrir menu");
         form.classList.add("is-open");
         toggle.setAttribute("aria-expanded", "true");
         input.focus();

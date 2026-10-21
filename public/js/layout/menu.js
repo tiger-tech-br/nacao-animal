@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (menuToggle.dataset.sidebarReady === "true") {
         return;
     }
+    menuToggle.dataset.sidebarReady = "true";
 
     const isPublicMenu = panel.classList.contains("menu");
     let overlay = document.querySelector(".menu-overlay");
@@ -21,14 +22,17 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.appendChild(overlay);
     }
 
-    function closePanel() {
+    function closePanel(returnFocus = false) {
+        const wasOpen = panel.classList.contains("active");
         panel.classList.remove("active");
         if (!isPublicMenu) {
             overlay.classList.remove("active");
+            document.body.classList.remove("menu-open");
+            document.body.style.overflow = "";
         }
-        document.body.classList.remove("menu-open");
-        document.body.style.overflow = "";
         menuToggle.setAttribute("aria-expanded", "false");
+        menuToggle.setAttribute("aria-label", "Abrir menu");
+        if (returnFocus === true && wasOpen) menuToggle.focus();
     }
 
     function openPanel() {
@@ -39,6 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
             document.body.style.overflow = "hidden";
         }
         menuToggle.setAttribute("aria-expanded", "true");
+        menuToggle.setAttribute("aria-label", "Fechar menu");
     }
 
     function togglePanel() {
@@ -51,7 +56,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     menuToggle.addEventListener("click", togglePanel);
-    overlay.addEventListener("click", closePanel);
+    overlay.addEventListener("click", () => closePanel());
+    document.addEventListener("click", event => {
+        if (isPublicMenu && panel.classList.contains("active") &&
+            !panel.contains(event.target) && !menuToggle.contains(event.target)) closePanel();
+    });
 
     panel.querySelectorAll("a").forEach(link => {
         link.addEventListener("click", () => {
@@ -62,8 +71,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.addEventListener("keydown", event => {
-        if (event.key === "Escape") {
-            closePanel();
+        if (event.key === "Escape" && panel.classList.contains("active")) {
+            event.preventDefault();
+            closePanel(true);
         }
     });
 

@@ -130,6 +130,7 @@
 .home-page .category-card { overflow: hidden; border: 1px solid #f3e8d9; border-radius: 20px; box-shadow: none; background: #fffcf7; }
 .home-page .category-card img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; background: #fff3dc; }
 .home-page .category-card h3 { margin: 17px 10px; text-align: center; font-size: 16px; }
+.home-page .favorite-item .favorite-image-placeholder { display: grid; place-items: center; width: 64px; height: 64px; margin: 0; padding: 4px; border-radius: 8px; color: #85745a; background: #fff7e6; font-size: 10px; font-weight: 500; line-height: 1.4; text-align: center; }
 .home-page .home-about { background: #fff8e9; }
 .home-page .about-content { display: grid; grid-template-columns: .55fr 1fr; align-items: center; gap: 80px; max-width: 1080px; }
 .home-page .about-mark { display: grid; place-items: center; aspect-ratio: 1.2; border-radius: 45% 55% 48% 43%; color: #ff9b00; background: #ffe29a; transform: rotate(-10deg); }
@@ -217,20 +218,20 @@
     .home-page .logo img { width: 145px; height: 145px; margin-top: -13px; }
     .home-page .home-header .header-actions { grid-column: 2; justify-self: end; gap: 14px; padding-top: 28px; }
     .home-page .home-header .menu-toggle { display: inline-flex; }
-    .home-page .home-header .menu { position: absolute; inset: 100px 0 auto; grid-column: 1 / -1; grid-row: auto; z-index: 26; display: none; padding: 0; width: 100%; }
-    .home-page .home-header .menu.active { display: block; max-height: none; }
-    .home-page .menu-list { display: grid; justify-content: stretch; gap: 0; padding: 14px; border: 1px solid #f3dc9a; border-radius: 18px; background: #fffdf6; box-shadow: 0 10px 25px #6045071a; }
-    .home-page .menu-link { min-height: 43px; padding: 10px 14px; border-radius: 8px; font-size: 14px; }
+    .home-page .home-header .menu { position: absolute; inset: 100px 0 auto; grid-column: 1 / -1; grid-row: auto; z-index: 26; display: block; padding: 0; width: 100%; max-height: max(0px, calc(100vh - 120px)); max-height: max(0px, calc(100dvh - 120px)); visibility: hidden; opacity: 0; transform: translateY(-10px); clip-path: inset(0 0 100% 0); pointer-events: none; transition: opacity .22s ease, transform .28s ease, clip-path .28s ease, visibility 0s linear .28s; }
+    .home-page .home-header .menu.active { visibility: visible; opacity: 1; transform: translateY(0); clip-path: inset(-12px -28px -32px); pointer-events: auto; transition-delay: 0s; }
+    .home-page .menu-list { display: grid; justify-content: stretch; gap: 0; max-height: inherit; overflow-y: auto; overscroll-behavior: contain; padding: 14px; border: 1px solid #f3dc9a; border-radius: 18px; background: #fffdf6; box-shadow: 0 10px 25px #6045071a; text-align: center; }
+    .home-page .menu-link { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 43px; padding: 10px 14px; border-radius: 8px; font-size: 14px; text-align: center; }
     .home-page .menu-link.active { border: 0; background: transparent; }
     .home-page .menu-link { text-underline-offset: 6px; }
     .home-page .menu-link:hover { background: transparent; }
     .home-page .home-header :is(.menu-login-item, .menu-actions-item) { display: block; padding: 8px 0 0 !important; margin: 5px 0 0; border-top: 1px solid #f4e4bf; }
-    .home-page .home-header .menu-login-link { min-height: 44px; padding: 10px 14px; font-size: 14px; }
+    .home-page .home-header .menu-login-link { justify-content: center; width: 100%; min-height: 44px; padding: 10px 14px; font-size: 14px; text-align: center; }
     .home-page .home-header .menu-login-link .customer-avatar { margin-top: 0; }
     .home-page .home-header [data-customer-label] { max-width: none; white-space: normal; }
-    .home-page .home-header .menu-login-item .public-logout-link { min-height: 40px; padding: 10px 14px; font-size: 13px; }
+    .home-page .home-header .menu-login-item .public-logout-link { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 40px; padding: 10px 14px; font-size: 13px; text-align: center; }
     .home-page .menu-login-link, .home-page .menu-action-link { color: #b94e00; background: none; box-shadow: none; }
-    .home-page .menu-actions-item a { display: block; padding: 10px 14px; font-size: 14px; }
+    .home-page .home-header .menu-actions-item a { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; padding: 10px 18px; border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 14px; text-align: center; }
     .home-page .home-header .search-form { top: 100px; width: 100%; }
 }
 @media (max-width: 820px) {
@@ -259,7 +260,15 @@
     .home-page .newsletter-content { grid-template-columns: .9fr 1.1fr; gap: 30px; }
     .home-page .newsletter h2 { font-size: 32px; }
     .home-page .footer-content { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .home-page .footer-column { min-width: 0; }
+    .home-page .footer-column:first-child { grid-column: 1 / -1; }
+    .home-page .footer-column:nth-child(2) { grid-column: 1; grid-row: 2 / span 2; }
+    .home-page .footer-column:nth-child(3) { grid-column: 2; grid-row: 2; }
+    .home-page .footer-column:nth-child(4) { grid-column: 2; grid-row: 3; }
     .home-page .footer-bottom { flex-direction: column; }
+}
+@media (max-width: 720px) {
+    .home-page .favorite-item .favorite-image-placeholder { width: 56px; height: 56px; }
 }
 @media (max-width: 540px) {
     .home-page .container { width: calc(100% - 36px); }
@@ -269,6 +278,7 @@
     .home-page .home-header .header-actions { padding-top: 21px; gap: 12px; }
     .home-page .home-header .line-icon { width: 25px; height: 25px; }
     .home-page .home-header .menu, .home-page .home-header .search-form { top: 89px; }
+    .home-page .home-header .menu { max-height: max(0px, calc(100vh - 109px)); max-height: max(0px, calc(100dvh - 109px)); }
     .home-page .home-cart::after { width: 20px; min-width: 20px; height: 20px; font-size: 10px; top: 0; right: -1px; }
     .home-page .hero-container { min-height: 650px; }
     .home-page .hero-content { width: 100%; max-width: none; padding-top: 135px; padding-bottom: 0; }

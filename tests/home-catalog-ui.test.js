@@ -8,21 +8,23 @@ const vm = require("node:vm");
 function catalogPage(products, cards = [], href = "http://localhost:4600/") {
     const grid = { innerHTML: "" };
     const status = { textContent: "" };
+    const favorites = { innerHTML: "" };
+    const listeners = {};
     const saved = {};
     const context = {
         URL,
         console,
         sessionStorage: { getItem: key => saved[key] || null, setItem: (key, value) => { saved[key] = value; } },
         document: {
-            addEventListener() {},
-            querySelector: selector => selector === ".products-grid" ? grid : null,
+            addEventListener(type, callback) { (listeners[type] ||= []).push(callback); },
+            querySelector: selector => selector === ".products-grid" ? grid : selector === ".favorites-overlay" ? {} : null,
             querySelectorAll(selector) {
                 if (selector === "[data-product-card]") return cards;
                 if (selector === "[data-action='toggle-cart']") return cards.map(card => card.cart);
                 if (selector === "[data-action='toggle-favorite']") return cards.map(card => card.favorite);
                 return [];
             },
-            getElementById: id => id === "searchStatus" ? status : null
+            getElementById: id => id === "searchStatus" ? status : id === "favoritesItems" ? favorites : null
         },
         products
     };
@@ -30,7 +32,9 @@ function catalogPage(products, cards = [], href = "http://localhost:4600/") {
     context.location = { href };
     vm.runInNewContext(fs.readFileSync("public/js/pages/home/catalog.js", "utf8"), context);
     vm.runInNewContext("publicProducts = products", context);
-    return { context, grid, status, saved };
+    return { context, grid, status, saved, favorites,
+        clickDocument(target) { for (const callback of listeners.click || []) callback({ target }); }
+    };
 }
 
 test("catálogo inicial mantém os produtos posteriores ao sexto disponíveis para navegação", () => {
@@ -143,4 +147,75 @@ test("favoritos alternam armazenamento e estado acessível sem alterar a sacola"
     assert.deepEqual(JSON.parse(page.saved.petflow_public_favorites), []);
     assert.equal(card.favorite.attributes["aria-pressed"], "false");
     assert.equal(card.favorite.attributes["aria-label"], "Salvar Brinquedo nos favoritos");
+});
+
+function favoritesPage(products, cart = {}) {
+    const page = catalogPage(products);
+    page.context.initialCart = cart;
+    vm.runInNewContext("publicFavorites=new Set(products.map(product=>String(product.id)));publicCart={...initialCart};setupFavoritesPanel();renderFavoritesItems();", page.context);
+    page.addFromFavorites = id => page.clickDocument({
+        classList: { contains: () => false },
+        closest(selector) { return selector === "[data-favorite-add-cart]" ? { disabled: false, dataset: { favoriteAddCart: String(id) } } : null; }
+    });
+    return page;
+}
+
+test("adicionar pelos favoritos preserva quantidade existente e inicia novos itens com uma unidade", () => {
+    const page = favoritesPage([
+        { id: "old", nome: "Produto já na sacola", preco: 10, estoque_disponivel: 5 },
+        { id: "new", nome: "Outro produto", preco: 6, estoque_disponivel: 5 }
+    ], { old: 3 });
+    assert.match(page.favorites.innerHTML, /Produto já na sacola já está na sacola/);
+    page.addFromFavorites("old");
+    assert.deepEqual(JSON.parse(page.saved.petflow_public_cart), { old: 3 });
+    page.addFromFavorites("new");
+    page.addFromFavorites("new");
+    assert.deepEqual(JSON.parse(page.saved.petflow_public_cart), { old: 3, new: 1 });
+    assert.deepEqual(JSON.parse(page.saved.petflow_public_favorites), ["old", "new"]);
+});
+
+test("favoritos e vitrine bloqueiam preço ausente ou inválido, inclusive no handler", () => {
+    for (const preco of [undefined, null, "", " ", "inválido", NaN, Infinity, -1]) {
+        const product = { id: "invalid", nome: "Produto sem preço", preco, estoque_disponivel: 5 };
+        const page = favoritesPage([product]);
+        assert.match(page.favorites.innerHTML, /Preço indisponível/);
+        assert.match(page.favorites.innerHTML, /data-favorite-add-cart="invalid"[^>]*disabled/);
+        assert.doesNotMatch(page.favorites.innerHTML, /R\$|NaN/);
+        page.addFromFavorites("invalid");
+        assert.equal(page.saved.petflow_public_cart, undefined);
+        page.context.renderProducts([product]);
+        assert.match(page.grid.innerHTML, /Preço indisponível/);
+        assert.match(page.grid.innerHTML, /data-action="toggle-cart"[^>]*disabled/);
+        page.context.toggleCartProduct("invalid");
+        assert.equal(vm.runInNewContext("Object.keys(publicCart).length", page.context), 0);
+    }
+});
+
+test("favoritos bloqueiam esgotados e ignoram produto que saiu do catálogo", () => {
+    const page = favoritesPage([{ id: "empty", nome: "Produto esgotado", preco: 6, estoque_disponivel: 0 }]);
+    assert.match(page.favorites.innerHTML, /data-favorite-add-cart="empty"[^>]*disabled/);
+    assert.match(page.favorites.innerHTML, />Esgotado</);
+    page.addFromFavorites("empty");
+    page.addFromFavorites("removed");
+    assert.equal(page.saved.petflow_public_cart, undefined);
+});
+
+test("favoritos sem foto mostram placeholder e não usam imagem de outro produto", () => {
+    for (const foto of [undefined, null, "", " "]) {
+        const page = favoritesPage([{ id: "photo", nome: "Bolinha", preco: 10, foto }]);
+        assert.match(page.favorites.innerHTML, /favorite-image-placeholder[^>]*role="img"[^>]*aria-label="Sem foto">Sem foto/);
+        assert.doesNotMatch(page.favorites.innerHTML, /<img|petflow-prime-racao/);
+    }
+    const page = favoritesPage([{ id: "photo", nome: "Bolinha", preco: 10, foto: "/images/products/test-pet-ball.jpg" }]);
+    assert.match(page.favorites.innerHTML, /<img src="\/images\/products\/test-pet-ball.jpg" alt="Bolinha"/);
+    assert.doesNotMatch(page.favorites.innerHTML, /favorite-image-placeholder|petflow-prime-racao/);
+});
+
+test("preços zero e numérico em texto permanecem válidos nos favoritos", () => {
+    for (const preco of [0, "0", "6.50"]) {
+        const page = favoritesPage([{ id: "valid", nome: "Produto", preco, estoque_disponivel: 1 }]);
+        assert.doesNotMatch(page.favorites.innerHTML, /Preço indisponível|data-favorite-add-cart="valid"[^>]*disabled/);
+        page.addFromFavorites("valid");
+        assert.deepEqual(JSON.parse(page.saved.petflow_public_cart), { valid: 1 });
+    }
 });

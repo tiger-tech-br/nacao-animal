@@ -3,6 +3,12 @@
 const CATEGORY_API = "/api/public";
 
 const CATEGORY_CONFIG = {
+    favoritos: {
+        title: "Meus favoritos",
+        description: "Reencontre os produtos que você gostou. Seus favoritos ficam salvos durante esta sessão de navegação.",
+        image: "/images/categories/accessories-v2.jpg",
+        favoritesOnly: true
+    },
     todas: {
         title: "Todos os produtos",
         description: "Explore o catálogo da Nação Animal e encontre o que seu melhor amigo precisa.",
@@ -62,6 +68,13 @@ document.addEventListener("petflow:customer-logout", () => {
     applyFilters();
 });
 
+window.addEventListener("pageshow", event => {
+    if (!event.persisted) return;
+    publicFavorites = readFavorites();
+    applyFilters();
+    window.PetFlowPublicHeader?.update();
+});
+
 window.addEventListener("popstate", () => {
     currentSlug = getCurrentSlug();
     const config = CATEGORY_CONFIG[currentSlug];
@@ -78,6 +91,7 @@ window.addEventListener("popstate", () => {
 });
 
 async function setupCategoryPage() {
+    catalogFailed = false;
     currentSlug = getCurrentSlug();
     const config = CATEGORY_CONFIG[currentSlug];
     if (!config) {
@@ -91,15 +105,15 @@ async function setupCategoryPage() {
         const response = await fetch(`${CATEGORY_API}/produtos`);
         const payload = await response.json();
 
-        if (!response.ok || payload.success === false) {
+        if (!response.ok || payload.success === false || !Array.isArray(payload.data)) {
             throw new Error(payload.message || "Produtos indisponíveis.");
         }
 
-        allProducts = Array.isArray(payload.data) ? payload.data : [];
+        allProducts = payload.data;
         applyFilters();
     } catch (error) {
         catalogFailed = true;
-        renderEmpty(error.message || "Não foi possível carregar os produtos.", "Não foi possível carregar a seleção");
+        renderEmpty(error.message || "Não foi possível carregar os produtos.", config.favoritesOnly ? "Não foi possível carregar seus favoritos" : "Não foi possível carregar a seleção");
         setText("categoryResults", "Catálogo indisponível no momento.");
     } finally {
         document.getElementById("categoryProducts")?.setAttribute("aria-busy", "false");
@@ -136,6 +150,7 @@ function applyFilters() {
     if (!config) return;
     if (catalogFailed) {
         renderEmpty("Atualize a página para tentar carregar os produtos novamente.", "Catálogo indisponível no momento");
+        setText("categoryResults", "Catálogo indisponível no momento.");
         return;
     }
     const query = normalize(document.getElementById("categorySearch")?.value || "");
@@ -159,9 +174,9 @@ function renderCategoryHeader(config) {
     setText("categoryTitle", config.title);
     setText("categoryDescription", config.description);
     setText("categoryBreadcrumb", config.title);
-    setText("productsTitle", config.all ? "Catálogo completo" : "Produtos da categoria");
+    setText("productsTitle", config.favoritesOnly ? "Produtos salvos" : config.all ? "Catálogo completo" : "Produtos da categoria");
     const search = document.getElementById("categorySearch");
-    if (search) search.placeholder = config.all ? "Buscar no catálogo" : "Buscar nesta categoria";
+    if (search) search.placeholder = config.favoritesOnly ? "Buscar nos favoritos" : config.all ? "Buscar no catálogo" : "Buscar nesta categoria";
     document.querySelectorAll("[data-category-link]").forEach(link => {
         if (link.dataset.categoryLink === currentSlug) link.setAttribute("aria-current", "page");
         else link.removeAttribute("aria-current");
@@ -191,6 +206,7 @@ function renderUnknownCategory() {
 }
 
 function filterByPetCategory(products, config) {
+    if (config.favoritesOnly) return products.filter(product => publicFavorites.has(String(product.id || product.sku || product.nome)));
     if (config.all) return [...products];
     const matches = products.filter(product => {
         const words = productHaystack(product).split(/[^a-z0-9]+/);
@@ -227,9 +243,16 @@ function renderProducts(products, config, query = "") {
         return;
     }
 
-    setText("categoryResults", `${products.length} ${products.length === 1 ? "produto encontrado" : "produtos encontrados"}${query ? " nesta busca" : config.all ? " no catálogo" : " na categoria"}.`);
+    setText("categoryResults", `${products.length} ${products.length === 1 ? "produto encontrado" : "produtos encontrados"}${query ? " nesta busca" : config.favoritesOnly ? " nos favoritos" : config.all ? " no catálogo" : " na categoria"}.`);
 
     if (!products.length) {
+        if (config.favoritesOnly && !query) {
+            renderEmpty(
+                publicFavorites.size ? "Os produtos salvos não estão disponíveis no catálogo no momento. Explore a loja para encontrar outras opções para seu pet." : "Toque no coração dos produtos que você gostou para encontrá-los aqui.",
+                publicFavorites.size ? "Seus produtos salvos estão indisponíveis" : "Você ainda não tem favoritos"
+            );
+            return;
+        }
         const message = query
             ? `Nenhum produto encontrado para "${query}" em ${config.title.toLowerCase()}.`
             : config.all ? "Ainda não há produtos cadastrados no catálogo." : `Ainda não há produtos cadastrados para ${config.title.toLowerCase()}.`;
@@ -245,11 +268,12 @@ function renderProducts(products, config, query = "") {
         const favorite = publicFavorites.has(id);
         const available = stockAvailable(product);
         const hasPrice = hasValidPrice(product);
+        const photo = typeof product.foto === "string" ? product.foto.trim() : "";
 
         return `
             <article class="product-card" data-product-id="${escapeHtml(id)}">
                 <a class="product-link" href="${escapeHtml(href)}" aria-label="Ver produto ${escapeHtml(product.nome)}">
-                    ${product.foto ? `<img src="${escapeHtml(product.foto)}" alt="${escapeHtml(product.nome)}" loading="lazy" decoding="async">` : '<span class="product-image-placeholder">Imagem indisponível</span>'}
+                    ${photo ? `<img src="${escapeHtml(photo)}" alt="${escapeHtml(product.nome)}" loading="lazy" decoding="async">` : '<span class="product-image-placeholder" role="img" aria-label="Sem foto">Sem foto</span>'}
                 </a>
                 <button class="cart-action favorite ${favorite ? "is-active" : ""}" type="button" data-favorite-product="${escapeHtml(id)}" aria-label="${favorite ? "Remover" : "Salvar"} ${escapeHtml(product.nome)} ${favorite ? "dos" : "nos"} favoritos" aria-pressed="${favorite}">
                     <i class="fa-${favorite ? "solid" : "regular"} fa-heart" aria-hidden="true"></i>
@@ -289,12 +313,13 @@ function renderEmpty(message, title = "Categoria em atualização") {
         return;
     }
 
+    const explorePath = CATEGORY_CONFIG[currentSlug]?.favoritesOnly ? "/produtos" : "/#products";
     grid.innerHTML = `
         <div class="empty-card">
             <span class="empty-icon" aria-hidden="true"><i class="fa-solid fa-paw"></i></span>
             <h3>${escapeHtml(title)}</h3>
             <p>${escapeHtml(message)}</p>
-            <a class="empty-link" href="/#products">Explorar a loja <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+            <a class="empty-link" href="${explorePath}">Explorar a loja <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
         </div>
     `;
 }
@@ -330,6 +355,10 @@ function bindCartButtons() {
 
             sessionStorage.setItem("petflow_public_favorites", JSON.stringify([...publicFavorites]));
             window.PetFlowPublicHeader?.update();
+            if (CATEGORY_CONFIG[currentSlug]?.favoritesOnly) {
+                applyFilters();
+                return;
+            }
             const active = publicFavorites.has(id);
             const product = allProducts.find(item => String(item.id || item.sku || item.nome) === id);
             button.classList.toggle("is-active", active);
@@ -345,7 +374,7 @@ function productSlug(product) {
 }
 
 function updateUrl(slug) {
-    const nextPath = slug === "todas" ? "/produtos" : `/categorias/${slug}`;
+    const nextPath = slug === "favoritos" ? "/favoritos" : slug === "todas" ? "/produtos" : `/categorias/${slug}`;
 
     if (window.location.pathname !== nextPath) {
         window.history.pushState({}, "", nextPath);
@@ -372,7 +401,9 @@ function readFavorites() {
 }
 
 function getCurrentSlug() {
-    if (window.location.pathname.replace(/\/+$/, "") === "/produtos") return "todas";
+    const pathname = window.location.pathname.replace(/\/+$/, "");
+    if (pathname === "/produtos") return "todas";
+    if (pathname === "/favoritos") return "favoritos";
     return window.location.pathname.split("/").filter(Boolean).pop() || "caes";
 }
 

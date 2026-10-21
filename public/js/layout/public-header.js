@@ -1,7 +1,7 @@
 "use strict";
 
 (function setupPetFlowPublicHeader() {
-    const HEADER_VERSION = "20261021-1";
+    const HEADER_VERSION = "20261021-3";
     const DEFAULT_LOGO = "/images/logo/nacao-animal-logo-transparent.png";
     let storeInfoRequest;
 
@@ -119,7 +119,7 @@
                                 <a href="/login" class="menu-link menu-login-link">Entrar</a>
                             </li>
                             <li class="menu-item menu-actions-item">
-                                <a href="/#products" class="menu-action-link" aria-label="Abrir favoritos">
+                                <a href="/favoritos" class="menu-action-link" aria-label="Abrir favoritos">
                                     <i class="fa-regular fa-heart"></i>
                                     Favoritos
                                 </a>
@@ -141,7 +141,7 @@
                             <i class="fa-regular fa-bell"></i>
                         </button>
 
-                        <a href="/#products" class="icon-badge" aria-label="Favoritos">
+                        <a href="/favoritos" class="icon-badge" aria-label="Favoritos">
                             <i class="fa-regular fa-heart"></i>
                         </a>
 
@@ -188,10 +188,10 @@
                             <li class="menu-item"><a href="/#hero" class="menu-link" data-public-nav="home">Início</a></li>
                             <li class="menu-item"><a href="/sobre" class="menu-link" data-public-nav="about">Sobre</a></li>
                             <li class="menu-item"><a href="/produtos" class="menu-link" data-public-nav="products">Produtos</a></li>
-                            <li class="menu-item"><a href="/servicos/dog-walker-pet-sitter" class="menu-link" data-public-nav="services">Serviços</a></li>
+                            <li class="menu-item"><a href="/servicos" class="menu-link" data-public-nav="services">Serviços</a></li>
                             <li class="menu-item"><a href="/contato" class="menu-link" data-public-nav="contact">Contato</a></li>
                             <li class="menu-item menu-login-item"><a href="/login" class="menu-link menu-login-link" aria-label="Entrar ou cadastrar">${storefrontIcon("user")}<span data-customer-label>Entrar | Cadastrar</span></a></li>
-                            <li class="menu-item menu-actions-item"><a href="/?favoritos=1#products" class="menu-action-link" aria-label="Abrir favoritos">Meus favoritos</a></li>
+                            <li class="menu-item menu-actions-item"><a href="/favoritos" class="menu-action-link" aria-label="Abrir favoritos">Meus favoritos</a></li>
                         </ul>
                     </nav>
                     <div class="header-actions">
@@ -276,6 +276,10 @@
         form.addEventListener("submit", () => closeSearch());
         menuToggle?.addEventListener("click", () => closeSearch());
         menu?.querySelectorAll("a").forEach(link => link.addEventListener("click", () => closeMenu()));
+        document.addEventListener("click", event => {
+            if (menu?.classList.contains("active") &&
+                !menu.contains(event.target) && !menuToggle?.contains(event.target)) closeMenu();
+        });
         header.addEventListener("keydown", event => {
             if (event.key !== "Escape") return;
             if (!form.hidden) {
@@ -326,7 +330,7 @@
             setActive(document.querySelector(".storefront-header") ? "products" : "categories");
         } else if (path.startsWith("/produtos")) {
             setActive("products");
-        } else if (path === "/servicos/dog-walker-pet-sitter") {
+        } else if (path === "/servicos" || path.startsWith("/servicos/")) {
             setActive("services");
         } else if (path === "/sobre") {
             setActive("about");

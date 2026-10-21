@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Encontre os produtos que você salvou nos favoritos da Nação Animal. Busque, compare e escolha os próximos cuidados para seu pet.">
+    <meta name="theme-color" content="#ffda61">
+    <title>Nação Animal | Meus favoritos</title>
+    <link rel="icon" href="/images/logo/nacao-animal-logo-transparent.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/layout/public-header.css?v=20260811-1">
+    <link rel="stylesheet" href="/css/pages/public-category.css?v=20261020-1">
+    <link rel="stylesheet" href="/css/pages/favorites.css?v=20261021-1">
+    <link rel="stylesheet" href="/css/layout/cart-sidebar.css?v=20261001">
+    <link rel="stylesheet" href="/css/layout/notifications.css?v=20261021-1">
+    <link rel="stylesheet" href="/css/layout/storefront-theme.css?v=20261021-1">
+</head>
+<body class="storefront-page category-storefront">
+    <a class="skip-link" href="#category-main">Pular para o conteúdo</a>
+    <main class="category-page storefront-container" id="category-main">
+        <nav class="storefront-breadcrumbs" aria-label="Caminho de navegação"><ol><li><a href="/">Início</a></li><li><span id="categoryBreadcrumb" aria-current="page">Meus favoritos</span></li></ol></nav>
+        <section class="category-hero" aria-labelledby="categoryTitle">
+            <div class="category-copy"><span class="eyebrow">Suas escolhas, sempre por perto</span><h1 id="categoryTitle">Meus favoritos</h1><p id="categoryDescription">Reencontre os produtos que você gostou. Seus favoritos ficam salvos durante esta sessão de navegação.</p><a class="category-hero-link" href="#category-products">Ver produtos salvos <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></div>
+            <div class="category-hero-media"><span class="category-paw" aria-hidden="true"><i class="fa-solid fa-heart"></i></span><img id="categoryImage" src="/images/categories/accessories-v2.jpg" alt="Acessórios para pets" width="540" height="360" loading="eager" decoding="async"></div>
+        </section>
+        <nav class="category-quick-links" aria-label="Explore a loja"><a href="/favoritos" data-category-link="favoritos" aria-current="page">Meus favoritos</a><a href="/produtos" data-category-link="todas">Todos os produtos</a><a href="/categorias">Categorias</a></nav>
+        <section class="category-products" id="category-products" aria-labelledby="productsTitle">
+            <div class="section-heading"><div><span class="eyebrow">Escolhidos por você</span><h2 id="productsTitle">Produtos salvos</h2></div><p id="categoryResults" role="status" aria-live="polite">Carregando favoritos…</p></div>
+            <form class="category-toolbar favorites-toolbar" id="categoryToolbar" role="search" aria-label="Filtrar produtos salvos">
+                <div class="search-field"><label for="categorySearch">Encontre um favorito</label><div class="search-input"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input class="form-control" id="categorySearch" name="busca" type="search" placeholder="Buscar nos favoritos" maxlength="100" autocomplete="off"></div></div>
+                <div class="filter-field"><label for="categorySort">Ordenar por</label><select class="form-control" id="categorySort"><option value="default">Seleção da loja</option><option value="price-asc">Menor preço</option><option value="price-desc">Maior preço</option><option value="name">Nome de A a Z</option></select></div>
+            </form>
+            <div class="products-grid" id="categoryProducts" aria-busy="true"><div class="empty-card"><span class="empty-icon" aria-hidden="true"><i class="fa-regular fa-heart"></i></span><h3>Preparando seus favoritos</h3><p>Estamos buscando os produtos que você salvou.</p></div></div>
+            <noscript><p class="empty-card">Ative o JavaScript para consultar seus favoritos e usar o carrinho.</p></noscript>
+        </section>
+        <aside class="category-help" aria-label="Precisa de ajuda?"><span aria-hidden="true"><i class="fa-regular fa-heart"></i></span><div><h2>Ficou em dúvida na escolha?</h2><p>A equipe da Nação Animal está pronta para ajudar.</p></div><a href="/contato">Fale com a gente <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></aside>
+    </main>
+    <footer class="storefront-footer"><div class="storefront-container"><div class="storefront-footer-top"><div><a class="storefront-footer-brand" href="/">Nação Animal</a><p>O melhor para o seu pet, sempre.</p></div><nav aria-label="Links do rodapé"><a href="/produtos">Produtos</a><a href="/categorias">Categorias</a><a href="/sacola">Meu carrinho</a><a href="/contato">Contato</a><a href="/ajuda">Ajuda</a></nav></div><div class="storefront-footer-bottom"><p>© 2026 Nação Animal. Todos os direitos reservados.</p><div><a href="/politica-de-privacidade">Privacidade</a><a href="/termos-de-uso">Termos de uso</a></div></div></div></footer>
+    <script src="/js/layout/public-header.js?v=20261021-3" defer></script>
+    <script src="/js/pages/categories/category-detail.js?v=20261021-2" defer></script>
+    <script src="/js/layout/cart-sidebar.js?v=20261020-1" defer></script>
+    <script src="/js/layout/notifications.js?v=20261021-1" defer></script>
+</body>
+</html>

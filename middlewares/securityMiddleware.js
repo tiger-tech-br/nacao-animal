@@ -7,6 +7,7 @@
 const helmet = require("helmet");
 
 const cors = require("cors");
+const os = require("node:os");
 
 const compression = require("compression");
 
@@ -67,34 +68,35 @@ const allowedOrigins = [
     .map(origin => origin.trim())
     .filter(Boolean);
 
-const corsOptions = {
+function isLocalDevelopmentOrigin(origin, request) {
+    if (process.env.NODE_ENV === "production") return false;
+    try {
+        const url = new URL(origin);
+        if (url.origin !== origin || url.protocol !== "http:" ||
+            url.host !== request.get("host") ||
+            Number(url.port || 80) !== request.socket.localPort) return false;
 
-    origin(origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-            return;
-        }
+        if (["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) return true;
+        return Object.values(os.networkInterfaces()).flat().some(address =>
+            address && !address.internal && address.address === url.hostname);
+    } catch {
+        return false;
+    }
+}
 
-        callback(new Error("Origem não permitida pelo CORS."));
-    },
-
-    credentials: true,
-
-    methods: [
-
-        "GET",
-
-        "POST",
-
-        "PUT",
-
-        "PATCH",
-
-        "DELETE"
-
-    ]
-
-};
+function corsOptions(request, configure) {
+    configure(null, {
+        origin(origin, callback) {
+            if (!origin || allowedOrigins.includes(origin) || isLocalDevelopmentOrigin(origin, request)) {
+                callback(null, true);
+                return;
+            }
+            callback(new Error("Origem não permitida pelo CORS."));
+        },
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    });
+}
 
 /* ==================================================
    SEGURANÇA
@@ -107,6 +109,7 @@ function securityMiddleware(app) {
     app.use(helmet({
         contentSecurityPolicy: {
             directives: {
+                "upgrade-insecure-requests": process.env.NODE_ENV === "production" ? [] : null,
                 "frame-src": ["'self'", "https://*.google.com"],
                 "script-src": [
                     "'self'",

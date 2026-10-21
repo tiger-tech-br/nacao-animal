@@ -260,6 +260,7 @@ function renderProducts(products, options = {}) {
         const favorite = publicFavorites.has(String(id));
         const href = `/produtos/${productSlug(product)}`;
         const available = stockAvailable(product);
+        const hasPrice = hasValidPrice(product);
 
         return `
             <article class="product-card" data-product-card data-id="${escapeHtml(id)}">
@@ -274,9 +275,9 @@ function renderProducts(products, options = {}) {
                 <div class="product-content">
                     <h3 class="product-title"><a href="${escapeHtml(href)}">${escapeHtml(product.nome)}</a></h3>
                     <div class="product-footer">
-                        <strong class="product-price">${currency(product.preco)}</strong>
+                        <strong class="product-price">${hasPrice ? currency(product.preco) : "Preço indisponível"}</strong>
                         <div class="cart-actions" aria-label="Ações da sacola">
-                            <button class="cart-action add ${inCart ? "is-active" : ""}" type="button" data-action="toggle-cart" aria-label="${escapeHtml(cartActionLabel(product, inCart))}" aria-pressed="${inCart}" ${available <= 0 ? "disabled" : ""}>
+                            <button class="cart-action add ${inCart ? "is-active" : ""}" type="button" data-action="toggle-cart" aria-label="${escapeHtml(cartActionLabel(product, inCart))}" aria-pressed="${inCart}" ${available <= 0 || !hasPrice ? "disabled" : ""}>
                                 ${cartActionContent(product, inCart)}
                             </button>
                         </div>
@@ -293,6 +294,7 @@ function renderProducts(products, options = {}) {
 function cartActionLabel(product, inCart) {
     const name = product?.nome || "produto";
     if (stockAvailable(product) <= 0) return `${name}: esgotado`;
+    if (!hasValidPrice(product)) return `${name}: preço indisponível`;
     return inCart ? `Remover ${name} da sacola` : `Adicionar ${name} à sacola`;
 }
 
@@ -363,7 +365,7 @@ function syncProductButtons() {
         const available = stockAvailable(product);
 
         if (cartButton) {
-            const unavailable = available <= 0;
+            const unavailable = available <= 0 || !hasValidPrice(product);
             cartButton.disabled = unavailable;
             cartButton.classList.toggle("is-active", inCart);
             cartButton.setAttribute("aria-label", cartActionLabel(product, inCart));
@@ -423,6 +425,8 @@ function toggleCartProduct(id) {
         return;
     }
 
+    const product = publicProducts.find(item => String(item.id || item.sku || item.nome) === key);
+    if (!product || stockAvailable(product) <= 0 || !hasValidPrice(product)) return;
     publicCart[key] = 1;
 }
 
@@ -451,6 +455,7 @@ function setupFavoritesPanel() {
     injectFavoritesPanel();
 
     document.querySelectorAll("[aria-label='Favoritos'], .menu-action-link[aria-label='Abrir favoritos']").forEach(link => {
+        if (link.getAttribute?.("href") === "/favoritos") return;
         link.addEventListener("click", event => {
             event.preventDefault();
             openFavoritesPanel();
@@ -476,8 +481,9 @@ function setupFavoritesPanel() {
         const addCart = event.target.closest("[data-favorite-add-cart]");
         if (addCart && !addCart.disabled) {
             const product = publicProducts.find(item => String(item.id || item.sku || item.nome) === addCart.dataset.favoriteAddCart);
-            if (stockAvailable(product) <= 0) return;
-            publicCart[addCart.dataset.favoriteAddCart] = 1;
+            if (!product || stockAvailable(product) <= 0 || !hasValidPrice(product)) return;
+            const id = addCart.dataset.favoriteAddCart;
+            publicCart[id] = Math.max(1, Number(publicCart[id]) || 0);
             persistPublicState();
             renderProducts(currentVisibleProducts());
         }
@@ -553,17 +559,22 @@ function renderFavoritesItems() {
         const id = String(product.id || product.sku || product.nome);
         const inCart = Boolean(publicCart[id]);
         const available = stockAvailable(product);
+        const hasPrice = hasValidPrice(product);
+        const imageSource = typeof product.foto === "string" ? product.foto.trim() : "";
+        const actionLabel = available <= 0 ? `${product.nome}: esgotado`
+            : !hasPrice ? `${product.nome}: preço indisponível`
+                : inCart ? `${product.nome} já está na sacola` : `Adicionar ${product.nome} à sacola`;
 
         return `
             <article class="favorite-item">
-                <img src="${escapeHtml(product.foto || "/images/products/petflow-prime-racao.jpg")}" alt="${escapeHtml(product.nome)}">
+                ${imageSource ? `<img src="${escapeHtml(imageSource)}" alt="${escapeHtml(product.nome)}">` : '<span class="favorite-image-placeholder" role="img" aria-label="Sem foto">Sem foto</span>'}
                 <div>
                     <strong>${escapeHtml(product.nome)}</strong>
-                    <span>${currency(product.preco)}</span>
+                    <span>${hasPrice ? currency(product.preco) : "Preço indisponível"}</span>
                 </div>
-                <button class="cart-action add ${inCart ? "is-active" : ""}" type="button" data-favorite-add-cart="${escapeHtml(id)}" ${available <= 0 ? "disabled" : ""}>
-                    <i class="fa-solid ${available <= 0 ? "fa-ban" : inCart ? "fa-check" : "fa-plus"}"></i>
-                    <span>${available <= 0 ? "Esgotado" : inCart ? "Na sacola" : "Sacola"}</span>
+                <button class="cart-action add ${inCart ? "is-active" : ""}" type="button" data-favorite-add-cart="${escapeHtml(id)}" aria-label="${escapeHtml(actionLabel)}" ${available <= 0 || !hasPrice ? "disabled" : ""}>
+                    <i class="fa-solid ${available <= 0 || !hasPrice ? "fa-ban" : inCart ? "fa-check" : "fa-plus"}" aria-hidden="true"></i>
+                    <span>${available <= 0 ? "Esgotado" : !hasPrice ? "Indisponível" : inCart ? "Na sacola" : "Sacola"}</span>
                 </button>
                 <button class="icon-badge" type="button" data-favorite-remove="${escapeHtml(id)}" aria-label="Remover dos favoritos">
                     <i class="fa-solid fa-trash"></i>
@@ -582,6 +593,12 @@ function getFavoriteProducts() {
 function stockAvailable(product) {
     if (!product || product.estoque_disponivel == null) return Number.POSITIVE_INFINITY;
     return Math.max(0, Number(product.estoque_disponivel) || 0);
+}
+
+function hasValidPrice(product) {
+    return (typeof product?.preco === "number" || typeof product?.preco === "string")
+        && String(product.preco).trim() !== ""
+        && Number.isFinite(Number(product.preco)) && Number(product.preco) >= 0;
 }
 
 function setupCartCheckout() {

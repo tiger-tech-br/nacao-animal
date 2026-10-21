@@ -130,6 +130,10 @@ app.get("/", (request, response) => {
 
 });
 
+app.get("/servicos", (request, response) => {
+    response.sendFile(path.join(__dirname, "views", "services", "index.html"));
+});
+
 app.get("/servicos/dog-walker-pet-sitter", (request, response) => {
     response.sendFile(path.join(__dirname, "views", "services", "dog-walker-pet-sitter.html"));
 });
@@ -148,6 +152,10 @@ app.get("/ajuda", (request, response) => {
 
 app.get("/categorias", (request, response) => {
     response.sendFile(path.join(__dirname, "views", "categories", "index.html"));
+});
+
+app.get("/favoritos", (request, response) => {
+    response.sendFile(path.join(__dirname, "views", "products", "favorites.html"));
 });
 
 app.get("/login", (request, response) => {

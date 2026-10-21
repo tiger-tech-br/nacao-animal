@@ -77,7 +77,7 @@ test("menus publicos e administrativos nao divulgam modulos removidos", () => {
     const files = ["views/home/index.html", "public/js/layout/public-header.js", "public/js/layout/sidebar.js", "views/auth/account.html", "views/auth/orders.html", "admin/pages/dashboard/dashboard.html"];
     for (const file of files) {
         const source = fs.readFileSync(file, "utf8");
-        assert.doesNotMatch(source, /href=["'][^"']*(?:#services|\/servicos(?!\/dog-walker-pet-sitter["'])|\/agendamentos|\/meus-pets|\/pages\/pets)/, file);
+        assert.doesNotMatch(source, /href=["'][^"']*(?:#services|\/servicos(?!["']|\/dog-walker-pet-sitter(?:#[^"']*)?["'])|\/agendamentos|\/meus-pets|\/pages\/pets)/, file);
     }
 });
 
@@ -117,7 +117,7 @@ test("rotas removidas retornam 404 e paginas comerciais continuam acessiveis", a
         const png = Buffer.from(await banner.arrayBuffer());
         assert.equal(png.readUInt32BE(16), 1536);
         assert.equal(png.readUInt32BE(20), 1024);
-        for (const route of ["/", "/sobre", "/contato", "/ajuda", "/categorias", "/produtos", "/login", "/conta", "/sacola", "/meus-pedidos", "/politica-de-privacidade", "/produtos/racao",
+        for (const route of ["/", "/sobre", "/contato", "/ajuda", "/categorias", "/produtos", "/favoritos", "/servicos", "/login", "/conta", "/sacola", "/meus-pedidos", "/politica-de-privacidade", "/produtos/racao",
             "/admin/pages/dashboard/dashboard.html", "/admin/pages/produtos/produtos.html", "/admin/pages/vendas/vendas.html",
             "/admin/pages/cupons/cupons.html", "/admin/pages/usuarios/usuarios.html",
             "/admin/pages/auditoria/auditoria.html", "/admin/pages/atendimento/atendimento.html", "/admin/pages/lgpd/lgpd.html"]) {
