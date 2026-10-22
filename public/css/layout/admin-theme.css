@@ -114,6 +114,24 @@ body.admin-brand {
 .admin-brand .content-grid { grid-template-columns: minmax(0, 1fr); }
 .admin-brand .content-grid > aside > .form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .admin-brand .content-grid > aside > .form > :is(.form-actions, .items-builder, .empty-state, .sale-details) { grid-column: 1 / -1; }
+.admin-brand .form > :is(.form-group-wide, .record-form-status) { grid-column: 1 / -1; }
+.admin-brand .content-grid > .panel { scroll-margin-top: 110px; }
+.admin-brand .record-form-status { margin: 0; padding: 12px 14px; border-radius: 10px; border: 1px solid #e8dac3; color: #765d32; background: #fff8e8; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.admin-brand .record-form-status[data-state="success"] { color: #166042; border-color: #b8dfcc; background: #edf8f1; }
+.admin-brand .record-form-status[data-state="error"] { color: #992d2d; border-color: #eac0c0; background: #fff2f2; }
+.admin-brand .record-form-status[hidden] { display: none; }
+.admin-brand .form [disabled], .admin-brand #openRecordForm:disabled { cursor: wait; opacity: .65; }
+.admin-brand .form input[disabled], .admin-brand .form select[disabled], .admin-brand .form textarea[disabled] { cursor: default; }
+.admin-brand :is(.topbar-left, .topbar-title) { min-width: 0; }
+.admin-brand .topbar-left { flex: 1; }
+.admin-brand .topbar > .btn { flex-shrink: 0; }
+.admin-brand .topbar-title h1 { white-space: normal; overflow-wrap: anywhere; line-height: 1.2; }
+.admin-brand .toolbar { flex-wrap: wrap; }
+.admin-brand .toolbar .search-box { min-width: 180px; }
+.admin-brand .panel-header { flex-wrap: wrap; }
+.admin-brand .items-builder .item-control { display: grid; gap: 6px; min-width: 0; }
+.admin-brand .item-control > span { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.admin-brand .items-builder-row > .icon-btn { align-self: end; }
 .admin-brand .data-table { min-width: 0; width: 100%; table-layout: fixed; }
 .admin-brand .data-table :is(th, td) { white-space: normal; overflow-wrap: anywhere; }
 .admin-brand .table-wrap { overflow-x: visible; }
@@ -140,7 +158,9 @@ body.admin-brand {
 @media (max-width: 720px) {
     .admin-brand .content-grid > aside > .form { grid-template-columns: minmax(0, 1fr); }
     .admin-brand .items-builder .items-builder-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 38px; }
-    .admin-brand .items-builder .items-builder-row select { grid-column: 1 / -1; }
+    .admin-brand .items-builder .item-control-product { grid-column: 1 / -1; }
+    .admin-brand .item-control > span { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip-path: none; white-space: normal; font-size: 11px; color: #79654b; }
+    .admin-brand .toolbar .search-box { width: 100%; min-width: 0; }
     .admin-brand .dashboard-topbar-actions { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; }
     .admin-brand .dashboard-topbar-actions .notification-menu { justify-self: end; width: 48px; }
     .admin-brand .dashboard-topbar-actions .notification-button { width: 48px; height: 48px; }

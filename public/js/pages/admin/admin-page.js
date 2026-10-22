@@ -13,6 +13,8 @@
 
     let records = [];
     let editingId = null;
+    let savingRecord = false;
+    const disabledRecordControls = new Map();
     let selectedSaleId = null;
     let saleDetailsRevision = 0;
     let currentPage = 1;
@@ -34,6 +36,7 @@
         buildForm();
         applyReadOnlyLayout();
         applySalesLayout();
+        setupRecordFormNavigation();
         setupSalesFilters();
 
         if (!isSalesPage) {
@@ -177,6 +180,79 @@
                 localStorage.removeItem("user");
             });
         });
+    }
+
+    function setupRecordFormNavigation() {
+        if (isReadOnlyPage || isSalesPage) return;
+        const form = document.getElementById("recordForm");
+        const toolbar = document.querySelector(".toolbar");
+        const header = form?.closest(".panel")?.querySelector(".panel-header");
+        if (!form || !toolbar || !header || document.getElementById("openRecordForm")) return;
+
+        const open = document.createElement("button");
+        open.type = "button";
+        open.className = "btn btn-primary";
+        open.id = "openRecordForm";
+        open.setAttribute("aria-controls", "recordForm");
+        open.addEventListener("click", () => {
+            if (!savingRecord) revealRecordForm();
+        });
+        toolbar.appendChild(open);
+
+        const back = document.createElement("button");
+        back.type = "button";
+        back.className = "btn btn-small";
+        back.textContent = config.mode === "single" ? "Ver dados atuais" : "Voltar à lista";
+        back.addEventListener("click", () => revealRecordSection("tableTitle"));
+        header.appendChild(back);
+        syncRecordFormActions();
+    }
+
+    function revealRecordSection(titleId) {
+        const title = document.getElementById(titleId);
+        if (!title) return;
+        title.setAttribute("tabindex", "-1");
+        const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+        title.closest(".panel")?.scrollIntoView({
+            block: "start", behavior: reducedMotion ? "auto" : "smooth"
+        });
+        title.focus({ preventScroll: true });
+    }
+
+    function revealRecordForm() {
+        revealRecordSection("formTitle");
+    }
+
+    function syncRecordFormActions() {
+        setText("openRecordForm", editingId ? "Continuar edição" : (config.formTitle || "Novo registro"));
+        setText("cancelEdit", editingId ? "Cancelar edição" : "Limpar campos");
+        setText("saveRecord", savingRecord ? "Salvando..." :
+            (editingId || config.mode === "single" ? "Salvar alterações" : "Salvar"));
+    }
+
+    function setRecordFormFeedback(message, state = "info") {
+        const feedback = document.getElementById("recordFormStatus");
+        if (!feedback) return;
+        feedback.textContent = message;
+        feedback.dataset.state = state;
+        feedback.hidden = !message;
+    }
+
+    function setRecordFormBusy(busy) {
+        const form = document.getElementById("recordForm");
+        form?.setAttribute("aria-busy", String(busy));
+        const open = document.getElementById("openRecordForm");
+        if (open) open.disabled = busy;
+        if (busy) {
+            form?.querySelectorAll("input, select, textarea, button").forEach(control => {
+                if (!disabledRecordControls.has(control)) disabledRecordControls.set(control, control.disabled);
+                control.disabled = true;
+            });
+        } else {
+            disabledRecordControls.forEach((disabled, control) => { control.disabled = disabled; });
+            disabledRecordControls.clear();
+        }
+        syncRecordFormActions();
     }
 
     function bindPageText() {
@@ -356,11 +432,15 @@
 
                 <button
                     type="submit"
-                    class="btn btn-primary">
+                    class="btn btn-primary"
+                    id="saveRecord">
                     Salvar
                 </button>
             </div>
+            <p id="recordFormStatus" class="record-form-status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
         `;
+        syncRecordFormActions();
+        if (savingRecord) setRecordFormBusy(true);
     }
 
     function applyReadOnlyLayout() {
@@ -394,7 +474,7 @@
 
         if (field.type === "file") {
             return `
-                <div class="form-group product-photo-field">
+                <div class="form-group form-group-wide product-photo-field">
                     <label for="${escapeHtml(field.name)}">
                         ${escapeHtml(field.label)}
                     </label>
@@ -418,7 +498,7 @@
 
         if (field.type === "textarea" || field.type === "json") {
             return `
-                <div class="form-group">
+                <div class="form-group form-group-wide">
                     <label for="${escapeHtml(field.name)}">
                         ${escapeHtml(field.label)}
                     </label>
@@ -665,14 +745,15 @@
             }
 
             if (cancelButton && !isSalesPage) {
-                resetForm();
+                if (!savingRecord) resetForm();
             }
 
             if (addItemButton && !isSalesPage) {
-                addItemRow(addItemButton.dataset.field);
+                if (!savingRecord) addItemRow(addItemButton.dataset.field);
             }
 
             if (removeItemButton && !isSalesPage) {
+                if (savingRecord) return;
                 const row =
                     removeItemButton.closest(".items-builder-row");
                 const builder =
@@ -743,6 +824,7 @@
 
             updateSalesSummary();
             setStatus(`${records.length} registro(s) carregado(s).`);
+            return true;
         } catch (error) {
             records = [];
             renderTable();
@@ -751,19 +833,23 @@
 
             updateSalesSummary();
             setStatus(error.message || "Não foi possível carregar os dados.");
+            return false;
         }
     }
 
     async function saveRecord(event) {
         event.preventDefault();
-
-        const payload = readForm();
-        const requestPayload = hasFileFields()
-            ? buildMultipartPayload(payload)
-            : payload;
+        if (savingRecord || isReadOnlyPage || isSalesPage) return;
+        savingRecord = true;
         setStatus("Salvando...");
+        setRecordFormFeedback("Salvando o registro...");
 
         try {
+            const payload = readForm();
+            const requestPayload = hasFileFields()
+                ? buildMultipartPayload(payload)
+                : payload;
+            setRecordFormBusy(true);
             if (config.mode === "single") {
                 await apiPut(config.endpoint, requestPayload);
             } else if (editingId) {
@@ -773,10 +859,18 @@
             }
 
             resetForm();
-            await loadData();
-            setStatus("Registro salvo com sucesso.");
+            setRecordFormFeedback("Registro salvo. Atualizando a lista...");
+            const refreshed = await loadData();
+            const message = refreshed ? "Registro salvo com sucesso." :
+                "Registro salvo. Não foi possível atualizar a lista; use Atualizar para conferir os dados.";
+            setStatus(message);
+            setRecordFormFeedback(message, refreshed ? "success" : "info");
         } catch (error) {
             setStatus(error.message || "Não foi possível salvar.");
+            setRecordFormFeedback(error.message || "Não foi possível salvar. Confira os dados e tente novamente.", "error");
+        } finally {
+            savingRecord = false;
+            setRecordFormBusy(false);
         }
     }
 
@@ -798,6 +892,7 @@
     }
 
     function editRecord(id) {
+        if (savingRecord || isReadOnlyPage || isSalesPage) return;
         const record = records.find(item =>
             String(getRecordValue(item, config.idKey || "id")) === String(id)
         );
@@ -809,6 +904,9 @@
         editingId = id;
         fillForm(record);
         setText("formTitle", "Editar registro");
+        setRecordFormFeedback("");
+        syncRecordFormActions();
+        revealRecordForm();
     }
 
     function fillForm(record) {
@@ -867,6 +965,7 @@
         buildForm();
         populateRemoteSelects();
         setText("formTitle", config.formTitle || "Novo registro");
+        syncRecordFormActions();
     }
 
     function readForm() {
@@ -2097,7 +2196,7 @@
                     </button>
                 </div>
 
-                <div class="items-builder-columns">
+                <div class="items-builder-columns" aria-hidden="true">
                     <span>Produto</span>
                     <span>Qtd</span>
                     <span>Valor unit.</span>
@@ -2140,7 +2239,9 @@
         const row = document.createElement("div");
         row.className = "items-builder-row";
         row.innerHTML = `
-            <select class="form-control" data-item-product aria-label="Produto" required>
+            <label class="item-control item-control-product">
+                <span>Produto</span>
+                <select class="form-control" data-item-product required>
                 <option value="">Selecione</option>
                 ${options.map(option => `
                     <option
@@ -2150,38 +2251,45 @@
                         ${escapeHtml(option.label || option.value)}
                     </option>
                 `).join("")}
-            </select>
+                </select>
+            </label>
 
-            <input
+            <label class="item-control">
+                <span>Quantidade</span>
+                <input
                 class="form-control"
                 type="number"
                 min="1"
                 step="1"
                 value="${escapeHtml(quantity)}"
                 data-item-quantity
-                aria-label="Quantidade"
                 required>
+            </label>
 
-            <input
+            <label class="item-control">
+                <span>Valor unitário (R$)</span>
+                <input
                 class="form-control"
                 type="number"
                 min="0"
                 step="0.01"
                 value="${escapeHtml(price)}"
                 data-item-price
-                aria-label="Valor unitário"
                 required>
+            </label>
 
             <button
                 class="icon-btn"
                 type="button"
                 data-action="remove-item"
+                aria-label="Remover item"
                 title="Remover item">
                 <i class="fa-solid fa-trash"></i>
             </button>
         `;
 
         list.appendChild(row);
+        if (savingRecord) setRecordFormBusy(true);
         refreshItemsBuilderTotal(builder);
     }
 
