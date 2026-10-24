@@ -4,16 +4,35 @@
     const stop = document.getElementById("stopGps"), retry = document.getElementById("refreshRoute");
     const routeStatus = document.getElementById("routeStatus"), mapStatus = document.getElementById("mapStatus");
     const login = document.getElementById("testLogin"), destination = document.getElementById("destinationAddress");
+    const movementStatus = document.getElementById("gpsMovementStatus");
     const COOLDOWN_MS = 60000;
     let running = false, preparing = false, generation = 0, watchId = null, trip = null;
     let routeController = null, routePending = false, routeAttempted = false, lastRouteAt = null;
     let token = "", mapReady = false, routeReady = false, paused = false, wakeLock = null;
+    let movementOrigin = null, summaryTimer = null, gpsMessage = "";
+    const canNavigate = () => running && !document.hidden && !gpsMessage && trip && Date.now() - trip.timestamp <= 15000 && trip.precisao_m <= 50;
+    let view = { following: false, overview: true };
     const show = (element, message) => { element.textContent = message; element.hidden = !message; };
     function summary() {
         if (!running) return;
-        show(status, trip ? `GPS obtido · Precisão: ${Math.round(trip.precisao_m)} m · Mapa ${mapReady ? "carregado" : "aguardando"} · Rota ${routeReady ? "calculada" : "aguardando"}.` : "Permita a localização para iniciar o teste até a loja.");
+        const age = trip ? Math.max(0, Math.floor((Date.now() - trip.timestamp) / 1000)) : 0;
+        const stale = Boolean(trip && age >= 15);
+        show(status, gpsMessage || (stale ? `GPS sem atualização há ${age} segundos. Aguardando uma nova posição do aparelho.`
+            : trip ? `GPS obtido · Precisão: ${Math.round(trip.precisao_m)} m · Mapa ${mapReady ? "carregado" : "aguardando"} · Rota ${routeReady ? "calculada" : "aguardando"}.` : "Permita a localização para iniciar o teste até a loja."));
+        if (!trip) { show(movementStatus, ""); return; }
+        // Direção e relógio não contam como deslocamento. A estimativa usa só
+        // coordenadas reais na memória desta tela, sem consultar o Google.
+        const meters = movementOrigin && trip.precisao_m <= 50
+            ? Math.round(window.PetFlowNavigationEngine.distance(movementOrigin, trip)) : null;
+        const movement = meters === null ? "Deslocamento: aguardando GPS mais preciso" : `Deslocamento estimado: ~${meters} m desde o início`;
+        const camera = view.following ? "Seguindo você: o mapa anda por baixo da seta centralizada."
+            : view.overview ? "Rota completa: acompanhe a seta avançando no trajeto."
+                : "Mapa livre: toque em Centralizar em mim para voltar a acompanhar.";
+        show(movementStatus, `Precisão: ${Math.round(trip.precisao_m)} m · ${age <= 2 ? "Leitura agora" : `Leitura há ${age} s`}\n${movement}\n${camera}`);
+        if (mapReady && routeReady && !stale && !gpsMessage) status.hidden = true;
+        if (stale) navigation.pause();
     }
-    const map = window.PetFlowDeliveryMap({ mode: "driver", onStatus(notice) {
+    const map = window.PetFlowDeliveryMap({ mode: "driver", onViewChange(nextView) { view = nextView; summary(); }, onStatus(notice) {
         if (!running) { show(mapStatus, ""); return; }
         mapReady = notice.state === "ready" && Boolean(notice.message);
         mapStatus.classList.toggle("is-error", notice.state === "error");
@@ -41,6 +60,8 @@
         running = preparing = false; generation++;
         if (watchId !== null) navigator.geolocation?.clearWatch(watchId);
         watchId = null; routeController?.abort(); routeController = null; routePending = false;
+        if (summaryTimer !== null) clearInterval(summaryTimer);
+        summaryTimer = null; movementOrigin = null; gpsMessage = ""; show(movementStatus, "");
         trip = null; mapReady = routeReady = false; navigation.stop(); map.hide();
         wakeLock?.release().catch(() => {}); wakeLock = null;
         retry.disabled = true; retry.hidden = true; stop.disabled = true;
@@ -85,9 +106,11 @@
             if (!running || current !== generation) return;
             trip.rota = route; routeReady = true;
             if (route.enderecoDestino && typeof route.enderecoDestino === "object") trip.endereco_entrega = route.enderecoDestino;
-            map.update(trip); navigation.update(trip);
+            map.update(trip);
+            if (canNavigate()) navigation.update(trip);
+            else navigation.pause();
             if (!trip.endereco_entrega) destination.textContent = "Destino do teste: loja Nação Animal.";
-            show(routeStatus, "Rota de teste calculada até a loja. Recalcule manualmente se precisar de outro trajeto."); summary();
+            show(routeStatus, ""); summary();
         } catch (error) {
             if (current !== generation) return;
             if ([401, 403].includes(error.status)) { authFailure(error); return; }
@@ -99,12 +122,15 @@
     }
     function receivePosition(position, current) {
         if (!running || current !== generation || document.hidden) return;
-        if (!validFix(position)) { show(status, "Aguardando uma posição GPS válida e recente. Confira a localização do aparelho."); navigation.pause(); return; }
+        if (!validFix(position)) { gpsMessage = "Aguardando uma posição GPS válida e recente. Confira a localização do aparelho."; navigation.pause(); summary(); return; }
+        if (trip && Number(position.timestamp) <= trip.timestamp) return;
         const coords = position.coords;
         trip = { ...trip, latitude: coords.latitude, longitude: coords.longitude, precisao_m: coords.accuracy,
             heading: Number.isFinite(coords.heading) ? coords.heading : null,
             velocidade_mps: Number.isFinite(coords.speed) && coords.speed >= 0 ? coords.speed : null,
             timestamp: Number(position.timestamp), atualizado_em: new Date(position.timestamp).toISOString() };
+        gpsMessage = "";
+        if (!movementOrigin && coords.accuracy <= 50) movementOrigin = { latitude: coords.latitude, longitude: coords.longitude };
         // Renderização local vem antes de qualquer chamada da rota ao servidor.
         map.update(trip); navigation.update(trip); summary();
         if (!trip.endereco_entrega) destination.textContent = "Destino do teste: loja Nação Animal.";
@@ -116,7 +142,7 @@
             clearTest(); start.disabled = false; start.textContent = "Tentar GPS novamente";
             show(status, "Localização negada. Permita a localização para este site e para o navegador nas configurações do celular.");
         } else {
-            navigation.pause(); show(status, "GPS temporariamente indisponível. Aguardando o sinal do aparelho; o teste não envia posições inventadas.");
+            navigation.pause(); gpsMessage = "GPS temporariamente indisponível. Aguardando o sinal do aparelho; o teste não envia posições inventadas."; summary();
         }
     }
     start.addEventListener("click", async () => {
@@ -127,8 +153,10 @@
         try {
             if (!await validateSession(current) || current !== generation || document.hidden) return;
             preparing = paused = false; running = true; routeAttempted = false;
+            gpsMessage = "";
             stop.disabled = false; retry.hidden = false; retry.disabled = false;
             navigation.start(); summary(); keepScreenOn(current);
+            summaryTimer = setInterval(summary, 1000);
             const id = navigator.geolocation.watchPosition(position => receivePosition(position, current), error => positionError(error, current),
                 { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
             if (running && current === generation) watchId = id; else navigator.geolocation.clearWatch(id);

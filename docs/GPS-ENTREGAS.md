@@ -16,8 +16,11 @@ O projeto Google Cloud precisa de faturamento ativo. A chave de servidor não de
 Nos sites autorizados da chave do navegador, inclua:
 
 - `https://nacao-animal-production.up.railway.app/*`
+- `https://nacao-animal-production.up.railway.app`
 - `http://localhost:4600/*`
+- `http://localhost:4600`
 - `http://127.0.0.1:4600/*`
+- `http://127.0.0.1:4600`
 - O domínio definitivo, quando for publicado, preservando os endereços ainda utilizados.
 
 No Railway, `APP_URL` deve ser `https://nacao-animal-production.up.railway.app`, para gerar os links da demonstração. A configuração remota deve preservar o `.env` usado pelo localhost. Ativar o mapa não ativa pagamentos.
@@ -39,7 +42,17 @@ Leia o aviso e toque em **Testar GPS e navegação**. O teste solicita a permiss
 
 O mapa e as orientações acompanham as novas posições recebidas do aparelho antes de aguardar a resposta da consulta de rota. Há uma consulta inicial quando o GPS está recente e com precisão de até 100 m. O botão **Recalcular rota de teste** solicita outro trajeto manualmente, com intervalo mínimo de um minuto; o teste não recalcula rotas automaticamente. Enquanto o Google responde, o GPS continua atualizando nesta tela.
 
-Toque em **Parar teste** para interromper a localização e limpar o mapa e os dados em memória. Ocultar a página, trocar de aplicativo ou voltar pelo histórico pausa o teste; para continuar, toque em **Retomar teste**. Nenhuma posição é salva em armazenamento do navegador. O uso do teste no aparelho é uma validação a realizar; os testes automatizados não comprovam o sinal GPS, as permissões ou a renderização do mapa real no celular.
+No modo de seguir posição, a seta fica centralizada e o mapa se desloca por baixo dela. **Ver rota completa** desliga essa centralização para observar a seta avançando no trajeto; arrastar ativa o mapa livre. O indicador local mostra precisão, idade da leitura e **deslocamento estimado em linha reta desde o início**, calculado só com coordenadas recebidas, sem somar rotação ou passagem do tempo. O valor pode variar com o erroGPS e não representa a distância total percorrida. Após15s sem leitura recente, aparece aviso de falta de atualização. Tudo é limpo ao encerrar/ocultar.
+
+Toque em **Parar teste** para interromper a localização e limpar o mapa e os dados em memória. Ocultar a página, trocar de aplicativo ou voltar pelo histórico pausa o teste; para continuar, toque em **Retomar teste**. Nenhuma posição é salva em armazenamento do navegador. Em24/10/2026, o usuário confirmou no celular GPS com precisão4m, mapa carregado e rota desenhada. Essa captura parada não valida movimento ou compartilhamento de uma entrega.
+
+## Roteiro de validação pendente
+
+O percurso em movimento foi adiado pelo usuário. Quando ele retomar, usar o diagnóstico existente com a página visível e a tela ativa durante um pequeno trecho a pé. Conferir se a seta acompanha a posição, se a distância até a manobra muda e se as instruções avançam ao chegar à manobra. Depois encerrar e conferir que o teste limpa a posição. Não pedir coordenadas nem registrar ruas ou o trajeto pessoal no relatório. O recálculo deste diagnóstico é manual; não usá-lo como evidência do recálculo automático da viagem comercial.
+
+Para o acompanhamento entre aparelhos, é necessário um pedido de teste autorizado que passe pelo fluxo de entrega. A última consulta ao Railway em24/10 retornou zero pedidos e pagamentos desativados. Preparar o cenário apropriado antes de iniciar; não forçar pagamento ou status no banco da demonstração.
+
+Com esse cenário pronto, abrir o link privado atual no celular do entregador; no segundo aparelho, o cliente autenticado abre o próprio pedido e o administrador usa **Acompanhar entrega**. Confirmar posição e rota em ambos, atualização durante o movimento e aviso de última posição conhecida após15s sem dados recentes. Por fim, conferir encerramento e remoção do rastreamento. Cada resultado deve ser registrado separadamente; a aprovação do mapa parado não comprova esses passos.
 
 ## Uso no celular
 

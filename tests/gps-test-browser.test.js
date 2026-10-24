@@ -7,8 +7,9 @@ function element() {
         addEventListener(name, fn) { this.events[name] = fn; } };
 }
 function harness({ token = "admin-session", role = "ADMIN", routeRequest } = {}) {
-    const elements = Object.fromEntries(["gpsStatus", "startGps", "stopGps", "refreshRoute", "routeStatus", "mapStatus", "testLogin", "destinationAddress", "originAddress"].map(id => [id, element()]));
+    const elements = Object.fromEntries(["gpsStatus", "gpsMovementStatus", "startGps", "stopGps", "refreshRoute", "routeStatus", "mapStatus", "testLogin", "destinationAddress", "originAddress"].map(id => [id, element()]));
     const calls = [], watches = [], cleared = [], updates = [], navigation = [], documentEvents = {}, events = {}, timers = new Map();
+    const intervals = new Set();
     let mapOptions, nextTimer = 0, clock = Date.now();
     class FakeDate extends Date { static now() { return clock; } }
     const context = { Date: FakeDate, AbortController, AbortSignal,
@@ -18,6 +19,8 @@ function harness({ token = "admin-session", role = "ADMIN", routeRequest } = {})
         isSecureContext: true,
         addEventListener(name, fn) { events[name] = fn; },
         setTimeout(fn) { const id = ++nextTimer; timers.set(id, fn); return id; }, clearTimeout(id) { timers.delete(id); },
+        setInterval(fn) { intervals.add(fn); return fn; }, clearInterval(fn) { intervals.delete(fn); },
+        PetFlowNavigationEngine: require("../public/js/pages/delivery/navigation-engine"),
         PetFlowDeliveryMap(options) { mapOptions = options; return { update(data) { updates.push(JSON.parse(JSON.stringify(data))); }, hide() { navigation.push("hide"); } }; },
         PetFlowDeliveryNavigation() { return { start() { navigation.push("start"); }, update(data) { navigation.push({ update: JSON.parse(JSON.stringify(data)) }); }, stop() { navigation.push("stop"); }, pause() { navigation.push("pause"); } }; },
         fetch: async (url, options) => {
@@ -28,9 +31,10 @@ function harness({ token = "admin-session", role = "ADMIN", routeRequest } = {})
         }
     };
     context.window = context; vm.runInNewContext(source, context);
-    const fix = (index = watches.length - 1, extras = {}) => watches[index].success({ timestamp: clock, coords: { latitude: -23.66, longitude: -46.55, accuracy: 8, heading: 90, speed: 2, ...extras } });
-    return { context, elements, calls, watches, cleared, updates, navigation, documentEvents, events, timers, fix,
-        notice(notice) { mapOptions.onStatus(notice); }, advance(ms) { clock += ms; } };
+    const fix = (index = watches.length - 1, extras = {}) => watches[index].success({ timestamp: ++clock, coords: { latitude: -23.66, longitude: -46.55, accuracy: 8, heading: 90, speed: 2, ...extras } });
+    return { context, elements, calls, watches, cleared, updates, navigation, documentEvents, events, timers, intervals, fix,
+        notice(notice) { mapOptions.onStatus(notice); }, view(view) { mapOptions.onViewChange(view); },
+        tick() { [...intervals].forEach(fn => fn()); }, advance(ms) { clock += ms; } };
 }
 test("teste físico exige sessão administrativa e clique antes do GPS", async () => {
     const h = harness(); await settle();
@@ -107,4 +111,65 @@ test("posição antiga ou imprecisa não provoca chamadas pagas de rota", async 
     h.fix(0, { accuracy: 180 }); await settle();
     assert.equal(h.updates.length, 1); assert.equal(h.calls.filter(c => c.url.includes("diagnostico")).length, 0);
     await h.elements.refreshRoute.events.click(); assert.match(h.elements.routeStatus.textContent, /precisão de até 100 m/);
+});
+
+test("movimento medido usa coordenadas reais; girar a seta ou mudar a câmera não inventa deslocamento", async () => {
+    const h = harness(); await settle(); await h.elements.startGps.events.click();
+    h.fix(); await settle();
+    assert.match(h.elements.gpsMovementStatus.textContent, /~0 m desde o início/);
+    h.view({ following: true, overview: false });
+    assert.match(h.elements.gpsMovementStatus.textContent, /mapa anda por baixo da seta centralizada/);
+    h.advance(5000); h.fix(0, { latitude: -23.6597 }); await settle();
+    assert.equal(h.updates.at(-1).latitude, -23.6597);
+    assert.match(h.elements.gpsMovementStatus.textContent, /~33 m desde o início/);
+    h.advance(1000); h.fix(0, { latitude: -23.6597, heading: 180 }); await settle();
+    assert.match(h.elements.gpsMovementStatus.textContent, /~33 m desde o início/);
+    h.view({ following: false, overview: true });
+    assert.match(h.elements.gpsMovementStatus.textContent, /Rota completa/);
+    h.view({ following: false, overview: false });
+    assert.match(h.elements.gpsMovementStatus.textContent, /Mapa livre/);
+    assert.equal(h.calls.filter(call => call.url.includes("diagnostico")).length, 1, "Indicadores locais não consultam outra rota");
+    assert.doesNotMatch(h.elements.gpsMovementStatus.textContent, /-23|-46/);
+    h.elements.stopGps.events.click();
+    assert.equal(h.elements.gpsMovementStatus.hidden, true);
+    assert.equal(h.intervals.size, 0);
+    await h.elements.startGps.events.click(); h.fix(1, { latitude: -23.65 }); await settle();
+    assert.match(h.elements.gpsMovementStatus.textContent, /~0 m desde o início/, "Retomada não preserva a origem pessoal da sessão anterior");
+});
+
+test("GPS sem novas leituras mostra idade e espera sinal sem movimentar a posição", async () => {
+    const h = harness(); await settle(); await h.elements.startGps.events.click(); h.fix(); await settle();
+    h.notice({ state: "ready", message: "Mapa pronto" });
+    assert.equal(h.elements.gpsStatus.hidden, true);
+    const count = h.updates.length;
+    h.advance(16000); h.tick();
+    assert.equal(h.elements.gpsStatus.hidden, false);
+    assert.match(h.elements.gpsStatus.textContent, /GPS sem atualização há 16 segundos/);
+    assert.match(h.elements.gpsMovementStatus.textContent, /Leitura há 16 s/);
+    assert.equal(h.updates.length, count, "O relógio não cria posições GPS");
+    assert.equal(h.navigation.at(-1), "pause");
+    h.advance(1); h.fix(0, { latitude: -23.6597 }); await settle();
+    assert.equal(h.elements.gpsStatus.hidden, true);
+    assert.match(h.elements.gpsMovementStatus.textContent, /Leitura agora/);
+    assert.match(h.elements.gpsMovementStatus.textContent, /~33 m/);
+    h.context.document.hidden = true; h.documentEvents.visibilitychange();
+    assert.equal(h.intervals.size, 0);
+    assert.equal(h.elements.gpsMovementStatus.hidden, true);
+});
+
+test("diagnóstico ignora GPS fora de ordem e rota atrasada não retoma manobras após perda de sinal", async () => {
+    let finish;
+    const h = harness({ routeRequest: () => new Promise(resolve => { finish = resolve; }) });
+    await settle(); await h.elements.startGps.events.click(); h.fix(); await settle();
+    h.advance(1000); h.fix(0, { latitude: -23.6597 });
+    const last = h.updates.at(-1), before = h.updates.length;
+    h.watches[0].success({ timestamp: last.timestamp - 500, coords: { latitude: -23.6605, longitude: -46.55, accuracy: 4 } });
+    assert.equal(h.updates.length, before, "GPS antigo não substitui o deslocamento mais recente");
+    h.watches[0].error({ code: 2 });
+    finish({ ok: true, json: async () => ({ data: { polyline: "late-route" } }) }); await settle();
+    assert.equal(h.navigation.at(-1), "pause", "Rota pendente não encerra a pausa de sinal");
+    assert.match(h.elements.gpsStatus.textContent, /GPS temporariamente indisponível/);
+    h.advance(1000); h.fix(0, { latitude: -23.6595 }); await settle();
+    assert.equal(h.navigation.at(-1).update.latitude, -23.6595, "A nova leitura real retoma orientação");
+    assert.equal(h.updates.at(-1).rota.polyline, "late-route");
 });

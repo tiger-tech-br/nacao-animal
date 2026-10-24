@@ -300,19 +300,19 @@ test("sessão de cliente não permite abrir acompanhamento administrativo", asyn
     assert.equal(h.elements.trackingLogin.href,"/admin/index.html");
     assert.match(h.elements.trackingStatus.textContent,/Entre no painel administrativo/);
 });
-function mapHarness(mode = "tracking", delayMarker = false) {
+function mapHarness(mode = "tracking", delayMarker = false, cameraRelative = false, delayPan = false) {
     const elements=Object.fromEntries(["deliveryMap","mapStatus","originAddress","destinationAddress","recenterMap","centerTrackingMap","showFullRoute"].map(id=>[id,element()]));
-    const paths=[], centers=[], vehicles=[], circles=[], polylines=[], maps=[], pans=[], fits=[], notices=[]; let ready;
+    const paths=[], centers=[], vehicles=[], circles=[], polylines=[], maps=[], pans=[], cameraCenters=[], fits=[], notices=[], viewChanges=[]; let ready;
     const domElement = () => ({ ...element(), style: {}, children: [], setAttribute() {}, appendChild(child) { this.children.push(child); }, remove() {} });
     const ctx={URLSearchParams,console,setTimeout,clearTimeout,document:{getElementById:id=>elements[id],createElement:domElement,head:{appendChild(){ready=()=>ctx.petflowMapsReady();}}},fetch:async()=>({ok:true,json:async()=>({data:{browserKey:"public-key"}})}),google:{maps:{
-        Map:class{constructor(el,options){this.options=options;this.events={};this.zoom=options.zoom;maps.push(this);}fitBounds(b){fits.push(b);}getBounds(){return{contains:()=>this.inside!==false};}panTo(p){pans.push(p);}getZoom(){return this.zoom;}setZoom(value){this.zoom=value;}addListener(name,fn){this.events[name]=fn;}},
+        Map:class{constructor(el,options){this.options=options;this.events={};this.zoom=options.zoom;this.center={...options.center};maps.push(this);}fitBounds(b){fits.push(b);}getBounds(){return{contains:()=>this.inside!==false};}panTo(p){pans.push(p);if(!delayPan)this.setCenter(p);}setCenter(p){cameraCenters.push({...p});this.center={...p};if(cameraRelative)vehicles.filter(marker=>marker.map===this).forEach(marker=>marker.draw());}getZoom(){return this.zoom;}setZoom(value){this.zoom=value;}addListener(name,fn){this.events[name]=fn;}},
         Circle:class{constructor(){circles.push(this);}setCenter(p){this.center=p;centers.push(p);}setRadius(){}setVisible(v){this.visible=v;}},
-        OverlayView:class{setMap(){vehicles.push(this);if(!delayMarker)this.onAdd();}getPanes(){return{overlayMouseTarget:{appendChild(){}}};}getProjection(){return{fromLatLngToDivPixel:p=>({x:p.lng*100,y:p.lat*100})};}},
+        OverlayView:class{setMap(map){this.map=map;vehicles.push(this);if(!delayMarker)this.onAdd();}getPanes(){return{overlayMouseTarget:{appendChild(){}}};}getProjection(){return{fromLatLngToDivPixel:p=>cameraRelative ? {x:160+(p.lng-this.map.center.lng)*100000,y:240-(p.lat-this.map.center.lat)*100000} : {x:p.lng*100,y:p.lat*100}};}},
         LatLng:class{constructor(p){Object.assign(this,p);}},
         Polyline:class{constructor(options){this.options=options;polylines.push(this);}setPath(p){this.path=p;paths.push(p);}getPath(){return this.path;}},LatLngBounds:class{constructor(){this.points=[];}extend(p){this.points.push(p);return this;}},geometry:{encoding:{decodePath:()=>[{lat:-23,lng:-46}]}}
     }}};
     ctx.window=ctx;vm.runInNewContext(source("map"),ctx);
-    return { elements,paths,centers,vehicles,circles,polylines,maps,pans,fits,notices,context:ctx,map:ctx.PetFlowDeliveryMap({mode,onStatus:notice=>notices.push(notice)}),ready:()=>ready() };
+    return { elements,paths,centers,vehicles,circles,polylines,maps,pans,cameraCenters,fits,notices,viewChanges,context:ctx,map:ctx.PetFlowDeliveryMap({mode,onStatus:notice=>notices.push(notice),onViewChange:view=>viewChanges.push(JSON.parse(JSON.stringify(view)))}),ready:()=>ready() };
 }
 const routeData = () => ({latitude:-23.66,longitude:-46.55,precisao_m:10,endereco_entrega:{endereco:"Rua",numero:"123"},rota:{tipoOrigem:"GPS_ENTREGADOR",polyline:"route",distanciaMetros:1500,duracao:"300s",origem:{latitude:-23.66,longitude:-46.55},destino:{latitude:-23.67,longitude:-46.56}}});
 test("mapa informa carregamento, recusa do Google e sucesso pelo callback opcional", async () => {
@@ -350,7 +350,7 @@ test("cliente vê van, partida e destino com acompanhamento automático da linha
     h.maps[0].events.dragstart();await h.map.update({...data,latitude:-23.64});assert.equal(h.fits.length,2,"Respeita o mapa movido pelo cliente");
     h.elements.centerTrackingMap.events.click();assert.equal(h.fits.length,3,"Centralizar volta a enquadrar van e destino");
 });
-test("entregador vê partida, destino e rota completa e pode alternar para seguir GPS", async () => {
+test("entregador começa seguindo GPS e pode alternar para rota completa ou mapa livre", async () => {
     const h=mapHarness("driver"),data={...routeData(),heading:90};
     const pending=h.map.update(data);await settle();h.ready();await pending;
     const marker=h.vehicles[0];
@@ -358,28 +358,111 @@ test("entregador vê partida, destino e rota completa e pode alternar para segui
     assert.equal(marker.icon.hidden,false);
     assert.equal(marker.icon.style.transform,"rotate(90deg)");
     assert.equal(h.polylines[0].options.strokeColor,"#00d7f2");
-    assert.equal(h.paths.length,1);assert.equal(h.fits.length,1,"Enquadra a rota completa ao carregar");
-    assert.ok(h.fits[0].points.some(p=>p.lat===data.rota.origem.latitude && p.lng===data.rota.origem.longitude));
-    assert.ok(h.fits[0].points.some(p=>p.lat===data.rota.destino.latitude && p.lng===data.rota.destino.longitude));
+    assert.equal(h.paths.length,1);assert.equal(h.fits.length,0,"Primeiro GPS segue a posição sem exigir uma rota válida");
+    assert.equal(h.cameraCenters.at(-1).lat,data.latitude);
+    assert.equal(h.cameraCenters.at(-1).lng,data.longitude);
     assert.equal(h.circles[2].visible,true);
     assert.equal(h.circles[2].center.lat,data.rota.origem.latitude,"Partida tem seu próprio marcador");
     assert.equal(h.circles[1].center.lat,data.rota.destino.latitude);
-    assert.equal(h.pans.length,0,"Não centraliza só no entregador na visão completa");
+    assert.equal(h.pans.length,0,"Acompanhamento direto não depende de pan animado");
     assert.equal(h.maps[0].options.zoom,17);
     h.maps[0].events.dragstart();
     await h.map.update({...data,latitude:-23.65});assert.equal(h.pans.length,0,"Respeita o mapa arrastado pelo entregador");
-    assert.equal(h.fits.length,1);
-    h.elements.recenterMap.events.click();assert.equal(h.pans.at(-1).lat,-23.65);
-    await h.map.update({...data,latitude:-23.64,heading:0});assert.equal(h.pans.at(-1).lat,-23.64);
+    assert.equal(h.cameraCenters.at(-1).lat,data.latitude);
+    assert.equal(h.fits.length,0);
+    assert.equal(h.map.follow(),false,"A navegação não desfaz a escolha manual de mapa livre");
+    h.elements.recenterMap.events.click();assert.equal(h.cameraCenters.at(-1).lat,-23.65);
+    await h.map.update({...data,latitude:-23.64,heading:0});assert.equal(h.cameraCenters.at(-1).lat,-23.64);
     assert.equal(marker.icon.style.transform,"rotate(0deg)","Direção norte é válida");
     assert.equal(h.paths.length,1,"Só redesenha a rota quando ela muda");
-    h.elements.showFullRoute.events.click();assert.equal(h.fits.length,2);
+    h.elements.showFullRoute.events.click();assert.equal(h.fits.length,1);
+    assert.ok(h.fits.at(-1).points.some(p=>p.lat===data.rota.origem.latitude && p.lng===data.rota.origem.longitude));
+    assert.ok(h.fits.at(-1).points.some(p=>p.lat===data.rota.destino.latitude && p.lng===data.rota.destino.longitude));
     assert.ok(h.fits.at(-1).points.some(p=>p.lat===-23.64),"A visão completa inclui a posição mais recente");
-    await h.map.update({...data,latitude:-23.63});assert.equal(h.fits.length,2,"Não redefine o zoom a cada GPS dentro do mapa");
+    assert.equal(h.map.follow(),false,"Uma rota nova não força seguir após escolher visão completa");
+    await h.map.update({...data,latitude:-23.63});assert.equal(h.fits.length,1,"Não redefine o zoom a cada GPS dentro do mapa");
     h.maps[0].inside=false;
-    await h.map.update({...data,latitude:-23.62});assert.equal(h.fits.length,3,"Reenquadra se a seta sair da área visível");
+    await h.map.update({...data,latitude:-23.62});assert.equal(h.fits.length,2,"Reenquadra se a seta sair da área visível");
     h.map.hide();assert.equal(h.elements.recenterMap.hidden,true);assert.equal(h.elements.showFullRoute.hidden,true);
 });
+
+test("controles anunciam seguir GPS, visão completa, mapa livre e ocultação", async () => {
+    const h=mapHarness("driver");
+    assert.deepEqual(h.viewChanges.at(-1),{following:true,overview:false});
+    assert.equal(h.elements.recenterMap["aria-pressed"],"true");
+    assert.equal(h.elements.showFullRoute["aria-pressed"],"false");
+    assert.equal(h.elements.recenterMap.title,"Acompanhando minha localização");
+    assert.equal(h.map.follow(),false,"Não anuncia acompanhamento antes de carregar o mapa");
+    assert.equal(h.viewChanges.length,1);
+    const pending=h.map.update(routeData());await settle();h.ready();await pending;
+    h.elements.recenterMap.events.click();
+    assert.deepEqual(h.viewChanges.at(-1),{following:true,overview:false});
+    assert.equal(h.elements.recenterMap["aria-pressed"],"true");
+    assert.equal(h.elements.recenterMap["aria-label"],"Acompanhando minha localização");
+    assert.equal(h.elements.showFullRoute["aria-pressed"],"false");
+    assert.equal(h.elements.showFullRoute.title,"Mostrar rota completa");
+    h.maps[0].events.dragstart();
+    assert.deepEqual(h.viewChanges.at(-1),{following:false,overview:false});
+    assert.equal(h.elements.recenterMap["aria-pressed"],"false");
+    assert.equal(h.elements.recenterMap.title,"Seguir minha localização");
+    h.elements.showFullRoute.events.click();
+    assert.deepEqual(h.viewChanges.at(-1),{following:false,overview:true});
+    assert.equal(h.elements.showFullRoute["aria-label"],"Exibindo rota completa");
+    assert.equal(h.elements.showFullRoute["aria-pressed"],"true");
+    h.elements.recenterMap.events.click();h.map.hide();
+    assert.deepEqual(h.viewChanges.at(-1),{following:true,overview:false});
+    assert.equal(h.elements.recenterMap.hidden,true);assert.equal(h.elements.showFullRoute.hidden,true);
+    assert.equal(h.elements.recenterMap["aria-pressed"],"true");
+});
+
+test("câmera acompanha GPS diretamente mesmo se panTo não aplicar a animação", async () => {
+    const h=mapHarness("driver",false,true,true),data={...routeData(),heading:90};
+    const pending=h.map.update(data);await settle();h.ready();await pending;
+    h.map.follow();
+    const marker=h.vehicles[0],camera=h.maps[0];
+    const pixel=()=>({left:marker.element.style.left,top:marker.element.style.top});
+    const centeredPixel=pixel(),firstCenter={...camera.center};
+    const next={...data,latitude:data.latitude+.0001,longitude:data.longitude+.0002,heading:30};
+    await h.map.update(next);
+    assert.equal(marker.position.lat,next.latitude);assert.equal(marker.position.lng,next.longitude);
+    assert.equal(camera.center.lat,next.latitude);assert.equal(camera.center.lng,next.longitude);
+    assert.notEqual(camera.center.lat,firstCenter.lat,"A câmera avançou com a coordenada recebida");
+    assert.deepEqual(pixel(),centeredPixel,"Seguir GPS mantém a seta centralizada enquanto o mapa se desloca");
+    assert.equal(h.pans.length,0,"Não enfileira panTo enquanto o Android entrega novas coordenadas");
+    assert.equal(marker.icon.style.transform,"rotate(30deg)");
+    h.maps[0].events.dragstart();
+    const heldCenter={...camera.center},panCount=h.pans.length;
+    const afterDrag={...next,latitude:next.latitude+.0001,longitude:next.longitude+.0001};
+    await h.map.update(afterDrag);
+    assert.deepEqual(camera.center,heldCenter,"Arrastar desliga acompanhamento e conserva a câmera");
+    assert.equal(h.pans.length,panCount);
+    assert.equal(marker.position.lat,afterDrag.latitude);assert.equal(marker.position.lng,afterDrag.longitude);
+    assert.notDeepEqual(pixel(),centeredPixel,"Com câmera livre, o novo GPS desloca a seta na tela");
+    const fixedPixel=pixel(),fixedPosition={...marker.position};
+    await h.map.update({...afterDrag,heading:180});
+    assert.equal(marker.position.lat,fixedPosition.lat);assert.equal(marker.position.lng,fixedPosition.lng);
+    assert.deepEqual(pixel(),fixedPixel,"Mudar só a direção não inventa deslocamento");
+    assert.deepEqual(camera.center,heldCenter);assert.equal(h.pans.length,panCount);
+    assert.equal(marker.icon.style.transform,"rotate(180deg)");
+});
+test("seguir GPS independe de rota e hide restaura acompanhamento para a próxima sessão", async () => {
+    const h=mapHarness("driver",false,true,true),data={...routeData(),rota:null};
+    const pending=h.map.update(data);await settle();h.ready();await pending;
+    const marker=h.vehicles[0],camera=h.maps[0];
+    await h.map.update({...data,latitude:data.latitude+.0001});
+    assert.equal(camera.center.lat,data.latitude+.0001);
+    assert.equal(marker.position.lat,data.latitude+.0001);
+    assert.equal(h.elements.showFullRoute.hidden,true,"Sem rota, a câmera ainda acompanha o GPS");
+    assert.equal(h.pans.length,0);
+    camera.events.dragstart();
+    assert.equal(h.map.follow(),false);
+    h.map.hide();
+    assert.deepEqual(h.viewChanges.at(-1),{following:true,overview:false});
+    await h.map.update({...data,latitude:data.latitude+.0003});
+    assert.equal(camera.center.lat,data.latitude+.0003,"Nova sessão segue a primeira coordenada disponível");
+    assert.equal(marker.position.lat,data.latitude+.0003);
+});
+
 test("seta permanece sem direção inicial e conserva a última direção quando parado", async () => {
     const h=mapHarness("driver"),data=routeData();
     const pending=h.map.update(data);await settle();h.ready();await pending;

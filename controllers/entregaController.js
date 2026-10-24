@@ -57,8 +57,15 @@ async function localizacao(req, res, next) {
             if (stop) await client.query("DELETE FROM entrega_rastreamento WHERE venda_id=$1 AND token_hash=$2", [rows[0].id, hash(token)]);
             else {
                 const result = await client.query(`UPDATE entrega_rastreamento SET latitude=$1,longitude=$2,precisao_m=$3,atualizado_em=COALESCE($4::timestamptz,NOW())
-                    WHERE venda_id=$5 AND token_hash=$6 AND expira_em>NOW()`, [latitude,longitude,precisao,capture,rows[0].id,hash(token)]);
-                if (!result.rowCount) throw fail("Link expirado ou substituído.", 410);
+                    WHERE venda_id=$5 AND token_hash=$6 AND expira_em>NOW()
+                    AND ($4::timestamptz IS NULL OR atualizado_em IS NULL OR atualizado_em<$4::timestamptz)`, [latitude,longitude,precisao,capture,rows[0].id,hash(token)]);
+                if (!result.rowCount) {
+                    // Uma leitura repetida ou atrasada preserva o fix ja recebido.
+                    // O predicado do UPDATE e atomico mesmo com POSTs concorrentes.
+                    const newer = capture && await client.query(`SELECT 1 FROM entrega_rastreamento
+                        WHERE venda_id=$1 AND token_hash=$2 AND expira_em>NOW() AND atualizado_em>=$3::timestamptz`, [rows[0].id,hash(token),capture]);
+                    if (!newer?.rows[0]) throw fail("Link expirado ou substituído.", 410);
+                }
             }
         });
         res.set("Cache-Control", "no-store").json({ success: true });
@@ -109,8 +116,11 @@ async function rota(req, res, next) {
                 WHERE r.token_hash=$1 AND r.expira_em>NOW() AND v.status='SAIU_PARA_ENTREGA' FOR UPDATE OF v,r`, [tokenHash]);
             const row = rows[0];
             if (!row) throw fail("Link expirado ou entrega encerrada.", 410);
-            if (row.latitude === null || !row.atualizado_em || Date.now()-new Date(row.atualizado_em).getTime()>120000)
-                throw fail("Compartilhe uma posição GPS recente antes de calcular a rota.", 409);
+            const captured = new Date(row.atualizado_em).getTime(), now = Date.now();
+            if (!Number.isFinite(row.latitude) || Math.abs(row.latitude)>90 || !Number.isFinite(row.longitude) || Math.abs(row.longitude)>180 ||
+                !row.atualizado_em || !Number.isFinite(captured) || now-captured>15000 || captured-now>5000 ||
+                !Number.isFinite(row.precisao_m) || row.precisao_m<0 || row.precisao_m>50)
+                throw fail("Compartilhe uma posição GPS de até 15 segundos e precisão de até 50 metros antes de calcular a rota.", 409);
             if (row.recente) {
                 if (row.rota?.tipoOrigem === "GPS_ENTREGADOR") return { cached: row.rota };
                 throw fail("Aguarde alguns segundos para tentar a rota novamente.", 429);

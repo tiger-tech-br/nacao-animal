@@ -73,13 +73,28 @@
         if (distance < Math.max(5, Number(precision) || 0)) return null;
         return (Math.atan2(Math.sin(delta)*Math.cos(lat2), Math.cos(lat1)*Math.sin(lat2)-Math.sin(lat1)*Math.cos(lat2)*Math.cos(delta)) * 180 / Math.PI + 360) % 360;
     }
-    window.PetFlowDeliveryMap = function ({ mode = "tracking", onStatus } = {}) {
+    window.PetFlowDeliveryMap = function ({ mode = "tracking", onStatus, onViewChange } = {}) {
         const navigation = mode === "driver";
         const element = document.getElementById("deliveryMap"), message = document.getElementById("mapStatus");
         const recenter = document.getElementById(navigation ? "recenterMap" : "centerTrackingMap");
         const showRoute = navigation ? document.getElementById("showFullRoute") : null;
         let map, driver, origin, destination, route, accuracy, lastPolyline, lastDestination, routeBounds, version = 0;
-        let currentPosition, currentDestination, previousPosition, heading = null, following = !navigation, overview = true;
+        let currentPosition, currentDestination, previousPosition, heading = null, following = true, overview = !navigation, manualView = false;
+        function announceView() {
+            if (recenter) {
+                recenter.setAttribute("aria-pressed", String(following));
+                recenter.title = navigation
+                    ? (following ? "Acompanhando minha localização" : "Seguir minha localização")
+                    : (following ? "Acompanhando entregador e destino" : "Centralizar entregador e destino");
+                recenter.setAttribute("aria-label", recenter.title);
+            }
+            if (showRoute) {
+                showRoute.setAttribute("aria-pressed", String(overview));
+                showRoute.title = overview ? "Exibindo rota completa" : "Mostrar rota completa";
+                showRoute.setAttribute("aria-label", showRoute.title);
+            }
+            onViewChange?.({ following, overview });
+        }
         function setStatus(text, state = "ready") {
             message.textContent = text;
             onStatus?.({ message: text, state });
@@ -96,28 +111,33 @@
             destination.setRadius(metersPerPixel * 9);
             origin?.setRadius(metersPerPixel * 7);
         }
-        function followPosition() {
+        function followPosition(force = false) {
             if (!map || !currentPosition || element.hidden) return false;
+            if (navigation && manualView && !force) return false;
+            manualView = false;
             following = true; overview = false;
             if (!navigation && currentDestination) {
                 const bounds = new google.maps.LatLngBounds(); bounds.extend(currentPosition); bounds.extend(currentDestination);
                 map.fitBounds(bounds, { top: 72, right: 42, bottom: 190, left: 42 });
-            } else { map.setZoom(17); map.panTo(currentPosition); }
+            } else { map.setZoom(17); map.setCenter(currentPosition); }
+            announceView();
             return true;
         }
-        recenter?.addEventListener("click", followPosition);
+        recenter?.addEventListener("click", () => followPosition(true));
         showRoute?.addEventListener("click", () => {
             if (!map || !routeBounds || element.hidden) return;
-            following = false; overview = true; map.fitBounds(routeBounds, 40);
+            manualView = true; following = false; overview = true; map.fitBounds(routeBounds, 40);
+            announceView();
         });
+        announceView();
         return {
             follow: followPosition,
-            hide() { version++; element.hidden = true; setStatus(""); previousPosition = null; heading = null; following = !navigation; overview = true; if (recenter) recenter.hidden = true; if (showRoute) showRoute.hidden = true; },
+            hide() { version++; element.hidden = true; setStatus(""); previousPosition = null; heading = null; following = true; overview = !navigation; manualView = false; if (recenter) recenter.hidden = true; if (showRoute) showRoute.hidden = true; announceView(); },
             resize() {
                 if (!map || element.hidden) return;
                 google.maps.event?.trigger(map, "resize");
                 if (!navigation) followPosition();
-                else if (following) map.panTo(currentPosition);
+                else if (following) map.setCenter(currentPosition);
                 else if (overview && routeBounds) map.fitBounds(routeBounds, 40);
             },
             async update(data) {
@@ -148,13 +168,15 @@
                         origin = new google.maps.Circle({ map, radius: 12, fillColor: "#16834b", fillOpacity: 1, strokeColor: "#fff", strokeWeight: 3, zIndex: 2 });
                         route = new google.maps.Polyline({ map, strokeColor: navigation ? "#00d7f2" : "#2464d9", strokeOpacity: 1, strokeWeight: navigation ? 7 : 6, zIndex: 3 });
                         map.addListener("zoom_changed", resizeMarkers);
-                        map.addListener("dragstart", () => { following = false; overview = false; });
+                        map.addListener("dragstart", () => { manualView = true; following = false; overview = false; announceView(); });
                     }
                     if (navigation) {
                         const nextHeading = Number.isFinite(data.heading) ? (data.heading % 360 + 360) % 360 : movementHeading(previousPosition, position, data.precisao_m);
                         if (nextHeading !== null) heading = nextHeading;
                         driver.setHeading(heading); previousPosition = position;
-                        if (following) map.panTo(position);
+                        // Cada leitura real define a câmera diretamente, sem
+                        // enfileirar animações de pan que podem atrasar no celular.
+                        if (following) map.setCenter(position);
                     }
                     if (recenter) recenter.hidden = false;
                     driver.setPosition(position); accuracy.setCenter(currentPosition); accuracy.setRadius(hasPosition ? Math.max(0, Number(data.precisao_m) || 0) : 0);

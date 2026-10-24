@@ -12,7 +12,7 @@
     const PUBLISH_INTERVAL = 2000, GPS_MAX_AGE = 15000, ROUTE_COOLDOWN = 16000;
     const navigation = window.PetFlowDeliveryNavigation({map,recalculate:()=>{if(Date.now()-lastRouteAttempt>=ROUTE_COOLDOWN) getRoute();}});
     let running = false, pendingGeneration = null, routeGeneration = null, timer, publishTimer, watchId = null, watchGeneration = 0, generation = 0, trip, lastRouteAttempt = 0, wakeLock, paused = false, ended = false;
-    let latestFix, lastFixTime = 0, attemptedFixTime = 0, sharedFixTime = 0, lastPublishAt = -Infinity, gpsMessage = "", publishMessage = "", publicationController;
+    let latestFix, lastFixTime = 0, attemptedFixTime = 0, sharedFixTime = 0, lastPublishAt = -Infinity, gpsMessage = "", publishMessage = "", publicationController, gpsUsable = false, wakeRequest = 0, wakePending = false;
     async function api(path, method = "GET", body, signal) {
         const timeout = AbortSignal.timeout(path === "localizacao" && method === "POST" ? 5000 : 15000);
         const response = await fetch(`/api/public/entregas/${path}`, { method, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
@@ -26,26 +26,32 @@
         publicationController?.abort(); publicationController = null;
         pendingGeneration = routeGeneration = null;
         navigation.stop();
-        wakeLock?.release().catch(() => {}); wakeLock = null;
+        releaseScreen();
     }
     function stopWatching() {
         watchGeneration++;
         if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-        watchId = null; latestFix = null; clearTimeout(publishTimer); publishTimer = null;
+        watchId = null; latestFix = null; gpsUsable = false; clearTimeout(publishTimer); publishTimer = null;
     }
     function renderGpsStatus() {
         const message = gpsMessage || publishMessage;
         showStatus(status, message || "Viagem em andamento. GPS acompanha sua posição neste aparelho.", Boolean(message));
     }
     function isFresh(fix) { return fix && Date.now()-fix.time <= GPS_MAX_AGE && fix.time-Date.now() <= 5000; }
+    function releaseScreen() {
+        wakeRequest++; wakePending = false;
+        wakeLock?.release().catch(() => {}); wakeLock = null;
+    }
     async function keepScreenOn() {
         const current = generation;
+        if (!running || document.hidden || !navigator.wakeLock || wakePending || (wakeLock && !wakeLock.released)) return;
+        const request = ++wakeRequest; wakePending = true;
         try {
-            if (running && !document.hidden && navigator.wakeLock && (!wakeLock || wakeLock.released)) {
-                const lock = await navigator.wakeLock.request("screen");
-                if (running && current === generation) wakeLock = lock; else await lock.release();
-            }
+            const lock = await navigator.wakeLock.request("screen");
+            if (running && !document.hidden && current === generation && request === wakeRequest) wakeLock = lock;
+            else await lock.release();
         } catch { /* A tela pode ser mantida ativa manualmente. */ }
+        finally { if (request === wakeRequest) wakePending = false; }
     }
     async function getRoute() {
         if (!running || document.hidden || !isFresh(latestFix) || latestFix.precisao_m>50 || !sharedFixTime || !isFresh({time:sharedFixTime}) || routeGeneration === generation) return;
@@ -55,7 +61,12 @@
         try {
             const route = await api("rota", "POST");
             if (!running || current !== generation) return;
-            trip.rota = route; map.update(trip); navigation.update(trip);
+            trip.rota = route;
+            if (!document.hidden) {
+                map.update(trip);
+                if (gpsUsable && isFresh(latestFix)) navigation.update(trip);
+                else navigation.pause();
+            }
             showStatus(routeStatus, "Rota até o endereço da entrega atualizada.", false);
         } catch (error) {
             if (current !== generation) return;
@@ -94,6 +105,8 @@
     }
     function gpsError(error, current, watch) {
         if (!running || current !== generation || watch !== watchGeneration || document.hidden) return;
+        gpsUsable = false; latestFix = null; sharedFixTime = 0;
+        clearTimeout(publishTimer); publishTimer = null;
         navigation.pause();
         gpsMessage = error.code === 1 ? "Acesso ao GPS negado. Permita a localização nas configurações do navegador e tente iniciar novamente." : `GPS sem atualização: ${error.message || "não foi possível obter a posição"}. Aguardando um novo sinal do aparelho.`;
         renderGpsStatus();
@@ -102,7 +115,8 @@
     function startWatching() {
         if (!running || document.hidden || watchId !== null) return;
         const current = generation, watch = ++watchGeneration;
-        watchId = navigator.geolocation.watchPosition(position => {
+        let id;
+        try { id = navigator.geolocation.watchPosition(position => {
             if (!running || current !== generation || watch !== watchGeneration || document.hidden) return;
             const coords = position.coords, time = position.timestamp;
             if (!Number.isFinite(time) || !Number.isFinite(coords?.latitude) || Math.abs(coords.latitude)>90 || !Number.isFinite(coords.longitude) || Math.abs(coords.longitude)>180 || !Number.isFinite(coords.accuracy) || coords.accuracy<0 || coords.accuracy>10000) {
@@ -114,14 +128,24 @@
             latestFix = { latitude: coords.latitude, longitude: coords.longitude, precisao_m: coords.accuracy, heading: Number.isFinite(coords.heading) ? coords.heading : null,
                 velocidade_mps: Number.isFinite(coords.speed) && coords.speed>=0 ? coords.speed : null, atualizado_em: new Date(time).toISOString(), time };
             trip = { ...trip, ...latestFix };
+            gpsUsable = coords.accuracy<=50;
             gpsMessage = coords.accuracy>50 ? "GPS impreciso. Aguarde um sinal mais preciso para seguir as orientações." : "";
             // Não aguarda a rede: cada posição real move a seta e atualiza as manobras.
             map.update(trip); navigation.update(trip); renderGpsStatus();
             queuePublish();
-        }, error => gpsError(error, current, watch), { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+        }, error => gpsError(error, current, watch), { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }); }
+        catch (error) {
+            if (current !== generation || watch !== watchGeneration) return;
+            halt(); map.hide(); start.disabled = false; start.textContent = "Tentar iniciar novamente";
+            showStatus(status, `Não foi possível iniciar o GPS: ${error.message || "confira a permissão de localização no navegador"}.`);
+            return;
+        }
+        if (!running || current !== generation || watch !== watchGeneration) navigator.geolocation.clearWatch(id);
+        else watchId = id;
     }
     function checkGpsFreshness() {
         if (!running || document.hidden || !lastFixTime || Date.now()-lastFixTime <= GPS_MAX_AGE) return;
+        gpsUsable = false;
         gpsMessage = "GPS sem atualização recente. Aguardando uma nova posição do aparelho para continuar as orientações.";
         navigation.pause(); renderGpsStatus();
     }
@@ -141,7 +165,7 @@
             navigation.start();
             map.update({ ...trip, latitude: null, longitude: null });
             renderGpsStatus();
-            keepScreenOn(); startWatching(); timer = setInterval(checkGpsFreshness, 1000);
+            keepScreenOn(); startWatching(); if (running) timer = setInterval(checkGpsFreshness, 1000);
         } catch (error) {
             if (current !== generation) return;
             showStatus(status, error.message); ended = [401,410].includes(error.status); start.disabled = ended;
@@ -160,7 +184,7 @@
     retryRoute.addEventListener("click", getRoute);
     document.addEventListener("visibilitychange", () => {
         if (!running) return;
-        if (document.hidden) { stopWatching(); navigation.pause(); wakeLock?.release().catch(() => {}); wakeLock = null; }
+        if (document.hidden) { stopWatching(); navigation.pause(); releaseScreen(); }
         else { gpsMessage = "Aguardando uma nova posição GPS após voltar à viagem."; renderGpsStatus(); keepScreenOn(); startWatching(); }
     });
     window.addEventListener("pagehide", () => {

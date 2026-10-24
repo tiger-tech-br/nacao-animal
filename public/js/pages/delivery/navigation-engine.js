@@ -43,15 +43,16 @@
                 steps.push(step);total+=meters;
             }
         } catch { return null; }
-        let progress=0,initialized=false,lastFix,lastTime,lastPosition,offRouteFixes=0,lastSignature,lastResult;
+        let progress=0,initialized=false,lastFix,lastTime,lastPosition,offRouteFixes=0,lastSensorTime=-Infinity,lastResult;
         return {
             update(position,now=Date.now()) {
                 const time=new Date(position.atualizado_em).getTime();
                 if(!validPoint(position) || !Number.isFinite(time) || now-time>15000 || time-now>5000) return {state:"stale"};
-                if(!Number.isFinite(position.precisao_m) || position.precisao_m>50 || position.precisao_m<0) return {state:"imprecise"};
-                const signature=JSON.stringify([time,position.latitude,position.longitude,position.precisao_m,position.velocidade_mps]);
-                if(signature===lastSignature && lastResult) return lastResult;
-                const remember=result=>{lastSignature=signature;lastResult=result;return result;};
+                // O mesmo fix e respostas fora de ordem não avançam manobras nem contam como outro desvio.
+                if(time<=lastSensorTime && lastResult) return lastResult;
+                lastSensorTime=time;
+                const remember=result=>{lastResult=result;return result;};
+                if(!Number.isFinite(position.precisao_m) || position.precisao_m>50 || position.precisao_m<0) return remember({state:"imprecise"});
                 const elapsed=lastTime ? Math.max(0,(time-lastTime)/1000) : 0;
                 const maxAdvance=Math.max(150,elapsed*Math.max(10,position.velocidade_mps || 0)+position.precisao_m*2);
                 let match;
@@ -63,11 +64,11 @@
                     if(!match || score<match.score) match={...candidate,at,index:segment.index,score};
                 }
                 if(!match || match.offset>Math.max(50,position.precisao_m*2)) {
-                    if(lastFix!==position.atualizado_em) {offRouteFixes++;lastFix=position.atualizado_em;}
+                    if(lastFix!==time) {offRouteFixes++;lastFix=time;}
                     return remember({state:"off-route",recalculate:offRouteFixes>=2});
                 }
                 const estimatedSpeed=lastPosition && lastTime && time>lastTime ? distance(lastPosition,position)/((time-lastTime)/1000) : null;
-                offRouteFixes=0;lastFix=position.atualizado_em;lastTime=time;lastPosition={latitude:position.latitude,longitude:position.longitude};initialized=true;
+                offRouteFixes=0;lastFix=time;lastTime=time;lastPosition={latitude:position.latitude,longitude:position.longitude};initialized=true;
                 progress=Math.max(progress,match.at);
                 let index=steps.findIndex(step=>step.end>progress+.5);if(index<0) index=steps.length-1;
                 const current=steps[index],remainingInStep=Math.max(0,current.end-progress);

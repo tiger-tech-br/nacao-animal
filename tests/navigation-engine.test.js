@@ -21,3 +21,22 @@ test("renderizar a mesma leitura nao zera a velocidade estimada nem revalida GPS
     assert.equal(engine.update(next,now+2000).speedKmh,first.speedKmh,"Relogio da interface nao inventa nova velocidade");
     assert.equal(engine.update(next,now+20000).state,"stale","Cache nao prolonga validade da leitura");
 });
+
+test("fixes fora de ordem ou repetidos não avançam manobras nem contam duas saídas da rota",()=>{
+    const engine=navigation.create(route()),now=Date.now();
+    const fix=(time,point)=>({...point,precisao_m:5,atualizado_em:new Date(time).toISOString()});
+    engine.update(fix(now,p(-23.66,-46.5498)),now);
+    const current=engine.update(fix(now+3000,p(-23.66,-46.5496)),now+3000);
+    assert.deepEqual(engine.update(fix(now+1000,p(-23.6592,-46.549)),now+3000),current,"GPS anterior não avança o progresso");
+    const first=fix(now+4000,p(-23.67,-46.57));assert.equal(engine.update(first,now+4000).recalculate,false);
+    assert.equal(engine.update({...first,atualizado_em:first.atualizado_em.replace("Z","+00:00")},now+4000).recalculate,false,"Outra representação do mesmo instante continua sendo um único fix");
+    assert.equal(engine.update(fix(now+5000,p(-23.67,-46.57)),now+5000).recalculate,true);
+});
+
+test("GPS impreciso não é substituído por uma leitura boa que chegou atrasada",()=>{
+    const engine=navigation.create(route()),now=Date.now(),fix=time=>({...p(-23.66,-46.5498),precisao_m:5,atualizado_em:new Date(time).toISOString()});
+    engine.update(fix(now),now);
+    assert.equal(engine.update({...fix(now+3000),precisao_m:80},now+3000).state,"imprecise");
+    assert.equal(engine.update(fix(now+1000),now+3000).state,"imprecise");
+    assert.equal(engine.update(fix(now+4000),now+4000).state,"navigating");
+});

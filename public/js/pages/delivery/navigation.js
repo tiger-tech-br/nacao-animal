@@ -26,7 +26,8 @@
             if(!followed) followed=map.follow()!==false;
             el.navigationTime.textContent=result.remainingSeconds===null ? "—" : `${Math.max(1,Math.ceil(result.remainingSeconds/60))} min`;
             el.navigationRemaining.textContent=meters(result.remainingMeters);
-            el.navigationArrival.textContent=result.remainingSeconds===null ? "" : new Date(Date.now()+result.remainingSeconds*1000).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+            const capturedAt=new Date(trip.atualizado_em).getTime();
+            el.navigationArrival.textContent=result.remainingSeconds===null || !Number.isFinite(capturedAt) ? "" : new Date(capturedAt+result.remainingSeconds*1000).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
             el.navigationSpeed.textContent=result.speedKmh===null ? "—" : `${result.speedKmh}`;
             if(result.state==="arrived") {
                 el.navigationInstruction.textContent="Você está perto do endereço da entrega.";el.navigationDistance.textContent="Confira o número do imóvel.";el.navigationManeuver.textContent="●";el.navigationNext.textContent="";
