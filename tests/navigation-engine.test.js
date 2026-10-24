@@ -40,3 +40,52 @@ test("GPS impreciso não é substituído por uma leitura boa que chegou atrasada
     assert.equal(engine.update(fix(now+1000),now+3000).state,"imprecise");
     assert.equal(engine.update(fix(now+4000),now+4000).state,"navigating");
 });
+
+function straightRoute(mode){
+    const a=p(0,0),b=p(0,500/111195);
+    return{tipoOrigem:"GPS_ENTREGADOR",modo:mode,origem:a,destino:b,duracao:"500s",
+        etapas:[{instrucao:"Siga pelo caminho",manobra:"STRAIGHT",distanciaMetros:500,duracao:"500s",polyline:encode([a,b])}]};
+}
+function walkingFix(now,seconds,x,y,precision=3){
+    return{...p(y/111195,x/111195),precisao_m:precision,velocidade_mps:1,heading:null,
+        atualizado_em:new Date(now+seconds*1000).toISOString()};
+}
+
+test("atalho a pé a vinte metros do caminho solicita recálculo após duas leituras distintas",()=>{
+    const now=Date.now(),engine=navigation.create(straightRoute("WALK"));
+    assert.equal(engine.update(walkingFix(now,0,50,0),now).state,"navigating");
+    const first=walkingFix(now,1,51,20),result=engine.update(first,now+1000);
+    assert.equal(result.state,"off-route");assert.equal(result.recalculate,false);
+    assert.equal(engine.update({...first,longitude:52/111195},now+1000).recalculate,false,
+        "Renderizar novamente ou mudar dados do mesmo instante não confirma outro desvio");
+    const second=engine.update(walkingFix(now,2,52,20),now+2000);
+    assert.equal(second.state,"off-route");assert.equal(second.recalculate,true);
+});
+
+test("o mesmo afastamento de vinte metros mantém a tolerância de carro e de rotas legadas",()=>{
+    const now=Date.now();
+    for(const mode of ["DRIVE",undefined,"BICYCLE","TWO_WHEELER"]){
+        const engine=navigation.create(straightRoute(mode));
+        engine.update(walkingFix(now,0,50,0),now);
+        for(const seconds of [1,2]){
+            const result=engine.update(walkingFix(now,seconds,50+seconds,20),now+seconds*1000);
+            assert.equal(result.state,"navigating",`Perfil ${mode || "legado"} preserva o corredor existente`);
+            assert.notEqual(result.recalculate,true);
+        }
+    }
+});
+
+test("precisão de vinte metros não provoca falso desvio pedestre dentro da margem do GPS",()=>{
+    const now=Date.now(),engine=navigation.create(straightRoute("WALK"));
+    engine.update(walkingFix(now,0,50,0,20),now);
+    for(const [seconds,y] of [[1,20],[2,30]]){
+        const result=engine.update(walkingFix(now,seconds,50+seconds,y,20),now+seconds*1000);
+        assert.equal(result.state,"navigating");assert.notEqual(result.recalculate,true);
+    }
+    const imprecise=engine.update(walkingFix(now,3,53,20,80),now+3000);
+    assert.equal(imprecise.state,"imprecise");assert.notEqual(imprecise.recalculate,true);
+    const recovered=engine.update(walkingFix(now,4,54,20),now+4000);
+    assert.equal(recovered.state,"off-route");assert.equal(recovered.recalculate,false,
+        "Leitura imprecisa não conta como confirmação do desvio");
+    assert.equal(engine.update(walkingFix(now,5,55,20),now+5000).recalculate,true);
+});

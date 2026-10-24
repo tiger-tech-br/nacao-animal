@@ -4,9 +4,7 @@ let activeDb,provider;
 require.cache[require.resolve("../database/connection")]={exports:{query:(...args)=>activeDb.query(...args),transaction:callback=>activeDb.transaction(callback)}};
 require.cache[require.resolve("../config/env")]={exports:{APP_URL:"https://route-selection.example.invalid"}};
 require.cache[require.resolve("../services/freteService")]={exports:{}};
-require.cache[require.resolve("../services/entregaRotaService")]={exports:{calcularRota:(...args)=>provider(...args),validarModo(value){
-    if(!["DRIVE","WALK","BICYCLE","TWO_WHEELER","TRANSIT"].includes(value))throw Object.assign(new Error("Modo inválido"),{status:400});return value;
-}}};
+require.cache[require.resolve("../services/entregaRotaService")]={exports:{calcularRotaEntrega:(...args)=>provider(...args)}};
 const controller=require("../controllers/entregaController");
 const token="a".repeat(64),tokenHash=crypto.createHash("sha256").update(token).digest("hex"),orderId="11111111-1111-4111-8111-111111111111";
 const clone=value=>JSON.parse(JSON.stringify(value));
@@ -18,7 +16,7 @@ function bundle(){
     return {...alternativas[0],alternativas};
 }
 function harness({valid=true,route=bundle()}={}){
-    const state={valid,rota:clone(route),reservation:new Date(Date.now()-1000),recent:false,
+    const state={valid,meio_transporte:"A_PE",rota:clone(route),reservation:new Date(Date.now()-1000),recent:false,
         latitude:1,longitude:1,precisao_m:8,atualizado_em:new Date(),endereco_entrega:{endereco:"Destino fixo do pedido"}},queries=[],providerCalls=[];
     let reservationIndex=0;
     activeDb={async transaction(callback){return callback(this);},async query(sql,values){
@@ -113,6 +111,7 @@ test("rota calculada antes de uma seleção não a sobrescreve nem encerra o lin
     const providerStarted=new Promise(resolve=>{started=resolve;});
     h.respond(()=>{started();return new Promise(resolve=>{release=resolve;});});
     const pending=invoke("rota",{});await providerStarted;
+    assert.equal(h.providerCalls[0][2],"A_PE","Cálculo concorrente usa o transporte atribuído à viagem");
     const result=await invoke("selecionarRota",selection(h.state));assert.equal(result.error,undefined);
     const selected=clone(h.state.rota);release(bundle());
     assert.equal((await pending).error?.status,409);

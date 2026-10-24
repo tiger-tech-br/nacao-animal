@@ -8,14 +8,14 @@ const db = { query: (...args) => activeDb.query(...args), transaction: callback 
 require.cache[require.resolve("../database/connection")] = { exports: db };
 require.cache[require.resolve("../config/env")] = { exports: { APP_URL: "https://demo.example.invalid" } };
 require.cache[require.resolve("../services/freteService")] = { exports: {} };
-require.cache[require.resolve("../services/entregaRotaService")] = { exports: { calcularRota: (...args) => routeProvider(...args) } };
+require.cache[require.resolve("../services/entregaRotaService")] = { exports: { calcularRotaEntrega: (...args) => routeProvider(...args) } };
 const controller = require("../controllers/entregaController");
 const token = "a".repeat(64), tokenHash = crypto.createHash("sha256").update(token).digest("hex");
 const saleId = "11111111-1111-4111-8111-111111111111";
 const route = { tipoOrigem: "GPS_ENTREGADOR", polyline: "test-route", origem: { latitude: -23.66, longitude: -46.55 }, destino: { latitude: -23.67, longitude: -46.56 } };
 
 function harness({ tracking = {}, valid = true, recent = false, existingRoute = null } = {}) {
-    const state = { valid, recent, latitude: -23.66, longitude: -46.55, precisao_m: 10,
+    const state = { valid, recent, meio_transporte: "CARRO", latitude: -23.66, longitude: -46.55, precisao_m: 10,
         atualizado_em: new Date(), rota: existingRoute, reservation: null, reservationIndex: 0, ...tracking };
     const queries = [], providerCalls = [];
     activeDb = {
@@ -138,6 +138,17 @@ test("GPS valido consulta rota, reserva custo e entrega cache sem outra consulta
     assert.deepEqual(cached.body, first.body);
     assert.equal(h.providerCalls.length, 1);
     assert.equal(h.queries.filter(item => item.sql.startsWith("UPDATE entrega_rastreamento SET rota_solicitada_em=")).length, 1);
+});
+
+test("cálculo usa transporte congelado na viagem e ignora tentativas de alterar perfil no corpo",async()=>{
+    for(const meioTransporte of ["CARRO","MOTO","BICICLETA","A_PE",undefined]){
+        const h=harness({tracking:{meio_transporte:meioTransporte}});
+        const result=await invoke("rota",{modo:"TRANSIT",meio_transporte:"A_PE"});
+        assert.equal(result.error,undefined);assert.equal(h.providerCalls.length,1);
+        assert.equal(h.providerCalls[0][2],meioTransporte||"CARRO");
+        assert.equal(h.providerCalls[0][0].latitude,h.state.latitude);
+        assert.deepEqual(h.providerCalls[0][1],{endereco:"Rua do pedido"});
+    }
 });
 
 test("consulta concorrente aguarda reserva em vez de chamar Google de novo", async () => {

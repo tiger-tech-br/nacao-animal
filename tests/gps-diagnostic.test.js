@@ -9,7 +9,6 @@ const now = Date.parse("2026-10-23T15:00:00.000Z");
 const position = { latitude: -23.66, longitude: -46.55, precisao: 10, timestamp: now };
 const address = { endereco: "Avenida Publica da Loja", numero: "100", bairro: "Centro", cidade: "Santo André", estado: "sp", cep: "09060-820" };
 const driverId = "e30ceaf8-85a4-4dc9-8b59-ae4f81e67880";
-const driverFixture = { id: driverId, empresa_id: "company-a", ativo: true, meio_transporte: "BICICLETA", nome: "Entregador de teste" };
 const route = { tipoOrigem: "GPS_ENTREGADOR", polyline: "fixture-polyline", origem: { latitude: -23.66, longitude: -46.55 },
     destino: { latitude: -23.67, longitude: -46.56 }, distanciaMetros: 1200, duracao: "180s", etapas: [], calculadaEm: new Date(now).toISOString() };
 
@@ -18,39 +17,30 @@ function response() {
         status(value) { this.statusCode = value; return this; }, json(value) { this.body = value; return this; } };
 }
 
-function harness({ store = address, driver = driverFixture, providerError, dbError } = {}) {
-    const queries = [], routeCalls = [], deliveryRouteCalls = [];
+function harness({ store = address, providerError, dbError } = {}) {
+    const queries = [], routeCalls = [];
     const controller = createGpsDiagnosticController({ now: () => now,
         db: { async query(sql, values) {
             queries.push({ sql, values });
             assert.match(sql, /^SELECT\s/);
             assert.ok(!/\b(INSERT|UPDATE|DELETE|BEGIN|COMMIT|ALTER|CREATE|DROP)\b/i.test(sql));
+            assert.match(sql, /FROM empresas WHERE id=\$1 LIMIT 1/);
             if (dbError) throw dbError;
-            if (/FROM empresas WHERE/.test(sql)) {
-                assert.match(sql, /FROM empresas WHERE id=\$1 LIMIT 1/);
-                return { rows: store ? [store] : [] };
-            }
-            assert.match(sql, /SELECT id,meio_transporte,nome FROM entregadores\s+WHERE id=\$1 AND empresa_id=\$2 AND ativo=TRUE LIMIT 1/);
-            return { rows: driver?.id === values[0] && driver.empresa_id === values[1] && driver.ativo === true ? [driver] : [] };
+            return { rows: store ? [store] : [] };
         } },
         async calcularRota(receivedPosition, destination) {
             routeCalls.push({ position: receivedPosition, destination });
             if (providerError) throw providerError;
             return route;
-        },
-        async calcularRotaEntrega(receivedPosition, destination, meioTransporte) {
-            deliveryRouteCalls.push({ position: receivedPosition, destination, meioTransporte });
-            if (providerError) throw providerError;
-            return { ...route, modo: { CARRO: "DRIVE", MOTO: "TWO_WHEELER", BICICLETA: "BICYCLE", A_PE: "WALK" }[meioTransporte] };
         }
     });
-    return { controller, queries, routeCalls, deliveryRouteCalls };
+    return { controller, queries, routeCalls };
 }
 
 test("diagnostico valida coordenadas, precisao e timestamp fresco sem coercoes", () => {
     assert.deepEqual(positionFromBody(position, now), position);
     assert.deepEqual(positionFromBody({ ...position, timestamp: new Date(now).toISOString() }, now), position);
-    assert.deepEqual(positionFromBody({ ...position, entregadorId: driverId }, now), position);
+    assert.equal(positionFromBody({ ...position, entregadorId: driverId }, now), null);
     for (const body of [null, [], {}, { ...position, latitude: 91 }, { ...position, longitude: -181 },
         { ...position, latitude: "-23.66" }, { ...position, precisao: Infinity }, { ...position, precisao: -1 },
         { ...position, precisao: 101 }, { ...position, timestamp: now - 30001 }, { ...position, timestamp: now + 5001 },
@@ -81,71 +71,15 @@ test("controlador consulta somente empresa da sessao e chama rota existente sem 
     assert.ok(!JSON.stringify(h.queries).includes(String(position.latitude)));
 });
 
-test("diagnóstico usa por padrão a chamada interna a pé sem receber perfil no GPS",async()=>{
-    const service=require("../services/entregaRotaService"),original=service.calcularRotaDiagnostico,calls=[];
-    service.calcularRotaDiagnostico=async(...args)=>{calls.push(args);return{...route,modo:"WALK"};};
+test("diagnóstico usa o carro da loja sem cadastro ou seleção de transporte",async()=>{
+    const service=require("../services/entregaRotaService"),original=service.calcularRota,calls=[];
+    service.calcularRota=async(...args)=>{calls.push(args);return{...route,modo:"DRIVE"};};
     try{
         const controller=createGpsDiagnosticController({now:()=>now,db:{query:async()=>({rows:[address]})}}),res=response();
         await controller({user:{empresaId:"authenticated-company",cargo:"ADMIN"},body:position},res);
-        assert.equal(res.statusCode,200);assert.equal(res.body.data.modo,"WALK");
+        assert.equal(res.statusCode,200);assert.equal(res.body.data.modo,"DRIVE");
         assert.deepEqual(calls,[[{latitude:position.latitude,longitude:position.longitude},storeAddress(address)]]);
-    }finally{service.calcularRotaDiagnostico=original;}
-});
-
-test("ADMIN ou GERENTE testa perfil do cadastro ativo sem aceitar transporte no GPS ou expor identificadores",async()=>{
-    for(const cargo of ["ADMIN","GERENTE"]){
-        for(const [meioTransporte,mode] of [["CARRO","DRIVE"],["MOTO","TWO_WHEELER"],["BICICLETA","BICYCLE"],["A_PE","WALK"]]){
-            const h=harness({driver:{...driverFixture,meio_transporte:meioTransporte,nome:`  ${"José".repeat(60)}\u0000  `}}),res=response();
-            await h.controller({user:{empresaId:"company-a",cargo},body:{...position,entregadorId:driverId}},res);
-            assert.equal(res.statusCode,200);assert.equal(res.body.data.modo,mode);
-            assert.equal(res.body.data.entregadorNome.length,150);assert.ok(!res.body.data.entregadorNome.includes("\u0000"));
-            assert.equal(res.body.data.entregadorNome.startsWith("José"),true);
-            assert.equal(res.body.data.id,undefined);assert.equal(res.body.data.entregadorId,undefined);
-            assert.equal(res.body.data.empresa_id,undefined);assert.equal(res.body.data.meio_transporte,undefined);
-            assert.equal(h.routeCalls.length,0);assert.equal(h.queries.length,2);
-            assert.deepEqual(h.queries[1].values,[driverId,"company-a"]);
-            assert.deepEqual(h.deliveryRouteCalls,[{position:{latitude:position.latitude,longitude:position.longitude},
-                destination:storeAddress(address),meioTransporte}]);
-            assert.ok(!JSON.stringify(h.queries).includes(String(position.latitude)));
-        }
-    }
-});
-
-test("UUID ausente explicitamente ou inválido é recusado antes de consultar banco e rotas",async()=>{
-    for(const entregadorId of [null,undefined,"","not-a-uuid",` ${driverId}`,`${driverId} `,driverId.replaceAll("-",""),[],{},1]){
-        const body={...position,entregadorId},h=harness(),res=response();
-        assert.equal(positionFromBody(body,now),null);
-        await h.controller({user:{empresaId:"company-a",cargo:"ADMIN"},body},res);
-        assert.equal(res.statusCode,400);assert.equal(h.queries.length,0);
-        assert.equal(h.routeCalls.length,0);assert.equal(h.deliveryRouteCalls.length,0);
-    }
-});
-
-test("entregador de outra loja, inativo ou inexistente recebe a mesma recusa sem consultar Google",async()=>{
-    for(const driver of [null,{...driverFixture,empresa_id:"company-b"},{...driverFixture,ativo:false},
-        {...driverFixture,id:"24a5a0d8-bfc2-4ac8-8564-589fb38b170a"}]){
-        const h=harness({driver}),res=response();
-        await h.controller({user:{empresaId:"company-a",cargo:"ADMIN"},body:{...position,entregadorId:driverId}},res);
-        assert.equal(res.statusCode,404);assert.equal(res.body.message,"O entregador ativo não foi encontrado nesta loja.");
-        assert.equal(h.queries.length,2);assert.deepEqual(h.queries[1].values,[driverId,"company-a"]);
-        assert.equal(h.routeCalls.length,0);assert.equal(h.deliveryRouteCalls.length,0);
-    }
-});
-
-test("diagnóstico de cadastro usa export de entrega e sanitiza falhas do provedor",async()=>{
-    const service=require("../services/entregaRotaService"),original=service.calcularRotaEntrega,calls=[];
-    service.calcularRotaEntrega=async(...args)=>{calls.push(args);return{...route,modo:"BICYCLE"};};
-    const db={query:async sql=>({rows:[/FROM empresas WHERE/.test(sql)?address:driverFixture]})};
-    try{
-        const controller=createGpsDiagnosticController({now:()=>now,db}),res=response();
-        await controller({user:{empresaId:"company-a",cargo:"ADMIN"},body:{...position,entregadorId:driverId}},res);
-        assert.equal(res.statusCode,200);assert.equal(res.body.data.modo,"BICYCLE");
-        assert.deepEqual(calls,[[{latitude:position.latitude,longitude:position.longitude},storeAddress(address),"BICICLETA"]]);
-        service.calcularRotaEntrega=async()=>{throw new Error("private-provider-key-and-location");};
-        const failure=response();
-        await controller({user:{empresaId:"company-a",cargo:"ADMIN"},body:{...position,entregadorId:driverId}},failure);
-        assert.equal(failure.statusCode,503);assert.ok(!JSON.stringify(failure.body).includes("private-provider"));
-    }finally{service.calcularRotaEntrega=original;}
+    }finally{service.calcularRota=original;}
 });
 
 test("GPS invalido, impreciso, antigo ou destino enviado pelo cliente nao consulta SQL nem Google", async () => {
@@ -168,7 +102,7 @@ test("opções de locomoção ou campos extras são recusados antes de SQL ou pr
         assert.equal(positionFromBody(body,now),null);
         const h=harness(),res=response();
         await h.controller({user:{empresaId:"company",cargo:"ADMIN"},body},res);
-        assert.equal(res.statusCode,400);assert.equal(h.queries.length,0);assert.equal(h.routeCalls.length,0);assert.equal(h.deliveryRouteCalls.length,0);
+        assert.equal(res.statusCode,400);assert.equal(h.queries.length,0);assert.equal(h.routeCalls.length,0);
     }
 });
 
@@ -257,18 +191,6 @@ test("ADMIN/GERENTE usam apenas empresa validada na sessao e empresa adulterada 
         assert.deepEqual(h.queries[1].values, ["company-b"]);
         assert.equal((await h.request(token("admin", { empresaId: "company-b" }))).status, 401);
         assert.equal(h.routeCalls.length, 2);
-    });
-});
-
-test("JWT validado limita o cadastro consultado à loja da sessão antes de usar perfil de entrega",async()=>{
-    await withServer(async h=>{
-        const body={...position,entregadorId:driverId};
-        assert.equal((await h.request(token("admin"),body)).status,200);
-        assert.equal((await h.request(token("manager"),body)).status,404);
-        assert.equal((await h.request(token("admin",{empresaId:"company-b"}),body)).status,401);
-        assert.equal(h.deliveryRouteCalls.length,1);assert.equal(h.routeCalls.length,0);
-        assert.deepEqual(h.queries.filter(query=>/FROM entregadores/.test(query.sql)).map(query=>query.values),
-            [[driverId,"company-a"],[driverId,"company-b"]]);
     });
 });
 

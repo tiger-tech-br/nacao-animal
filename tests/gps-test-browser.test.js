@@ -6,13 +6,14 @@ function element() {
     return { hidden: false, disabled: false, textContent: "", events: {}, classList: { toggle() {} },
         addEventListener(name, fn) { this.events[name] = fn; } };
 }
-function harness({ token = "admin-session", role = "ADMIN", routeRequest, clipboard, routeOptions = false } = {}) {
-    const elements = Object.fromEntries(["gpsStatus", "gpsMovementStatus", "startGps", "stopGps", "refreshRoute", "routeStatus", "mapStatus", "testLogin", "destinationAddress", "originAddress","gpsDiagnostics","gpsDiagnosticSummary","gpsDiagnosticReport","copyGpsDiagnostic","gpsDiagnosticStatus"].map(id => [id, element()]));
+function harness({ token = "admin-session", role = "ADMIN", routeRequest, clipboard, routeOptions = false, search = "", courierRequest } = {}) {
+    const elements = Object.fromEntries(["gpsStatus", "gpsMovementStatus", "testRouteProfile", "startGps", "stopGps", "refreshRoute", "routeStatus", "mapStatus", "testLogin", "destinationAddress", "originAddress","gpsDiagnostics","gpsDiagnosticSummary","gpsDiagnosticReport","copyGpsDiagnostic","gpsDiagnosticStatus"].map(id => [id, element()]));
+    const loginLink=element();elements.testLogin.querySelector=()=>loginLink;
     const calls = [], watches = [], cleared = [], updates = [], navigation = [], documentEvents = {}, events = {}, timers = new Map(), optionCalls=[];
     const intervals = new Set();
     let mapOptions, nextTimer = 0, clock = Date.now(), navigationOptions, optionOptions;
     class FakeDate extends Date { static now() { return clock; } }
-    const context = { Date: FakeDate, AbortController, AbortSignal,
+    const context = { Date: FakeDate, AbortController, AbortSignal, URLSearchParams, location:{search},
         sessionStorage: { getItem(key) { assert.equal(key, "token"); return token; }, setItem() { assert.fail("Não deve gravar posição no navegador"); } },
         document: { hidden: false, getElementById(id) { assert.ok(elements[id], id); return elements[id]; }, addEventListener(name, fn) { documentEvents[name] = fn; } },
         navigator: { clipboard, geolocation: { watchPosition(success, error, options) { watches.push({ success, error, options }); return watches.length; }, clearWatch(id) { cleared.push(id); } } },
@@ -27,6 +28,7 @@ function harness({ token = "admin-session", role = "ADMIN", routeRequest, clipbo
         fetch: async (url, options) => {
             calls.push({ url, options, localUpdates: updates.length });
             if (url === "/api/auth/me") return { ok: true, json: async () => ({ data: { perfil: role } }) };
+            if(url.startsWith("/api/entregadores/"))return courierRequest ? courierRequest(url,options) : {ok:true,json:async()=>({data:{nome:"Entregador de teste",meio_transporte:"MOTO",ativo:true}})};
             assert.equal(url, "/api/gps-diagnostico/rota");
             return routeRequest ? routeRequest(url, options) : { ok: true, json: async () => ({ data: { tipoOrigem: "GPS_ENTREGADOR", polyline: "route", destino: { latitude: -23.6, longitude: -46.5 } } }) };
         }
@@ -37,7 +39,7 @@ function harness({ token = "admin-session", role = "ADMIN", routeRequest, clipbo
     };
     context.window = context; vm.runInNewContext(source, context);
     const fix = (index = watches.length - 1, extras = {}) => watches[index].success({ timestamp: ++clock, coords: { latitude: -23.66, longitude: -46.55, accuracy: 8, heading: 90, speed: 2, ...extras } });
-    return { context, elements, calls, watches, cleared, updates, navigation, documentEvents, events, timers, intervals, fix,optionCalls,
+    return { context, elements, loginLink, calls, watches, cleared, updates, navigation, documentEvents, events, timers, intervals, fix,optionCalls,
         notice(notice) { mapOptions.onStatus(notice); }, view(view) { mapOptions.onViewChange(view); }, motion(notice) { mapOptions.onMotion(notice); },
         tick() { [...intervals].forEach(fn => fn()); }, advance(ms) { clock += ms; },
         async runTimers(){for(const [id,timer] of [...timers])if(timer.at<=clock){timers.delete(id);timer.fn();await settle();}},
@@ -56,6 +58,15 @@ test("teste físico exige sessão administrativa e clique antes do GPS", async (
     assert.equal(h.updates.at(-1).rota.polyline, "route");
     assert.match(h.elements.gpsStatus.textContent, /GPS obtido.*Precisão: 8 m.*Rota calculada/);
     assert.doesNotMatch(h.elements.gpsStatus.textContent, /-23|-46/);
+});
+
+test("teste independente não exige cadastro e consulta somente autenticação e rota",async()=>{
+ const h=harness({search:"?entregador=antigo"});await settle();
+ assert.equal(h.watches.length,0);assert.deepEqual(h.calls.map(call=>call.url),["/api/auth/me"]);
+ await h.elements.startGps.events.click();h.fix();await settle();
+ const body=JSON.parse(h.calls.find(call=>call.url==="/api/gps-diagnostico/rota").options.body);
+ assert.deepEqual(Object.keys(body).sort(),["latitude","longitude","precisao","timestamp"]);
+ assert.equal(h.watches.length,1);assert.ok(h.calls.every(call=>["/api/auth/me","/api/gps-diagnostico/rota"].includes(call.url)));
 });
 
 test("diagnóstico do sensor mede leituras espaçadas e exporta somente métricas após parar",async()=>{

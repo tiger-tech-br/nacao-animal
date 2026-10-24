@@ -58,11 +58,13 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         delete process.env.DELIVERY_ORIGIN_ADDRESS;
         process.env.GOOGLE_MAPS_BROWSER_API_KEY = "test-public-browser-key";
         let routeCalls = 0;
+        const routeProfiles = [];
         global.fetch = async (url, options) => {
             if (!String(url).startsWith("https://routes.googleapis.com/")) return originalFetch(url, options);
             if (options.headers["X-Goog-FieldMask"].includes("polyline")) {
                 routeCalls++;
                 const body = JSON.parse(options.body);
+                routeProfiles.push(body.travelMode);
                 assert.equal(body.origin.location.latLng.latitude, -23.66, "Rota parte da posição GPS do entregador");
                 assert.equal(body.origin.address, undefined, "Frete usa loja; navegação usa GPS");
                 assert.match(body.destination.address, /Rua de Teste/, "Rota usa endereço congelado do pedido, não perfil editado");
@@ -363,7 +365,8 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         assert.equal((await request(linkEndpoint,"GET",null,foreignAdminToken)).status,404,"Administrador autenticado de outra loja não acessa o GPS");
         assert.equal((await request("/api/vendas/invalid/rastreamento","GET",null,adminToken)).status,400);
         assert.equal((await request(`/api/vendas/${crypto.randomUUID()}/rastreamento`,"GET",null,adminToken)).status,404);
-        assert.equal((await request(linkEndpoint, "POST", {}, adminToken)).status, 409, "GPS só disponível em entrega");
+        assert.equal((await request(linkEndpoint,"POST",{entregadorId:crypto.randomUUID()},adminToken)).status,400,"Link não aceita cadastro nem transporte do cliente");
+        assert.equal((await request(linkEndpoint,"POST",{},adminToken)).status,409,"GPS só disponível em entrega");
         assert.equal((await request(`/api/vendas/${order}/status`, "PATCH", { status: "EM_SEPARACAO" }, adminToken)).status, 200);
         const transitions = await Promise.all([1,2].map(() => request(`/api/vendas/${order}/status`, "PATCH", { status: "SAIU_PARA_ENTREGA" }, adminToken)));
         assert.ok(transitions.every(r => r.status === 200));
@@ -379,6 +382,7 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         assert.equal(waiting.status,200);
         assert.equal(waiting.body.data.latitude,null,"Acompanhamento aguarda GPS sem gerar link");
         assert.equal(waiting.headers.get("cache-control"),"no-store");
+        assert.equal((await request(linkEndpoint,"POST",{meio_transporte:"A_PE"},adminToken)).status,400,"O link usa sempre o carro da loja");
         const link = await request(linkEndpoint, "POST", {}, adminToken);
         assert.equal(link.status, 200, JSON.stringify(link.body));
         const driverToken = new URL(link.body.data.url).hash.slice(1);
@@ -388,6 +392,8 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         assert.equal((await request("/api/public/entregas/viagem")).status, 401);
         const trip = await request("/api/public/entregas/viagem", "GET", null, driverToken);
         assert.equal(trip.body.data.endereco_entrega.endereco, "Rua de Teste");
+        assert.equal(trip.body.data.meio_transporte,"CARRO");
+        assert.equal(trip.body.data.entregador_id,undefined);
         assert.equal(trip.body.data.token_hash, undefined);
         const config = await request("/api/public/entregas/mapa-config");
         assert.deepEqual(config.body.data, { browserKey: "test-public-browser-key" }, "Não expõe chave privada de Routes");
@@ -418,6 +424,8 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         assert.equal(Number(afterDuplicate.precisao_m),position.precisao,"Fix duplicado preserva a precisão original");
         const firstRoute = await request("/api/public/entregas/rota", "POST", {}, driverToken);
         assert.equal(firstRoute.status, 200);
+        assert.equal(firstRoute.body.data.modo,"DRIVE");
+        assert.deepEqual(routeProfiles,["DRIVE"]);
         assert.equal((await request("/api/public/entregas/rota", "POST", {}, driverToken)).status, 200);
         assert.equal((await request(`/api/public/pedidos/${order}/rastreamento`, "GET", null, token)).body.data.rota.tipoOrigem, "GPS_ENTREGADOR");
         assert.equal(routeCalls, 1, "Consultas repetidas reaproveitam rota e limitam custo");
@@ -435,7 +443,13 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         assert.equal((await request(tracking, "GET", null, token)).body.data.rota.polyline, "test-route", "Cliente recebe a mesma rota do entregador");
         const adminTracking = await request(linkEndpoint,"GET",null,adminToken);
         assert.equal(adminTracking.status,200);
-        assert.deepEqual(adminTracking.body.data,(await request(tracking,"GET",null,token)).body.data,"Administrador e cliente veem o mesmo GPS e rota");
+        const customerTracking=(await request(tracking,"GET",null,token)).body.data;
+        for(const field of ["status","endereco_entrega","latitude","longitude","precisao_m","atualizado_em","rota"])
+            assert.deepEqual(adminTracking.body.data[field],customerTracking[field],`Administrador e cliente veem ${field} igual`);
+        assert.equal(adminTracking.body.data.entregador_id,null);
+        assert.equal(adminTracking.body.data.meio_transporte,"CARRO");
+        assert.equal(customerTracking.entregador_id,undefined);
+        assert.equal(customerTracking.meio_transporte,undefined);
         assert.equal(adminTracking.body.data.token_hash,undefined);
         assert.equal(adminTracking.body.data.token,undefined);
         const managerId = (await pool.query("INSERT INTO usuarios(nome,email,senha_hash,perfil,empresa_id) VALUES ('Gerente','gerente@example.invalid','test','GERENTE',$1) RETURNING id", [empresaId])).rows[0].id;
@@ -448,16 +462,24 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         assert.equal(expiredTracking.body.data.rota,null);
         assert.equal((await request("/api/public/clientes/notificacoes", "GET", null, otherToken)).status, 401, "Token de cliente inexistente é recusado");
         const replacement = await request(linkEndpoint, "POST", {}, adminToken);
+        assert.equal(replacement.status,200,JSON.stringify(replacement.body));
         const replacementToken = new URL(replacement.body.data.url).hash.slice(1);
+        assert.equal((await request("/api/public/entregas/viagem","GET",null,replacementToken)).body.data.meio_transporte,"CARRO",
+            "Novo link mantém o carro da loja, sem cadastro de entregador");
         assert.equal((await request("/api/public/entregas/viagem", "GET", null, driverToken)).status, 410);
         assert.equal((await request("/api/public/entregas/rota", "POST", {}, driverToken)).status, 410);
         assert.equal((await request(tracking, "GET", null, token)).body.data.rota, null, "Novo link remove rota da viagem anterior");
         assert.equal((await request(gps, "POST", position, driverToken)).status, 410, "Rotação revoga token anterior");
         assert.equal((await request(gps, "POST", position, replacementToken)).status, 200);
+        const replacementRoute=await request("/api/public/entregas/rota","POST",{},replacementToken);
+        assert.equal(replacementRoute.status,200,JSON.stringify(replacementRoute.body));
+        assert.equal(replacementRoute.body.data.modo,"DRIVE");
+        assert.deepEqual(routeProfiles,["DRIVE","DRIVE"]);
         assert.equal((await request(gps, "DELETE", null, replacementToken)).status, 200);
         assert.equal((await request(tracking, "GET", null, token)).body.data.latitude, null);
         assert.equal((await request(gps, "POST", position, replacementToken)).status, 410, "Parar revoga link");
         const lastLink = await request(linkEndpoint, "POST", {}, adminToken);
+        assert.equal(lastLink.status,200,JSON.stringify(lastLink.body));
         const lastDriverToken = new URL(lastLink.body.data.url).hash.slice(1);
         await request(gps, "POST", position, lastDriverToken);
         assert.equal((await request(`/api/vendas/${order}/status`, "PATCH", { status: "ENTREGUE" }, adminToken)).status, 200);

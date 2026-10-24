@@ -5,6 +5,9 @@ const source = fs.readFileSync("public/js/pages/auth/login.js", "utf8");
 for (const [search, expected] of [
     ["?next=%2Fadmin%2Ftestar-gps", "/admin/testar-gps"],
     ["?next=%2Fadmin%2Fsimular-navegacao", "/admin/simular-navegacao"],
+    ["?next=%2Fadmin%2Ftestar-gps%3Fentregador%3D11111111-1111-4111-8111-111111111111", "/admin/testar-gps?entregador=11111111-1111-4111-8111-111111111111"],
+    ["?next=/admin/testar-gps?entregador=wrong", "/admin/pages/dashboard/dashboard.html"],
+    ["?next=%2Fadmin%2Ftestar-gps%3Fentregador%3D11111111-1111-4111-8111-111111111111%26unsafe%3D1", "/admin/pages/dashboard/dashboard.html"],
     ["", "/admin/pages/dashboard/dashboard.html"],
     ["?next=https://external.invalid/", "/admin/pages/dashboard/dashboard.html"],
     ["?next=//external.invalid/", "/admin/pages/dashboard/dashboard.html"],

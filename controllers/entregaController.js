@@ -29,22 +29,19 @@ async function criarLink(req, res, next) {
     try {
         if (!uuid(req.params.id)) throw fail("Pedido inválido.", 400);
         const body = req.body;
-        if (!body || Array.isArray(body) || Object.keys(body).some(key => key !== "entregadorId") || !uuid(body.entregadorId))
-            throw fail("Selecione um entregador cadastrado para gerar o link.", 400);
+        if (body !== undefined && (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length))
+            throw fail("Não informe dados extras para gerar o link da entrega.", 400);
         const token = crypto.randomBytes(32).toString("hex");
         await db.transaction(async client => {
             const { rows } = await client.query("SELECT status FROM vendas WHERE id=$1 AND empresa_id=$2 FOR UPDATE", [req.params.id, req.user.empresaId]);
             if (!rows[0]) throw fail("Pedido não encontrado.", 404);
             if (rows[0].status !== "SAIU_PARA_ENTREGA") throw fail("Marque o pedido como Saiu para entrega antes de gerar o link.", 409);
-            const driver = await client.query(`SELECT id,meio_transporte FROM entregadores
-                WHERE id=$1 AND empresa_id=$2 AND ativo=TRUE FOR SHARE`, [body.entregadorId,req.user.empresaId]);
-            if (!driver.rows[0]) throw fail("Selecione um entregador ativo desta loja.", 404);
             await client.query(`INSERT INTO entrega_rastreamento (venda_id,token_hash,expira_em,entregador_id,meio_transporte)
-                VALUES ($1,$2,NOW()+INTERVAL '12 hours',$3,$4)
+                VALUES ($1,$2,NOW()+INTERVAL '12 hours',NULL,'CARRO')
                 ON CONFLICT (venda_id) DO UPDATE SET token_hash=EXCLUDED.token_hash,expira_em=EXCLUDED.expira_em,
                 entregador_id=EXCLUDED.entregador_id,meio_transporte=EXCLUDED.meio_transporte,
                 latitude=NULL,longitude=NULL,precisao_m=NULL,atualizado_em=NULL,rota=NULL,rota_solicitada_em=NULL`,
-                [req.params.id,hash(token),driver.rows[0].id,driver.rows[0].meio_transporte]);
+                [req.params.id,hash(token)]);
         });
         res.set("Cache-Control", "no-store").json({ success: true, data: { url: `${APP_URL}/entregador#${token}` } });
     } catch (e) { next(e); }
