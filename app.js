@@ -212,6 +212,10 @@ app.get("/admin/testar-gps", (request, response) => {
     response.set("Cache-Control", "no-store");
     response.sendFile(path.join(__dirname, "views", "delivery", "gps-test.html"));
 });
+app.get("/admin/simular-navegacao", (request, response) => {
+    response.set("Cache-Control", "no-store");
+    response.sendFile(path.join(__dirname, "views", "delivery", "simulation.html"));
+});
 
 app.get("/politica-de-privacidade", (request, response) => {
 

@@ -55,7 +55,12 @@ async function quote(customer) {
         });
         throw error("Não foi possível calcular o frete agora. Tente novamente.", 503);
     }
-    const meters = payload?.routes?.[0]?.distanceMeters;
+    const route = Array.isArray(payload?.routes) ? payload.routes[0] : null;
+    // Routes usa proto3: o inteiro zero pode ser omitido mesmo com field mask.
+    // Somente uma rota objeto existente em HTTP 200 pode representar esse zero;
+    // erro do provedor, rota ausente e valores de outro tipo continuam falhando.
+    const meters = route && typeof route === "object" && !Array.isArray(route)
+        ? (route.distanceMeters === undefined ? 0 : route.distanceMeters) : null;
     if (!Number.isInteger(meters) || meters < 0) throw error("Não encontramos uma rota. Confira o endereço e o CEP da entrega.", 422);
     const token = jwt.sign({ ...(customer.id ? { sub: customer.id } : {}), address: fingerprint(address), meters }, quoteSecret, { algorithm: "HS256", audience: "frete", expiresIn: "15m" });
     return { token, distanciaMetros: meters, valor: priceForDistance(meters), expiraEm: new Date(Date.now() + 900000).toISOString() };

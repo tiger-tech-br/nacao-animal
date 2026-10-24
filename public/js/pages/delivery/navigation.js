@@ -1,6 +1,6 @@
 "use strict";
 (() => {
-    const icons = maneuver => maneuver?.includes("ROUNDABOUT") ? "⟳" : maneuver?.includes("U_TURN") ? "↶" : maneuver?.includes("LEFT") ? "↰" : maneuver?.includes("RIGHT") ? "↱" : maneuver?.includes("MERGE") ? "⤴" : "↑";
+    const icons = maneuver => maneuver?.includes("ROUNDABOUT") ? "⟳" : maneuver?.includes("U_TURN") ? (maneuver.includes("RIGHT") ? "↷" : "↶") : maneuver?.includes("LEFT") ? "↰" : maneuver?.includes("RIGHT") ? "↱" : maneuver?.includes("MERGE") ? "⤴" : "↑";
     const meters = value => value>=1000 ? `${(value/1000).toLocaleString("pt-BR",{maximumFractionDigits:1})} km` : `${Math.round(value/10)*10} m`;
     window.PetFlowDeliveryNavigation = function ({map,recalculate}) {
         const ids=["navigationPanel","navigationInstruction","navigationDistance","navigationManeuver","navigationNext","navigationSummary","navigationTime","navigationRemaining","navigationArrival","navigationSpeed","toggleVoice"];
@@ -10,8 +10,9 @@
         const speech=window.speechSynthesis;
         if(!speech || !window.SpeechSynthesisUtterance) el.toggleVoice.disabled=true;
         function speak(text,key) {
-            if(!voice || !active || document.hidden || spoken.has(key)) return;
+            if(!voice || !active || document.hidden || spoken.has(key)) return false;
             spoken.add(key);speech.cancel();const utterance=new window.SpeechSynthesisUtterance(text);utterance.lang="pt-BR";speech.speak(utterance);
+            return true;
         }
         function render() {
             if(!active || !trip || document.hidden) return;
@@ -24,7 +25,7 @@
                 if(voice) speech.cancel();if(result.recalculate) recalculate();return;
             }
             if(!followed) followed=map.follow()!==false;
-            el.navigationTime.textContent=result.remainingSeconds===null ? "—" : `${Math.max(1,Math.ceil(result.remainingSeconds/60))} min`;
+            el.navigationTime.textContent=result.state==="arrived" ? "Chegando" : result.remainingSeconds===null ? "—" : `${Math.max(1,Math.ceil(result.remainingSeconds/60))} min`;
             el.navigationRemaining.textContent=meters(result.remainingMeters);
             const capturedAt=new Date(trip.atualizado_em).getTime();
             el.navigationArrival.textContent=result.remainingSeconds===null || !Number.isFinite(capturedAt) ? "" : new Date(capturedAt+result.remainingSeconds*1000).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
@@ -34,14 +35,20 @@
                 speak("Você está perto do endereço da entrega. Confira o número do imóvel.",`${routeKey}:arrival`);return;
             }
             const approaching=result.next && result.toNextMeters<=Math.max(100,(trip.velocidade_mps || 0)*8);
-            const instruction=approaching ? result.next : result.current;
-            const next=approaching ? result.afterNext : result.next;
+            // O texto principal e a distância apontam para a mesma manobra futura.
+            const instruction=result.next || result.current;
+            const next=result.next ? result.afterNext : null;
             el.navigationInstruction.textContent=instruction.instrucao;
             el.navigationManeuver.textContent=icons(instruction.manobra);
-            el.navigationDistance.textContent=approaching ? `Em ${meters(result.toNextMeters)}` : result.next ? `${meters(result.toNextMeters)} até a próxima manobra` : `${meters(result.remainingMeters)} até o destino`;
+            el.navigationDistance.textContent=result.next ? (result.toNextMeters<=10 ? "Agora" : `Em ${meters(result.toNextMeters)}`) : `${meters(result.remainingMeters)} até o destino`;
             el.navigationNext.textContent=next ? `Depois: ${next.instrucao}` : "";
             const bucket=approaching ? (result.toNextMeters<=25 ? "now" : "approach") : "current";
-            speak(approaching ? `Em ${meters(result.toNextMeters)}, ${instruction.instrucao}` : instruction.instrucao,`${routeKey}:${result.index}:${bucket}`);
+            const voiceInstruction=approaching ? result.next : result.current,voiceIndex=approaching ? result.index+1 : result.index;
+            const announcedKey=`${routeKey}:announced:${voiceIndex}`;
+            if(approaching || !spoken.has(announcedKey)) {
+                const text=approaching && result.toNextMeters>10 ? `Em ${meters(result.toNextMeters)}, ${voiceInstruction.instrucao}` : voiceInstruction.instrucao;
+                if(speak(text,`${routeKey}:${voiceIndex}:${bucket}`)) spoken.add(announcedKey);
+            }
         }
         el.toggleVoice.addEventListener("click",()=>{
             voice=!voice;

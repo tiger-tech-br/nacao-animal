@@ -44,7 +44,7 @@ async function handleLogin(event) {
         saveUser(response.data.user);
 
         const next = new URLSearchParams(window.location.search || "").get("next");
-        window.location.href = next === "/admin/testar-gps"
+        window.location.href = ["/admin/testar-gps", "/admin/simular-navegacao"].includes(next)
             ? next : "/admin/pages/dashboard/dashboard.html";
     } catch (error) {
         alert(error.message || "Erro ao realizar login.");

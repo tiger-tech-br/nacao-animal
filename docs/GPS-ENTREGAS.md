@@ -62,6 +62,8 @@ O navegador pode suspender o envio quando a tela é bloqueada ou a página vai p
 
 As estimativas de duração e chegada não consideram trânsito em tempo real. A posição não é simulada. Posição antiga ou imprecisa interrompe as orientações; após 15 segundos sem atualização, o acompanhamento informa que a posição está desatualizada.
 
+Na revisão de24/10, a câmera passou a acompanhar a primeira coordenada diretamente, sem depender de rota pronta ou animações acumuladas. Leituras atrasadas/duplicadas não substituem o GPS mais recente; o cálculo de rota exige posição de até15s e precisão de até50m também no servidor. O mapa foi conferido com o Google real e posições artificiais controladas. Essa verificação e os testes automatizados passaram; a confirmação da câmera durante novo percurso físico ainda é necessária. Não tratar a comparação controlada como aprovação da entrega comercial.
+
 ## Quando algo não aparecer
 
 | Situação | Conferir |

@@ -484,6 +484,78 @@ test("seta mantém direção quando o Google adiciona o marcador após a primeir
     assert.equal(marker.icon.hidden,false);assert.equal(marker.icon.style.transform,"rotate(180deg)");
     assert.equal(marker.element.hidden,false);
 });
+test("passos curtos sem heading nativo acumulam direção observada, curva e retorno reais", async () => {
+    const h=mapHarness("driver",false,true,true);
+    const fix=(latitude,longitude)=>({latitude,longitude,heading:null,precisao_m:2,rota:null});
+    const pending=h.map.update(fix(0,0));await settle();h.ready();await pending;
+    const marker=h.vehicles[0],camera=h.maps[0];
+    const angle=()=>Number(marker.icon.style.transform.match(/rotate\((.+)deg\)/)[1]);
+    async function walk(points,expectedHeading) {
+        for(const [latitude,longitude] of points) {
+            await h.map.update(fix(latitude,longitude));
+            assert.equal(marker.position.lat,latitude);assert.equal(marker.position.lng,longitude);
+            assert.equal(camera.center.lat,latitude);assert.equal(camera.center.lng,longitude);
+        }
+        assert.ok(Math.abs((angle()-expectedHeading+540)%360-180)<1,`Direção ${angle()} deve acompanhar ${expectedHeading} graus`);
+    }
+    await walk([[0,.000018],[0,.000036],[0,.000054]],90);
+    const stoppedPosition={...marker.position},stoppedCenter={...camera.center};
+    for(let tick=0;tick<4;tick++) await h.map.update(fix(0,.000054));
+    assert.equal(angle(),90,"Parado conserva a direção observada, sem avançar no trajeto");
+    assert.equal(marker.position.lat,stoppedPosition.lat);assert.equal(marker.position.lng,stoppedPosition.lng);
+    assert.deepEqual(camera.center,stoppedCenter);
+    await walk([[.000018,.000054],[.000036,.000054],[.000054,.000054]],0);
+    await walk([[.000036,.000054],[.000018,.000054],[0,.000054]],180);
+    assert.equal(h.fits.length,0);assert.equal(h.pans.length,0,"Só usa as coordenadas recebidas para posicionar a câmera");
+});
+
+test("coordenadas inválidas não movem câmera ou seta e a próxima posição válida recupera o mapa", async () => {
+    const h=mapHarness("driver",false,true,true),data={latitude:0,longitude:0,heading:90,precisao_m:2,rota:null};
+    const pending=h.map.update(data);await settle();h.ready();await pending;
+    const marker=h.vehicles[0],position={...marker.position},camera={...h.maps[0].center},centerCount=h.cameraCenters.length;
+    for(const invalid of [{latitude:NaN},{latitude:Infinity},{latitude:91},{longitude:-181},{longitude:"inválida"},{latitude:""},{longitude:true}]) {
+        await h.map.update({...data,...invalid,heading:180});
+        assert.equal(marker.position.lat,position.lat);assert.equal(marker.position.lng,position.lng);
+        assert.deepEqual(h.maps[0].center,camera);assert.equal(h.cameraCenters.length,centerCount);
+        assert.equal(h.elements.deliveryMap.hidden,true);
+        assert.match(h.notices.at(-1).message,/localização recebida não é válida/);
+    }
+    await h.map.update({...data,latitude:.000018,heading:null});
+    assert.equal(h.elements.deliveryMap.hidden,false);
+    assert.equal(marker.position.lat,.000018);assert.equal(h.maps[0].center.lat,.000018);
+    assert.equal(marker.icon.style.transform,"rotate(90deg)","Dados recusados não contaminam a referência da direção");
+});
+
+test("direção inválida e posição imprecisa não inventam rumo; norte nativo continua válido", async () => {
+    const h=mapHarness("driver"),data={latitude:0,longitude:0,heading:null,precisao_m:120,rota:null};
+    const pending=h.map.update(data);await settle();h.ready();await pending;
+    const marker=h.vehicles[0];
+    await h.map.update({...data,longitude:.001,precisao_m:2});
+    assert.equal(marker.icon.style.transform,"rotate(0deg)","Primeira referência precisa não usa o salto de uma leitura imprecisa para estimar direção");
+    await h.map.update({...data,longitude:.00106,precisao_m:2});
+    assert.ok(Math.abs(Number(marker.icon.style.transform.match(/rotate\((.+)deg\)/)[1])-90)<1);
+    const lastHeading=marker.icon.style.transform;
+    for(const heading of [-1,360,NaN,Infinity,"90"]) {
+        await h.map.update({...data,longitude:.00106,precisao_m:2,heading});
+        assert.equal(marker.icon.style.transform,lastHeading,"Rumo fora da faixa ou não numérico é descartado");
+    }
+    await h.map.update({...data,longitude:.00106,precisao_m:2,heading:0});
+    assert.equal(marker.icon.style.transform,"rotate(0deg)","Zero graus não é confundido com rumo ausente");
+});
+
+test("destino ou origem fora dos limites não produz rota geográfica fictícia", async () => {
+    const h=mapHarness("driver"),data=routeData();
+    const pending=h.map.update({...data,rota:{...data.rota,destino:{latitude:100,longitude:0}}});
+    await settle();h.ready();await pending;
+    assert.equal(h.circles[1].visible,false);assert.equal(h.paths.at(-1).length,0);
+    assert.equal(h.vehicles[0].position.lat,data.latitude,"Recusar destino não altera o GPS disponível");
+    await h.map.update({...data,rota:{...data.rota,origem:{latitude:0,longitude:181}}});
+    assert.equal(h.circles[1].visible,true);assert.equal(h.circles[2].visible,false);
+    assert.equal(h.paths.at(-1).length,0);
+    await h.map.update(data);
+    assert.equal(h.paths.at(-1).length,1);assert.equal(h.circles[2].visible,true);
+});
+
 test("destino do cliente aparece sem depender de uma linha de rota", async () => {
     const h=mapHarness(),data=routeData();delete data.rota.polyline;
     const pending=h.map.update(data);await settle();h.ready();await pending;

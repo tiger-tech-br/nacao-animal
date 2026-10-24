@@ -108,9 +108,10 @@ async function probeRoutes(fetchImpl) {
     if (response.redirected || response.url !== `${origin}/api/public/frete/cotar`)
         return { performed: true, status: "failed", httpStatus, code: "REMOTE_QUOTE_FAILED" };
     // No contrato atual de freteService.quote, 422 so ocorre depois de Google
-    // HTTP 200 quando falta uma distancia inteira valida. Loja->mesma loja pode
-    // omitir a distancia zero. Isso confirma acesso/autorizacao do provedor,
-    // mas nao comprova uma rota utilizavel, o mapa ou o GPS de uma entrega.
+    // HTTP 200 sem rota/distancia valida. O inteiro zero omitido pelo proto e
+    // normalizado pelo servico e retorna HTTP 200; nao explica mais um 422.
+    // Esse 422 confirma acesso/autorizacao, mas nao uma rota utilizavel, mapa
+    // ou GPS de entrega. A saida nao infere a causa pela mensagem do provedor.
     if (response.status === 422) return { performed: true, status: "inconclusive", httpStatus,
         code: "REMOTE_QUOTE_NO_ROUTE", providerReached: true, authorizationValidated: true };
     if (response.status !== 200)

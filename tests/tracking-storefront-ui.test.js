@@ -31,9 +31,12 @@ test("público e administrador usam documentos separados mantendo os scripts de 
     assert.match(adminRoute || "", /Cache-Control.*no-store/);
     for (const html of [original, storefront]) {
         assert.match(html, /name="robots" content="noindex,nofollow"/);
-        const scripts = [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map(match => match[1]);
+        const scripts = [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map(match => new URL(match[1], "http://localhost").pathname);
         assert.ok(scripts.includes("/js/pages/delivery/map.js"));
-        assert.ok(scripts.indexOf("/js/pages/delivery/map.js") < scripts.indexOf("/js/pages/delivery/tracking.js"));
+        assert.ok(scripts.includes("/js/pages/delivery/navigation-engine.js"));
+        assert.ok(scripts.includes("/js/pages/delivery/tracking.js"));
+        assert.ok(scripts.indexOf("/js/pages/delivery/map.js") < scripts.indexOf("/js/pages/delivery/navigation-engine.js"));
+        assert.ok(scripts.indexOf("/js/pages/delivery/navigation-engine.js") < scripts.indexOf("/js/pages/delivery/tracking.js"));
     }
     assert.match(storefront, /body class="storefront-page tracking-page tracking-storefront"/);
     assert.doesNotMatch(original, /storefront-theme|tracking-storefront/);

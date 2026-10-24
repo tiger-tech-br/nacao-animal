@@ -70,8 +70,13 @@
         const lat1 = radians(previous.lat), lat2 = radians(current.lat), delta = radians(current.lng - previous.lng);
         const a = Math.sin((lat2-lat1)/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(delta/2)**2;
         const distance = 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0,1-a)));
-        if (distance < Math.max(5, Number(precision) || 0)) return null;
+        if (distance < Math.max(5, Number(previous.precision) || 0, Number(precision) || 0)) return null;
         return (Math.atan2(Math.sin(delta)*Math.cos(lat2), Math.cos(lat1)*Math.sin(lat2)-Math.sin(lat1)*Math.cos(lat2)*Math.cos(delta)) * 180 / Math.PI + 360) % 360;
+    }
+    function mapPosition(data) {
+        const number = value => typeof value === "number" || (typeof value === "string" && value.trim()) ? Number(value) : NaN;
+        const lat = number(data?.latitude), lng = number(data?.longitude);
+        return Number.isFinite(lat) && Math.abs(lat) <= 90 && Number.isFinite(lng) && Math.abs(lng) <= 180 ? { lat, lng } : null;
     }
     window.PetFlowDeliveryMap = function ({ mode = "tracking", onStatus, onViewChange } = {}) {
         const navigation = mode === "driver";
@@ -79,7 +84,7 @@
         const recenter = document.getElementById(navigation ? "recenterMap" : "centerTrackingMap");
         const showRoute = navigation ? document.getElementById("showFullRoute") : null;
         let map, driver, origin, destination, route, accuracy, lastPolyline, lastDestination, routeBounds, version = 0;
-        let currentPosition, currentDestination, previousPosition, heading = null, following = true, overview = !navigation, manualView = false;
+        let currentPosition, currentDestination, headingOrigin, heading = null, following = true, overview = !navigation, manualView = false;
         function announceView() {
             if (recenter) {
                 recenter.setAttribute("aria-pressed", String(following));
@@ -132,7 +137,7 @@
         announceView();
         return {
             follow: followPosition,
-            hide() { version++; element.hidden = true; setStatus(""); previousPosition = null; heading = null; following = true; overview = !navigation; manualView = false; if (recenter) recenter.hidden = true; if (showRoute) showRoute.hidden = true; announceView(); },
+            hide() { version++; element.hidden = true; setStatus(""); headingOrigin = null; heading = null; following = true; overview = !navigation; manualView = false; if (recenter) recenter.hidden = true; if (showRoute) showRoute.hidden = true; announceView(); },
             resize() {
                 if (!map || element.hidden) return;
                 google.maps.event?.trigger(map, "resize");
@@ -145,19 +150,26 @@
                 const originElement = document.getElementById("originAddress");
                 const destinationText = address ? [address.endereco,address.numero,address.complemento,address.bairro,address.cidade,address.estado,address.cep].filter(Boolean).join(", ") : "";
                 document.getElementById("destinationAddress").textContent = destinationText ? `Destino: ${destinationText}` : "Endereço da entrega não disponível.";
-                const hasPosition = data.latitude != null && data.longitude != null;
+                const locationProvided = data.latitude != null && data.longitude != null;
+                const position = locationProvided ? mapPosition(data) : null;
+                const hasPosition = Boolean(position);
                 const endpoint = data.rota?.tipoOrigem === "GPS_ENTREGADOR" ? data.rota.destino : null;
-                const hasDestination = Number.isFinite(endpoint?.latitude) && Number.isFinite(endpoint?.longitude);
+                const destinationPosition = endpoint && mapPosition(endpoint);
+                const hasDestination = Boolean(destinationPosition);
                 const startpoint = data.rota?.origem;
-                const hasRoute = Boolean(hasDestination && data.rota.polyline && Number.isFinite(startpoint?.latitude) && Number.isFinite(startpoint?.longitude));
+                const startPosition = startpoint && mapPosition(startpoint);
+                const hasRoute = Boolean(hasDestination && data.rota.polyline && startPosition);
                 if (originElement) originElement.textContent = hasPosition ? (hasRoute ? "Partida da rota: posição GPS usada no último cálculo." : "Localização do entregador: última posição GPS recebida.") : "Aguardando a localização do entregador.";
-                if (!hasPosition) { element.hidden = true; if (recenter) recenter.hidden = true; if (showRoute) showRoute.hidden = true; setStatus("Aguardando o entregador compartilhar o GPS para mostrar o mapa.", "waiting"); return; }
+                if (!hasPosition) {
+                    element.hidden = true; if (recenter) recenter.hidden = true; if (showRoute) showRoute.hidden = true;
+                    setStatus(locationProvided ? "A localização recebida não é válida. Aguarde uma nova posição GPS." : "Aguardando o entregador compartilhar o GPS para mostrar o mapa.", locationProvided ? "error" : "waiting");
+                    return;
+                }
                 try {
                     setStatus("Carregando mapa...", "loading");
                     await loadMaps();
                     if (current !== version) return;
                     element.hidden = false;
-                    const position = { lat: Number(data.latitude), lng: Number(data.longitude) };
                     currentPosition = position;
                     if (!map) {
                         map = new google.maps.Map(element, { center: currentPosition, zoom: navigation ? 17 : 16, streetViewControl: false, mapTypeControl: false,
@@ -171,9 +183,14 @@
                         map.addListener("dragstart", () => { manualView = true; following = false; overview = false; announceView(); });
                     }
                     if (navigation) {
-                        const nextHeading = Number.isFinite(data.heading) ? (data.heading % 360 + 360) % 360 : movementHeading(previousPosition, position, data.precisao_m);
+                        const precision = Number.isFinite(data.precisao_m) && data.precisao_m >= 0 && data.precisao_m <= 50 ? data.precisao_m : null;
+                        const nativeHeading = Number.isFinite(data.heading) && data.heading >= 0 && data.heading < 360 ? data.heading : null;
+                        const nextHeading = nativeHeading ?? (precision !== null ? movementHeading(headingOrigin, position, precision) : null);
                         if (nextHeading !== null) heading = nextHeading;
-                        driver.setHeading(heading); previousPosition = position;
+                        driver.setHeading(heading);
+                        // Sem rumo nativo, conserva a referência até o movimento
+                        // observado superar a precisão; passos curtos também contam.
+                        if (precision !== null && (!headingOrigin || nextHeading !== null)) headingOrigin = { ...position, precision };
                         // Cada leitura real define a câmera diretamente, sem
                         // enfileirar animações de pan que podem atrasar no celular.
                         if (following) map.setCenter(position);
@@ -181,11 +198,10 @@
                     if (recenter) recenter.hidden = false;
                     driver.setPosition(position); accuracy.setCenter(currentPosition); accuracy.setRadius(hasPosition ? Math.max(0, Number(data.precisao_m) || 0) : 0);
                     destination.setVisible(hasDestination);
-                    const destinationPosition = hasDestination ? { lat: endpoint.latitude, lng: endpoint.longitude } : null;
                     currentDestination = destinationPosition;
                     if (hasDestination) destination.setCenter(destinationPosition);
                     origin.setVisible(hasRoute);
-                    if (hasRoute) origin.setCenter({ lat: startpoint.latitude, lng: startpoint.longitude });
+                    if (hasRoute) origin.setCenter(startPosition);
                     else { route.setPath([]); lastPolyline = null; routeBounds = null; }
                     if (showRoute) showRoute.hidden = !hasRoute;
                     resizeMarkers();
@@ -198,7 +214,7 @@
                     if (hasRoute) {
                         routeBounds = new google.maps.LatLngBounds();
                         route.getPath().forEach(point => routeBounds.extend(point));
-                        routeBounds.extend({ lat: startpoint.latitude, lng: startpoint.longitude });
+                        routeBounds.extend(startPosition);
                         routeBounds.extend(destinationPosition); routeBounds.extend(position);
                         if (navigation && overview && (routeChanged || !map.getBounds()?.contains(position))) map.fitBounds(routeBounds, 40);
                     }

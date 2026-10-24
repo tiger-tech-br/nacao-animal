@@ -14,6 +14,27 @@ test("tarifa inclui 1 km grátis e cobra frações do km adicional", () => {
     }
     for (const meters of [-1,NaN,Infinity,"1000",1.5]) assert.throws(() => shipping.priceForDistance(meters));
 });
+
+test("Google HTTP200 com rota e inteiro zero omitido pelo proto gera cotacao zero assinada", async () => {
+    process.env.GOOGLE_MAPS_API_KEY = "test-key";
+    global.fetch = async () => ({ ok: true, json: async () => ({ routes: [{}] }) });
+    const quote = await shipping.quote(customer);
+    assert.equal(quote.distanciaMetros, 0);
+    assert.equal(quote.valor, 0);
+    assert.equal(shipping.verifyQuote(quote.token, customer).valor, 0);
+});
+
+test("omissao de zero nao transforma erro, rota ausente ou valor invalido em frete gratis", async () => {
+    process.env.GOOGLE_MAPS_API_KEY = "test-key";
+    for (const route of [null, [], "invalid", { distanceMeters: null }, { distanceMeters: "0" }, { distanceMeters: -1 }]) {
+        global.fetch = async () => ({ ok: true, json: async () => ({ routes: [route] }) });
+        await assert.rejects(shipping.quote(customer), error => error.status === 422);
+    }
+    global.fetch = async () => ({ ok: true, json: async () => ({ routes: [] }) });
+    await assert.rejects(shipping.quote(customer), error => error.status === 422);
+    global.fetch = async () => ({ ok: false, status: 403, json: async () => ({ routes: [{}] }) });
+    await assert.rejects(shipping.quote(customer), error => error.status === 503);
+});
 test("cotação usa endereço salvo e Routes API; assinatura vincula cliente e endereço", async () => {
     process.env.GOOGLE_MAPS_API_KEY = "test-key";
     global.fetch = async (url, options) => {

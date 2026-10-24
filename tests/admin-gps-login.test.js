@@ -4,11 +4,17 @@ const vm = require("node:vm"), fs = require("node:fs");
 const source = fs.readFileSync("public/js/pages/auth/login.js", "utf8");
 for (const [search, expected] of [
     ["?next=%2Fadmin%2Ftestar-gps", "/admin/testar-gps"],
+    ["?next=%2Fadmin%2Fsimular-navegacao", "/admin/simular-navegacao"],
     ["", "/admin/pages/dashboard/dashboard.html"],
     ["?next=https://external.invalid/", "/admin/pages/dashboard/dashboard.html"],
     ["?next=//external.invalid/", "/admin/pages/dashboard/dashboard.html"],
-    ["?next=/admin/testar-gps?unsafe=1", "/admin/pages/dashboard/dashboard.html"]
-]) test(`login retorna somente ao teste GPS autorizado: ${search || "padrao"}`, async () => {
+    ["?next=/admin/testar-gps?unsafe=1", "/admin/pages/dashboard/dashboard.html"],
+    ["?next=/admin/simular-navegacao?unsafe=1", "/admin/pages/dashboard/dashboard.html"],
+    ["?next=/admin/simular-navegacao%23fragment", "/admin/pages/dashboard/dashboard.html"],
+    ["?next=/admin/simular-navegacao/../other", "/admin/pages/dashboard/dashboard.html"],
+    ["?next=%252Fadmin%252Fsimular-navegacao", "/admin/pages/dashboard/dashboard.html"],
+    ["?next=%5C%5Cexternal.invalid%5Cadmin%5Csimular-navegacao", "/admin/pages/dashboard/dashboard.html"]
+]) test(`login retorna somente aos testes administrativos autorizados: ${search || "padrao"}`, async () => {
     const saved=[];
     const context={URLSearchParams, document:{addEventListener(){},getElementById:id=>({value:id==="email"?"fixture@example.invalid":"fixture-password"})},
         validateRequired:()=>true,validateEmail:()=>true,validatePassword:()=>true,

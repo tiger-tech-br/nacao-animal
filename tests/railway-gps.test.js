@@ -175,7 +175,7 @@ test("cotacao recusada retorna somente HTTP e codigo local sem mensagem ou token
     assert.ok(!JSON.stringify(report).includes("never-display-quote-token"));
 });
 
-test("HTTP422 de loja para mesma loja confirma acesso Routes pelo contrato, sem comprovar rota ou GPS", async () => {
+test("HTTP422 sem rota valida confirma acesso Routes pelo contrato, sem confundir com zero normalizado ou GPS valido", async () => {
     const report = await runChecks(["--probe-routes"], fixture({ quote: async () => ({ status: 422,
         json: async () => ({ success: false, message: `upstream private ${serverKey}` }) }) }));
     assert.deepEqual(report.routes, { performed: true, status: "inconclusive", httpStatus: 422,
