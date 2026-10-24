@@ -11,3 +11,13 @@ test("navegação avança por GPS real e calcula manobra, distância, tempo e ve
     result=engine.update({...p(-23.6598,-46.549),precisao_m:5,velocidade_mps:null,atualizado_em:new Date(now+5000).toISOString()},now+5000);assert.equal(result.current.instrucao,"Vire à esquerda");assert.ok(result.speedKmh>0,"Estima velocidade quando o navegador não a fornece");});
 test("navegação não orienta com GPS antigo ou impreciso e só recalcula após duas posições fora da rota",()=>{const now=Date.now(),engine=navigation.create(route());assert.equal(engine.update({...p(-23.66,-46.55),precisao_m:5,atualizado_em:new Date(now-20000).toISOString()},now).state,"stale");assert.equal(engine.update({...p(-23.66,-46.55),precisao_m:80,atualizado_em:new Date(now).toISOString()},now).state,"imprecise");let result=engine.update({...p(-23.67,-46.57),precisao_m:5,atualizado_em:new Date(now+1000).toISOString()},now+1000);assert.equal(result.recalculate,false);result=engine.update({...p(-23.67,-46.57),precisao_m:5,atualizado_em:new Date(now+6000).toISOString()},now+6000);assert.equal(result.recalculate,true);});
 test("dados incompletos não viram instrução de navegação",()=>{assert.equal(navigation.create({tipoOrigem:"GPS_ENTREGADOR",etapas:[]}),null);assert.throws(()=>navigation.decode("abc"));});
+
+test("renderizar a mesma leitura nao zera a velocidade estimada nem revalida GPS antigo",()=>{
+    const engine=navigation.create(route()),now=Date.now();
+    engine.update({...p(-23.66,-46.5498),precisao_m:5,velocidade_mps:null,atualizado_em:new Date(now).toISOString()},now);
+    const next={...p(-23.66,-46.5496),precisao_m:5,velocidade_mps:null,atualizado_em:new Date(now+1000).toISOString()};
+    const first=engine.update(next,now+1000);
+    assert.ok(first.speedKmh>0);
+    assert.equal(engine.update(next,now+2000).speedKmh,first.speedKmh,"Relogio da interface nao inventa nova velocidade");
+    assert.equal(engine.update(next,now+20000).state,"stale","Cache nao prolonga validade da leitura");
+});

@@ -43,12 +43,15 @@
                 steps.push(step);total+=meters;
             }
         } catch { return null; }
-        let progress=0,initialized=false,lastFix,lastTime,lastPosition,offRouteFixes=0;
+        let progress=0,initialized=false,lastFix,lastTime,lastPosition,offRouteFixes=0,lastSignature,lastResult;
         return {
             update(position,now=Date.now()) {
                 const time=new Date(position.atualizado_em).getTime();
                 if(!validPoint(position) || !Number.isFinite(time) || now-time>15000 || time-now>5000) return {state:"stale"};
                 if(!Number.isFinite(position.precisao_m) || position.precisao_m>50 || position.precisao_m<0) return {state:"imprecise"};
+                const signature=JSON.stringify([time,position.latitude,position.longitude,position.precisao_m,position.velocidade_mps]);
+                if(signature===lastSignature && lastResult) return lastResult;
+                const remember=result=>{lastSignature=signature;lastResult=result;return result;};
                 const elapsed=lastTime ? Math.max(0,(time-lastTime)/1000) : 0;
                 const maxAdvance=Math.max(150,elapsed*Math.max(10,position.velocidade_mps || 0)+position.precisao_m*2);
                 let match;
@@ -61,7 +64,7 @@
                 }
                 if(!match || match.offset>Math.max(50,position.precisao_m*2)) {
                     if(lastFix!==position.atualizado_em) {offRouteFixes++;lastFix=position.atualizado_em;}
-                    return {state:"off-route",recalculate:offRouteFixes>=2};
+                    return remember({state:"off-route",recalculate:offRouteFixes>=2});
                 }
                 const estimatedSpeed=lastPosition && lastTime && time>lastTime ? distance(lastPosition,position)/((time-lastTime)/1000) : null;
                 offRouteFixes=0;lastFix=position.atualizado_em;lastTime=time;lastPosition={latitude:position.latitude,longitude:position.longitude};initialized=true;
@@ -72,9 +75,9 @@
                 let remainingSeconds;
                 if(steps.every(step=>step.seconds!==null)) remainingSeconds=current.seconds*remainingInStep/current.meters+steps.slice(index+1).reduce((sum,step)=>sum+step.seconds,0);
                 else remainingSeconds=seconds(route.duracao)===null ? null : seconds(route.duracao)*remainingMeters/total;
-                return {state:remainingMeters<40 && distance(position,route.destino)<Math.max(25,position.precisao_m) ? "arrived" : "navigating",
+                return remember({state:remainingMeters<40 && distance(position,route.destino)<Math.max(25,position.precisao_m) ? "arrived" : "navigating",
                     index,current,next:steps[index+1],afterNext:steps[index+2],toNextMeters:remainingInStep,remainingMeters,remainingSeconds,
-                    speedKmh:Math.round(Math.max(0,Number.isFinite(position.velocidade_mps) && position.velocidade_mps>=0 ? position.velocidade_mps : estimatedSpeed || 0)*3.6)};
+                    speedKmh:Math.round(Math.max(0,Number.isFinite(position.velocidade_mps) && position.velocidade_mps>=0 ? position.velocidade_mps : estimatedSpeed || 0)*3.6)});
             }
         };
     }

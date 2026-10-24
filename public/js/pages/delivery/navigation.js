@@ -51,7 +51,9 @@
             el.toggleVoice.setAttribute("aria-pressed",String(voice));
             if(!voice) speech.cancel();else {spoken.clear();render();}
         });
-        setInterval(render,5000);document.addEventListener("visibilitychange",()=>{if(document.hidden){if(voice)speech.cancel();}else render();});
+        // As leituras GPS chamam update imediatamente. Este relogio so reavalia
+        // a validade da ultima leitura quando o sensor deixa de responder.
+        setInterval(render,1000);document.addEventListener("visibilitychange",()=>{if(document.hidden){if(voice)speech.cancel();}else render();});
         return {
             start(){active=true;document.body.classList.add("navigation-active");},
             update(data){trip=data;const key=data.rota ? JSON.stringify([data.rota.calculadaEm,data.rota.polyline,data.rota.etapas]) : "";

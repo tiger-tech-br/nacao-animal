@@ -1,7 +1,9 @@
 "use strict";
 (() => {
-    let loading;
+    let loading, authenticationError;
+    const authenticationListeners = new Set();
     function loadMaps() {
+        if (authenticationError) return Promise.reject(authenticationError);
         if (!loading) loading = (async () => {
             const response = await fetch("/api/public/entregas/mapa-config", { cache: "no-store" });
             const payload = await response.json();
@@ -11,8 +13,10 @@
                 window.petflowMapsReady = () => { clearTimeout(timer); resolve(); };
                 window.gm_authFailure = () => {
                     clearTimeout(timer);
-                    document.getElementById("mapStatus").textContent = "O Google recusou o mapa. A loja precisa conferir a chave do navegador, o domínio e a Maps JavaScript API.";
-                    reject(new Error("A configuração do Google Maps precisa ser revisada pela loja."));
+                    authenticationError = new Error("O Google recusou o mapa. A loja precisa conferir a chave do navegador, o domínio e a Maps JavaScript API.");
+                    // O Google pode recusar a chave depois de já chamar o callback de carga.
+                    authenticationListeners.forEach(notify => notify(authenticationError));
+                    reject(authenticationError);
                 };
                 const script = document.createElement("script");
                 const params = new URLSearchParams({ key: payload.data.browserKey, loading: "async", libraries: "geometry", callback: "petflowMapsReady", language: "pt-BR", v: "weekly" });
@@ -69,13 +73,23 @@
         if (distance < Math.max(5, Number(precision) || 0)) return null;
         return (Math.atan2(Math.sin(delta)*Math.cos(lat2), Math.cos(lat1)*Math.sin(lat2)-Math.sin(lat1)*Math.cos(lat2)*Math.cos(delta)) * 180 / Math.PI + 360) % 360;
     }
-    window.PetFlowDeliveryMap = function ({ mode = "tracking" } = {}) {
+    window.PetFlowDeliveryMap = function ({ mode = "tracking", onStatus } = {}) {
         const navigation = mode === "driver";
         const element = document.getElementById("deliveryMap"), message = document.getElementById("mapStatus");
         const recenter = document.getElementById(navigation ? "recenterMap" : "centerTrackingMap");
         const showRoute = navigation ? document.getElementById("showFullRoute") : null;
         let map, driver, origin, destination, route, accuracy, lastPolyline, lastDestination, routeBounds, version = 0;
         let currentPosition, currentDestination, previousPosition, heading = null, following = !navigation, overview = true;
+        function setStatus(text, state = "ready") {
+            message.textContent = text;
+            onStatus?.({ message: text, state });
+        }
+        authenticationListeners.add(error => {
+            version++; element.hidden = true;
+            if (recenter) recenter.hidden = true;
+            if (showRoute) showRoute.hidden = true;
+            setStatus(error.message, "error");
+        });
         function resizeMarkers() {
             if (!map || !currentPosition) return;
             const metersPerPixel = 156543.03392 * Math.cos(currentPosition.lat * Math.PI / 180) / 2 ** map.getZoom();
@@ -98,7 +112,7 @@
         });
         return {
             follow: followPosition,
-            hide() { version++; element.hidden = true; message.textContent = ""; previousPosition = null; heading = null; following = !navigation; overview = true; if (recenter) recenter.hidden = true; if (showRoute) showRoute.hidden = true; },
+            hide() { version++; element.hidden = true; setStatus(""); previousPosition = null; heading = null; following = !navigation; overview = true; if (recenter) recenter.hidden = true; if (showRoute) showRoute.hidden = true; },
             resize() {
                 if (!map || element.hidden) return;
                 google.maps.event?.trigger(map, "resize");
@@ -117,9 +131,9 @@
                 const startpoint = data.rota?.origem;
                 const hasRoute = Boolean(hasDestination && data.rota.polyline && Number.isFinite(startpoint?.latitude) && Number.isFinite(startpoint?.longitude));
                 if (originElement) originElement.textContent = hasPosition ? (hasRoute ? "Partida da rota: posição GPS usada no último cálculo." : "Localização do entregador: última posição GPS recebida.") : "Aguardando a localização do entregador.";
-                if (!hasPosition) { element.hidden = true; if (recenter) recenter.hidden = true; if (showRoute) showRoute.hidden = true; message.textContent = "Aguardando o entregador compartilhar o GPS para mostrar o mapa."; return; }
+                if (!hasPosition) { element.hidden = true; if (recenter) recenter.hidden = true; if (showRoute) showRoute.hidden = true; setStatus("Aguardando o entregador compartilhar o GPS para mostrar o mapa.", "waiting"); return; }
                 try {
-                    message.textContent = "Carregando mapa...";
+                    setStatus("Carregando mapa...", "loading");
                     await loadMaps();
                     if (current !== version) return;
                     element.hidden = false;
@@ -169,10 +183,10 @@
                     if (!navigation && hasDestination && (following || lastDestination !== JSON.stringify(destinationPosition))) {
                         followPosition(); lastDestination = JSON.stringify(destinationPosition);
                     }
-                    message.textContent = navigation
+                    setStatus(navigation
                         ? `Seta azul: sua posição GPS · Verde: partida da rota · Laranja: destino. ${hasRoute ? "Siga a linha azul da rota." : "Aguardando a rota até o destino."} ${heading === null ? "Aguardando a primeira direção do GPS; a seta está voltada para cima." : "Sem uma nova direção, a seta mantém a última direção conhecida."}`
-                        : `Van: última posição recebida do entregador. ${hasRoute ? "Linha azul: trajeto da partida verde até o destino laranja." : (hasDestination ? "Ponto laranja: endereço da entrega. Aguardando o trajeto." : "Aguardando a localização do endereço da entrega.")}`;
-                } catch (error) { if (current === version) { element.hidden = true; if (recenter) recenter.hidden = true; if (showRoute) showRoute.hidden = true; message.textContent = error.message; } }
+                        : `Van: última posição recebida do entregador. ${hasRoute ? "Linha azul: trajeto da partida verde até o destino laranja." : (hasDestination ? "Ponto laranja: endereço da entrega. Aguardando o trajeto." : "Aguardando a localização do endereço da entrega.")}`);
+                } catch (error) { if (current === version) { element.hidden = true; if (recenter) recenter.hidden = true; if (showRoute) showRoute.hidden = true; setStatus(error.message, "error"); } }
             }
         };
     };

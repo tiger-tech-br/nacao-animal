@@ -1,0 +1,21 @@
+# O servidor usa as variables configuradas no Railway.
+.env
+.env.*
+!.env.example
+node_modules/
+.git/
+.railway/
+.codex/
+.agents/
+.aws/
+certs/
+uploads/
+logs/
+dist/
+coverage/
+backups/
+*.log
+*.dump
+*.bak
+*.pem
+*.key

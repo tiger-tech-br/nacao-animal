@@ -397,7 +397,11 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         assert.equal(previewTracking.rota, null);
         assert.equal((await request(gps, "POST", position)).status, 401);
         assert.equal((await request(gps, "POST", { ...position, latitude: 91 }, driverToken)).status, 400);
-        assert.equal((await request(gps, "POST", position, driverToken)).status, 200);
+        assert.equal((await request(gps,"POST",{...position,capturadoEm:new Date(Date.now()-60000).toISOString()},driverToken)).status,400,"Nao renova uma leitura antiga com a hora do servidor");
+        const captureTime=new Date(Date.now()-2000).toISOString();
+        assert.equal((await request(gps, "POST", {...position,capturadoEm:captureTime}, driverToken)).status, 200);
+        const receivedTime=(await pool.query("SELECT atualizado_em FROM entrega_rastreamento WHERE venda_id=$1",[order])).rows[0].atualizado_em;
+        assert.equal(new Date(receivedTime).toISOString(),captureTime,"Acompanhamento informa horario real da leitura GPS");
         assert.equal((await request("/api/public/entregas/rota", "POST", {}, driverToken)).status, 200);
         assert.equal((await request("/api/public/entregas/rota", "POST", {}, driverToken)).status, 200);
         assert.equal((await request(`/api/public/pedidos/${order}/rastreamento`, "GET", null, token)).body.data.rota.tipoOrigem, "GPS_ENTREGADOR");

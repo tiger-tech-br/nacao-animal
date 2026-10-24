@@ -15,7 +15,7 @@
         const back = document.getElementById("trackingBack");
         back.href = `/admin/pages/vendas/vendas.html${id ? `?pedido=${encodeURIComponent(id)}` : ""}`;
         back.textContent = "← Voltar ao pedido";
-        document.getElementById("trackingDescription").textContent = "Veja a van na posição do entregador, a linha azul da rota e o destino da entrega. Atualizamos a posição a cada 5 segundos enquanto esta página estiver visível. Esta tela apenas acompanha a entrega.";
+        document.getElementById("trackingDescription").textContent = "Veja a van na posição do entregador, a linha azul da rota e o destino da entrega. Atualizamos a posição a cada 2 segundos enquanto esta página estiver visível. Esta tela apenas acompanha a entrega.";
         login.textContent = "Entrar no painel administrativo";
     }
     function hideMap() { stage.hidden = true; live.hidden = true; map.hide(); updated.textContent = ""; }
@@ -64,7 +64,7 @@
             if (data.latitude === null || data.longitude === null || !data.atualizado_em) {
                 hideMap(); status.textContent = "Pedido saiu para entrega. Aguardando o entregador compartilhar o GPS."; return;
             }
-            const stale = Date.now() - new Date(data.atualizado_em).getTime() > 120000;
+            const stale = Date.now() - new Date(data.atualizado_em).getTime() > 15000;
             status.textContent = stale ? "Sem atualização recente. O mapa mostra a última posição conhecida, não a posição atual." : (admin ? "Entregador a caminho. Acompanhe a posição e a rota da entrega no mapa." : "Entregador a caminho! Acompanhe a rota no mapa e prepare-se para receber seu pedido.");
             updated.textContent = `${new Date(data.atualizado_em).toLocaleString("pt-BR")} · Precisão aproximada: ${Math.round(data.precisao_m)} m`;
             stage.hidden = false; live.hidden = false; updateSummary(data, stale);
@@ -72,5 +72,5 @@
         } catch (error) { status.textContent = `${error.message} A posição atual não pôde ser confirmada.`; hideMap(); }
         finally { pending = false; }
     }
-    refresh(); setInterval(refresh,5000); document.addEventListener("visibilitychange",refresh);
+    refresh(); setInterval(refresh,2000); document.addEventListener("visibilitychange",refresh);
 })();

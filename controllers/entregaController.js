@@ -3,6 +3,7 @@ const crypto = require("node:crypto");
 const db = require("../database/connection");
 const { APP_URL } = require("../config/env");
 const frete = require("../services/freteService");
+const { capturedAt } = require("../services/gpsTimestamp");
 const fail = (message, status) => Object.assign(new Error(message), { status });
 const uuid = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value || "");
 
@@ -47,6 +48,7 @@ async function localizacao(req, res, next) {
         const stop = req.method === "DELETE";
         const { latitude, longitude, precisao } = req.body || {};
         if (!stop && (!Number.isFinite(latitude) || Math.abs(latitude) > 90 || !Number.isFinite(longitude) || Math.abs(longitude) > 180 || !Number.isFinite(precisao) || precisao < 0 || precisao > 10000)) throw fail("Posição GPS inválida.", 400);
+        const capture = stop ? null : capturedAt(req.body?.capturadoEm);
         await db.transaction(async client => {
             // Lock the order first, matching the status-change trigger's lock order.
             const { rows } = await client.query(`SELECT v.id FROM vendas v JOIN entrega_rastreamento r ON r.venda_id=v.id
@@ -54,8 +56,8 @@ async function localizacao(req, res, next) {
             if (!rows[0]) throw fail("Link expirado ou entrega encerrada.", 410);
             if (stop) await client.query("DELETE FROM entrega_rastreamento WHERE venda_id=$1 AND token_hash=$2", [rows[0].id, hash(token)]);
             else {
-                const result = await client.query(`UPDATE entrega_rastreamento SET latitude=$1,longitude=$2,precisao_m=$3,atualizado_em=NOW()
-                    WHERE venda_id=$4 AND token_hash=$5 AND expira_em>NOW()`, [latitude,longitude,precisao,rows[0].id,hash(token)]);
+                const result = await client.query(`UPDATE entrega_rastreamento SET latitude=$1,longitude=$2,precisao_m=$3,atualizado_em=COALESCE($4::timestamptz,NOW())
+                    WHERE venda_id=$5 AND token_hash=$6 AND expira_em>NOW()`, [latitude,longitude,precisao,capture,rows[0].id,hash(token)]);
                 if (!result.rowCount) throw fail("Link expirado ou substituído.", 410);
             }
         });
@@ -99,10 +101,10 @@ async function viagem(req, res, next) {
 async function rota(req, res, next) {
     try {
         const tokenHash = driverHash(req);
-        // Reserva a consulta antes de chamar o Google; no máximo uma por minuto por entrega.
+        // Reserva a consulta antes de chamar o Google; no maximo quatro por minuto por entrega.
         const trip = await db.transaction(async client => {
             const { rows } = await client.query(`SELECT v.id,v.endereco_entrega,r.*,
-                (r.rota_solicitada_em>NOW()-INTERVAL '1 minute') AS recente
+                (r.rota_solicitada_em>NOW()-INTERVAL '15 seconds') AS recente
                 FROM vendas v JOIN entrega_rastreamento r ON r.venda_id=v.id
                 WHERE r.token_hash=$1 AND r.expira_em>NOW() AND v.status='SAIU_PARA_ENTREGA' FOR UPDATE OF v,r`, [tokenHash]);
             const row = rows[0];
@@ -111,7 +113,7 @@ async function rota(req, res, next) {
                 throw fail("Compartilhe uma posição GPS recente antes de calcular a rota.", 409);
             if (row.recente) {
                 if (row.rota?.tipoOrigem === "GPS_ENTREGADOR") return { cached: row.rota };
-                throw fail("Aguarde um minuto para tentar a rota novamente.", 429);
+                throw fail("Aguarde alguns segundos para tentar a rota novamente.", 429);
             }
             const reservation = await client.query("UPDATE entrega_rastreamento SET rota_solicitada_em=date_trunc('milliseconds',NOW()) WHERE venda_id=$1 RETURNING rota_solicitada_em", [row.id]);
             return { ...row, reservation: reservation.rows[0].rota_solicitada_em };

@@ -10,17 +10,24 @@ function element() {
     };
 }
 function driverHarness() {
-    const elements = Object.fromEntries(["startGps","stopGps","refreshRoute","gpsStatus","routeStatus"].map(id => [id,element()]));
-    const calls = [], updates = [], gps = [], intervals = new Set();
-    const route = { polyline: "route", destino: { latitude: -23.6, longitude: -46.5 } };
-    const navigationCalls=[];
-    const context = { URLSearchParams, AbortSignal, Date, console,
+    const elements = Object.fromEntries(["startGps","stopGps","refreshRoute","gpsStatus","routeStatus","mapStatus"].map(id => [id,element()]));
+    const calls = [], updates = [], gps = [], intervals = new Set(), timeouts = new Map(), clearedWatches=[];
+    const route = { tipoOrigem:"GPS_ENTREGADOR", polyline: "route", destino: { latitude: -23.6, longitude: -46.5 } };
+    const navigationCalls=[], events={}, documentEvents={}; let mapOptions;
+    let now=Date.now(),nextTimeout=0;
+    class ClockDate extends Date { constructor(value){super(arguments.length ? value : now);} static now(){return now;} }
+    const context = { URLSearchParams, AbortSignal, AbortController, Date:ClockDate, console,
         location: { hash: "#"+"a".repeat(64), pathname: "/entregador" }, history: { replaceState() {} },
-        document: { hidden: false, getElementById: id => elements[id], addEventListener() {} },
-        navigator: { geolocation: { getCurrentPosition(resolve,reject) { gps.push({resolve,reject}); } } },
-        isSecureContext: true, addEventListener() {},
+        document: { hidden: false, getElementById: id => elements[id], addEventListener(name,fn) {documentEvents[name]=fn;} },
+        navigator: { geolocation: {
+            getCurrentPosition(){assert.fail("Navegação usa watchPosition contínuo");},
+            watchPosition(resolve,reject,options) {const id=gps.length;gps.push({resolve:position=>resolve({timestamp:now,...position}),reject,options,id});return id;},
+            clearWatch(id){clearedWatches.push(id);}
+        } },
+        isSecureContext: true, addEventListener(name,fn) {events[name]=fn;},
         setInterval(fn) { intervals.add(fn); return fn; }, clearInterval(fn) { intervals.delete(fn); },
-        PetFlowDeliveryMap: options => { assert.equal(options.mode,"driver"); return { update(data) { updates.push(JSON.parse(JSON.stringify(data))); }, hide() {} }; },
+        setTimeout(fn,delay){const id=++nextTimeout;timeouts.set(id,{fn,at:now+delay});return id;},clearTimeout(id){timeouts.delete(id);},
+        PetFlowDeliveryMap: options => { mapOptions=options; assert.equal(options.mode,"driver"); return { update(data) { updates.push(JSON.parse(JSON.stringify(data))); }, hide() {elements.mapStatus.textContent="";options.onStatus?.({message:"",state:"ready"});} }; },
         PetFlowDeliveryNavigation:()=>({start(){navigationCalls.push("start");},update(data){navigationCalls.push({update:JSON.parse(JSON.stringify(data))});},stop(){navigationCalls.push("stop");},pause(){navigationCalls.push("pause");},needsRoute(){return false;}}),
         fetch: async (url,options) => {
             calls.push({url,options});
@@ -29,13 +36,18 @@ function driverHarness() {
         }
     };
     context.window = context; vm.runInNewContext(source("driver"),context);
-    return { context,elements,calls,updates,gps,intervals,navigationCalls };
+    return { context,elements,calls,updates,gps,intervals,navigationCalls,events,documentEvents,timeouts,clearedWatches,
+        now:()=>now,
+        async advance(ms){const target=now+ms;let ready;while((ready=[...timeouts].filter(([,timer])=>timer.at<=target).sort((a,b)=>a[1].at-b[1].at)[0])){now=ready[1].at;timeouts.delete(ready[0]);ready[1].fn();await settle();}now=target;await settle();},
+        fix(coords={},index=gps.length-1,timestamp=now){gps[index].resolve({timestamp,coords:{latitude:-23.66,longitude:-46.55,accuracy:10,...coords}});},
+        mapNotice(notice){elements.mapStatus.textContent=notice.message;mapOptions.onStatus(notice);} };
 }
 test("iniciar viagem solicita permissão, publica GPS e usa direção local na navegação", async () => {
     const h = driverHarness();
     assert.equal(h.calls.length,0,"Não transmite GPS antes do clique");
     await h.elements.startGps.events.click();
     assert.equal(h.gps.length,1);
+    assert.equal(h.gps[0].options.maximumAge,0);assert.equal(h.gps[0].options.enableHighAccuracy,true);
     h.gps[0].resolve({coords:{latitude:-23.66,longitude:-46.55,accuracy:10,heading:90,speed:5}}); await settle();
     assert.ok(h.calls.some(c=>c.url.endsWith("/localizacao") && c.options.method === "POST"));
     assert.equal(h.updates.at(-1).rota.polyline,"route");
@@ -44,11 +56,113 @@ test("iniciar viagem solicita permissão, publica GPS e usa direção local na n
     assert.equal(h.updates.at(-1).velocidade_mps,5);
     assert.ok(h.navigationCalls.some(call=>call.update?.latitude===-23.66));
     assert.equal(JSON.parse(h.calls.find(c=>c.url.endsWith("/localizacao") && c.options.method === "POST").options.body).heading,undefined,"A direção permanece no aparelho do entregador");
+    assert.equal(JSON.parse(h.calls.find(c=>c.url.endsWith("/localizacao") && c.options.method === "POST").options.body).capturadoEm,new Date(h.now()).toISOString());
     assert.ok(h.elements.gpsStatus.textContent.includes("Viagem em andamento"));
+    assert.equal(h.elements.gpsStatus.hidden,true,"Sucesso não cobre o mapa continuamente");
     await h.elements.stopGps.events.click();
     assert.equal(h.intervals.size,0);
     assert.equal(h.calls.at(-1).options.method,"DELETE");
     assert.equal(h.elements.startGps.disabled,true);
+    assert.deepEqual(h.clearedWatches,[0]);
+});
+
+test("watch atualiza manobras sem aguardar rede e fila publica só a posição mais recente a cada 2 s", async () => {
+    const h=driverHarness(),originalFetch=h.context.fetch,pending=[];
+    h.context.fetch=async(url,options)=>{
+        if(url.endsWith("/localizacao")&&options.method==="POST") return new Promise(resolve=>pending.push({resolve,body:JSON.parse(options.body)}));
+        return originalFetch(url,options);
+    };
+    await h.elements.startGps.events.click();h.fix({heading:10,speed:4});
+    assert.equal(pending.length,1);assert.equal(h.updates.at(-1).heading,10);
+    assert.ok(h.navigationCalls.some(call=>call.update?.heading===10),"A orientação recebe o fix antes da resposta da loja");
+    await h.advance(400);h.fix({latitude:-23.6599,heading:20,speed:5});
+    await h.advance(400);h.fix({latitude:-23.6598,heading:30,speed:6});
+    assert.equal(h.updates.at(-1).latitude,-23.6598);assert.equal(h.updates.at(-1).heading,30);
+    assert.equal(pending.length,1,"Uma publicação lenta não cria requisições concorrentes");
+    pending[0].resolve({ok:true,json:async()=>({})});await settle();
+    assert.equal(pending.length,1,"Não publica antes de completar os 2 s");
+    await h.advance(1200);
+    assert.equal(pending.length,2);assert.equal(pending[1].body.latitude,-23.6598,"Descarta posições intermediárias da fila");
+    assert.equal(pending[1].body.capturadoEm,new Date(h.now()-1200).toISOString());
+    assert.equal(h.updates.at(-1).latitude,-23.6598,"Resposta antiga não faz a seta retroceder");
+    pending[1].resolve({ok:true,json:async()=>({})});await settle();await h.advance(4000);
+    assert.equal(pending.length,2,"Não retransmite o mesmo fix na ausência de nova captura");
+    const count=h.updates.length;h.fix({latitude:-23.5},0,h.now()-6000);
+    assert.equal(h.updates.length,count,"Fix repetido ou fora de ordem não move a seta");
+});
+
+test("falha de publicação preserva navegação local com novos fixes reais", async () => {
+    const h=driverHarness(),originalFetch=h.context.fetch;
+    h.context.fetch=async(url,options)=>url.endsWith("/localizacao")&&options.method==="POST" ? Promise.reject(new Error("Rede indisponível")) : originalFetch(url,options);
+    await h.elements.startGps.events.click();h.fix({heading:80});await settle();
+    assert.equal(h.navigationCalls.filter(call=>call==="pause").length,0);
+    assert.match(h.elements.gpsStatus.textContent,/navegação local continua/);
+    await h.advance(500);h.fix({latitude:-23.6599,heading:90,speed:7});
+    assert.equal(h.updates.at(-1).latitude,-23.6599);assert.equal(h.updates.at(-1).heading,90);
+    assert.equal(h.navigationCalls.filter(call=>call==="pause").length,0,"Rede não interrompe GPS e orientação no aparelho");
+    assert.ok(h.navigationCalls.some(call=>call.update?.velocidade_mps===7));
+    assert.equal(h.elements.gpsStatus.hidden,false,"Mantém aviso sobre compartilhamento com a loja");
+});
+
+test("posição enfileirada que envelheceu não é enviada quando a rede responde", async () => {
+    const h=driverHarness(),originalFetch=h.context.fetch;let finish,posts=0;
+    h.context.fetch=async(url,options)=>{
+        if(url.endsWith("/localizacao")&&options.method==="POST") {posts++;return new Promise(resolve=>{finish=resolve;});}
+        return originalFetch(url,options);
+    };
+    await h.elements.startGps.events.click();h.fix();await h.advance(100);h.fix({latitude:-23.6599});
+    await h.advance(16000);finish({ok:true,json:async()=>({})});await settle();
+    assert.equal(posts,1,"A fila descarta o fix que já não é recente");
+    assert.equal(h.calls.filter(call=>call.url.endsWith("/rota")).length,0,"Não calcula rota a partir de GPS já antigo");
+});
+
+test("atualizar rota respeita margem de 16 s e aguarda publicação do GPS", async () => {
+    const h=driverHarness();await h.elements.startGps.events.click();
+    await h.elements.refreshRoute.events.click();assert.equal(h.calls.filter(call=>call.url.endsWith("/rota")).length,0);
+    h.fix();await settle();assert.equal(h.calls.filter(call=>call.url.endsWith("/rota")).length,1);
+    await h.advance(2000);h.fix();await settle();await h.elements.refreshRoute.events.click();
+    assert.equal(h.calls.filter(call=>call.url.endsWith("/rota")).length,1,"Não chama Google novamente a cada leitura GPS");
+    await h.advance(14000);h.fix();await settle();await h.elements.refreshRoute.events.click();
+    assert.equal(h.calls.filter(call=>call.url.endsWith("/rota")).length,2);
+});
+
+test("GPS antigo ou inválido não é publicado e orientações aguardam sinal confiável", async () => {
+    const h=driverHarness();await h.elements.startGps.events.click();
+    h.fix({},0,h.now()-16000);await settle();
+    assert.equal(h.calls.filter(c=>c.url.endsWith("/localizacao")).length,0);
+    assert.match(h.elements.gpsStatus.textContent,/desatualizada/);
+    h.fix({accuracy:80});await settle();
+    assert.equal(h.navigationCalls.at(-1).update.precisao_m,80,"Motor recebe precisão para suspender manobras imprecisas");
+    assert.match(h.elements.gpsStatus.textContent,/GPS impreciso/);
+    await h.advance(1);h.fix({accuracy:5});await settle();assert.equal(h.elements.gpsStatus.hidden,true);
+    await h.advance(16000);[...h.intervals][0]();
+    assert.match(h.elements.gpsStatus.textContent,/GPS sem atualização recente/);
+    assert.equal(h.navigationCalls.at(-1),"pause");
+    const last=h.updates.length;h.fix({latitude:200});await settle();assert.equal(h.updates.length,last);
+});
+
+test("ocultar página limpa watch e voltar retoma apenas a viagem já autorizada", async () => {
+    const h=driverHarness();h.context.document.hidden=true;h.documentEvents.visibilitychange();assert.equal(h.gps.length,0);
+    h.context.document.hidden=false;await h.elements.startGps.events.click();h.fix();await settle();
+    h.context.document.hidden=true;h.documentEvents.visibilitychange();assert.deepEqual(h.clearedWatches,[0]);
+    const count=h.updates.length;await h.advance(100);h.fix({latitude:-23.5},0);assert.equal(h.updates.length,count);
+    h.context.document.hidden=false;h.documentEvents.visibilitychange();assert.equal(h.gps.length,2);
+    assert.match(h.elements.gpsStatus.textContent,/Aguardando uma nova posição/);
+    await h.advance(1);h.fix({latitude:-23.6599});assert.equal(h.updates.at(-1).latitude,-23.6599);
+});
+
+test("parar aborta envio, limpa watch e descarta a última posição enfileirada", async () => {
+    const h=driverHarness(),originalFetch=h.context.fetch;let finish,signal,posts=0;
+    h.context.fetch=async(url,options)=>{
+        if(url.endsWith("/localizacao")&&options.method==="POST") {posts++;signal=options.signal;return new Promise(resolve=>{finish=resolve;});}
+        return originalFetch(url,options);
+    };
+    await h.elements.startGps.events.click();h.fix();await h.advance(100);h.fix({latitude:-23.6599});
+    await h.elements.stopGps.events.click();assert.equal(signal.aborted,true);assert.deepEqual(h.clearedWatches,[0]);
+    const count=h.updates.length;h.fix({latitude:-23.5},0);assert.equal(h.updates.length,count);
+    finish({ok:true,json:async()=>({})});await settle();await h.advance(3000);
+    assert.equal(posts,1);
+    assert.equal(h.timeouts.size,0);assert.equal(h.intervals.size,0);
 });
 test("encerrar enquanto aguarda GPS impede envio tardio da posição", async () => {
     const h = driverHarness(); await h.elements.startGps.events.click();
@@ -60,11 +174,76 @@ test("permissão negada permite tentar novamente e link expirado não solicita G
     const h = driverHarness(); await h.elements.startGps.events.click();
     h.gps[0].reject({code:1}); await settle();
     assert.equal(h.elements.startGps.disabled,false);
+    assert.equal(h.elements.gpsStatus.hidden,false,"Erro de permissão permanece visível");
     assert.equal(h.intervals.size,0);
     const expired = driverHarness();
     expired.context.fetch = async () => ({ok:false,status:410,json:async()=>({message:"Link encerrado"})});
     await expired.elements.startGps.events.click();
     assert.equal(expired.gps.length,0); assert.equal(expired.elements.startGps.disabled,true);
+});
+
+test("GPS temporariamente indisponível mostra aviso e recupera sem sobrepor sucesso ao mapa", async () => {
+    const h=driverHarness();await h.elements.startGps.events.click();
+    h.gps[0].reject({code:2,message:"Sinal indisponível"});await settle();
+    assert.equal(h.elements.gpsStatus.hidden,false);assert.match(h.elements.gpsStatus.textContent,/Sinal indisponível/);
+    assert.equal(h.intervals.size,1,"Mantém tentativa de recuperação da viagem autorizada");
+    h.fix();await settle();
+    assert.equal(h.elements.gpsStatus.hidden,true);assert.match(h.elements.gpsStatus.textContent,/Viagem em andamento/);
+});
+
+test("falha de envio, de rota e de Maps permanece visível durante a navegação", async () => {
+    const h=driverHarness(),originalFetch=h.context.fetch;
+    h.context.fetch=async(url,options)=>url.endsWith("/localizacao") ? Promise.reject(new Error("Sem conexão com a loja")) : originalFetch(url,options);
+    await h.elements.startGps.events.click();h.gps[0].resolve({coords:{latitude:-23.66,longitude:-46.55,accuracy:10}});await settle();
+    assert.equal(h.elements.gpsStatus.hidden,false);assert.match(h.elements.gpsStatus.textContent,/Sem conexão com a loja/);
+    h.context.fetch=async(url,options)=>url.endsWith("/rota") ? {ok:false,status:503,json:async()=>({message:"Rota indisponível"})} : originalFetch(url,options);
+    await h.advance(2000);h.fix();await settle();
+    assert.equal(h.elements.routeStatus.hidden,false);assert.match(h.elements.routeStatus.textContent,/Rota indisponível.*Atualizar rota/);
+    assert.equal(h.elements.refreshRoute.disabled,false);
+    h.mapNotice({state:"error",message:"O Google recusou o mapa"});
+    assert.equal(h.elements.mapStatus.hidden,false);assert.equal(h.elements.mapStatus.classList.contains("is-error"),true);
+    h.mapNotice({state:"loading",message:"Carregando mapa..."});assert.equal(h.elements.mapStatus.hidden,false);
+    h.mapNotice({state:"ready",message:"Mapa pronto"});assert.equal(h.elements.mapStatus.hidden,true);
+    h.context.fetch=originalFetch;await h.advance(16000);h.fix();await settle();
+    await h.elements.refreshRoute.events.click();assert.equal(h.elements.routeStatus.hidden,true);
+});
+
+test("voltar pelo BFCache exige retomar e ignora GPS pendente da viagem pausada", async () => {
+    const h=driverHarness();await h.elements.startGps.events.click();assert.equal(h.gps.length,1);
+    h.events.pagehide({persisted:true});h.events.pageshow({persisted:true});
+    assert.equal(h.intervals.size,0);assert.equal(h.elements.startGps.disabled,false);
+    assert.equal(h.elements.startGps.textContent,"Retomar viagem");assert.equal(h.elements.gpsStatus.hidden,false);
+    assert.match(h.elements.gpsStatus.textContent,/Viagem pausada/);
+    h.documentEvents.visibilitychange();await settle();assert.equal(h.gps.length,1,"Voltar à tela não reinicia GPS automaticamente");
+    await h.elements.startGps.events.click();assert.equal(h.gps.length,2,"Novo clique não fica preso no GPS anterior");
+    h.gps[0].resolve({coords:{latitude:-23.5,longitude:-46.4,accuracy:10}});await settle();
+    assert.equal(h.calls.filter(c=>c.url.endsWith("/localizacao")&&c.options.method==="POST").length,0);
+    h.gps[1].resolve({coords:{latitude:-23.66,longitude:-46.55,accuracy:10}});await settle();
+    assert.equal(h.calls.filter(c=>c.url.endsWith("/localizacao")&&c.options.method==="POST").length,1);
+    assert.equal(h.intervals.size,1);
+    await h.elements.stopGps.events.click();h.events.pagehide({persisted:true});h.events.pageshow({persisted:true});
+    assert.equal(h.elements.startGps.disabled,true,"Uma viagem encerrada não oferece retomada");
+});
+
+test("resposta de preparação anterior ao BFCache não altera a viagem retomada", async () => {
+    const h=driverHarness(),originalFetch=h.context.fetch;let finishPrevious;
+    h.context.fetch=async()=>new Promise(resolve=>{finishPrevious=resolve;});
+    const previousStart=h.elements.startGps.events.click();
+    h.events.pagehide({persisted:true});h.events.pageshow({persisted:true});
+    assert.equal(h.elements.stopGps.disabled,true,"Preparação pausada não oferece encerrar uma viagem ainda não carregada");
+    assert.equal(h.gps.length,0);
+    h.context.fetch=originalFetch;await h.elements.startGps.events.click();assert.equal(h.gps.length,1);
+    finishPrevious({ok:true,json:async()=>({data:{id:"previous-trip"}})});await previousStart;
+    h.gps[0].resolve({coords:{latitude:-23.66,longitude:-46.55,accuracy:10}});await settle();
+    assert.equal(h.updates.at(-1).id,"order","Resposta antiga não substitui dados carregados pela retomada");
+});
+
+test("expiração durante rota encerra navegação sem ocultar explicação", async () => {
+    const h=driverHarness(),originalFetch=h.context.fetch;
+    h.context.fetch=async(url,options)=>url.endsWith("/rota") ? {ok:false,status:410,json:async()=>({message:"Link encerrado"})} : originalFetch(url,options);
+    await h.elements.startGps.events.click();h.gps[0].resolve({coords:{latitude:-23.66,longitude:-46.55,accuracy:10}});await settle();
+    assert.equal(h.intervals.size,0);assert.equal(h.elements.startGps.disabled,true);assert.equal(h.elements.stopGps.disabled,true);
+    assert.equal(h.elements.gpsStatus.hidden,false);assert.equal(h.elements.gpsStatus.textContent,"Link encerrado");
 });
 test("cliente exibe última posição com alerta de atraso e remove mapa ao concluir", async () => {
     const elements = Object.fromEntries(["trackingStatus","trackingUpdated","trackingLogin","trackingStage","trackingLive","trackingHeadline","trackingDistance","trackingDuration","trackingArrival","expandTrackingMap","expandTrackingLabel"].map(id=>[id,element()]));
@@ -86,7 +265,7 @@ function adminTrackingHarness(token = "admin-session") {
         document:{hidden:false,body:element(),getElementById:id=>elements[id],addEventListener(){}},
         sessionStorage:{getItem:key=>key === "token" ? token : "customer-session"},
         navigator:{geolocation:{getCurrentPosition(){assert.fail("Administrador não deve solicitar GPS");},watchPosition(){assert.fail("Administrador não deve acompanhar seu próprio GPS");}}},
-        setInterval(fn,delay){assert.equal(delay,5000);tick=fn;},
+        setInterval(fn,delay){assert.equal(delay,2000);tick=fn;},
         PetFlowDeliveryMap:()=>({update(d){updates.push(d);},hide(){hides++;},resize(){}}),
         fetch:async(url,options)=>{calls.push({url,options});return {ok:true,json:async()=>({data})};}
     };
@@ -123,7 +302,7 @@ test("sessão de cliente não permite abrir acompanhamento administrativo", asyn
 });
 function mapHarness(mode = "tracking", delayMarker = false) {
     const elements=Object.fromEntries(["deliveryMap","mapStatus","originAddress","destinationAddress","recenterMap","centerTrackingMap","showFullRoute"].map(id=>[id,element()]));
-    const paths=[], centers=[], vehicles=[], circles=[], polylines=[], maps=[], pans=[], fits=[]; let ready;
+    const paths=[], centers=[], vehicles=[], circles=[], polylines=[], maps=[], pans=[], fits=[], notices=[]; let ready;
     const domElement = () => ({ ...element(), style: {}, children: [], setAttribute() {}, appendChild(child) { this.children.push(child); }, remove() {} });
     const ctx={URLSearchParams,console,setTimeout,clearTimeout,document:{getElementById:id=>elements[id],createElement:domElement,head:{appendChild(){ready=()=>ctx.petflowMapsReady();}}},fetch:async()=>({ok:true,json:async()=>({data:{browserKey:"public-key"}})}),google:{maps:{
         Map:class{constructor(el,options){this.options=options;this.events={};this.zoom=options.zoom;maps.push(this);}fitBounds(b){fits.push(b);}getBounds(){return{contains:()=>this.inside!==false};}panTo(p){pans.push(p);}getZoom(){return this.zoom;}setZoom(value){this.zoom=value;}addListener(name,fn){this.events[name]=fn;}},
@@ -133,9 +312,24 @@ function mapHarness(mode = "tracking", delayMarker = false) {
         Polyline:class{constructor(options){this.options=options;polylines.push(this);}setPath(p){this.path=p;paths.push(p);}getPath(){return this.path;}},LatLngBounds:class{constructor(){this.points=[];}extend(p){this.points.push(p);return this;}},geometry:{encoding:{decodePath:()=>[{lat:-23,lng:-46}]}}
     }}};
     ctx.window=ctx;vm.runInNewContext(source("map"),ctx);
-    return { elements,paths,centers,vehicles,circles,polylines,maps,pans,fits,map:ctx.PetFlowDeliveryMap({mode}),ready:()=>ready() };
+    return { elements,paths,centers,vehicles,circles,polylines,maps,pans,fits,notices,context:ctx,map:ctx.PetFlowDeliveryMap({mode,onStatus:notice=>notices.push(notice)}),ready:()=>ready() };
 }
 const routeData = () => ({latitude:-23.66,longitude:-46.55,precisao_m:10,endereco_entrega:{endereco:"Rua",numero:"123"},rota:{tipoOrigem:"GPS_ENTREGADOR",polyline:"route",distanciaMetros:1500,duracao:"300s",origem:{latitude:-23.66,longitude:-46.55},destino:{latitude:-23.67,longitude:-46.56}}});
+test("mapa informa carregamento, recusa do Google e sucesso pelo callback opcional", async () => {
+    const failure=mapHarness("driver"),pending=failure.map.update(routeData());await settle();
+    assert.equal(failure.notices.at(-1).state,"loading");failure.context.gm_authFailure();await pending;
+    assert.equal(failure.notices.at(-1).state,"error");assert.match(failure.notices.at(-1).message,/Google recusou/);
+    assert.equal(failure.elements.deliveryMap.hidden,true);
+    const success=mapHarness("driver"),loaded=success.map.update(routeData());await settle();success.ready();await loaded;
+    assert.equal(success.notices.at(-1).state,"ready");assert.equal(success.elements.deliveryMap.hidden,false);
+    success.context.gm_authFailure();
+    assert.equal(success.notices.at(-1).state,"error","Recusa tardia aparece mesmo após callback de carga bem-sucedido");
+    assert.equal(success.elements.deliveryMap.hidden,true);
+    await success.map.update(routeData());assert.equal(success.notices.at(-1).state,"error","Posição seguinte não mascara recusa de autenticação");
+    success.map.hide();assert.equal(success.notices.at(-1).message,"");
+    const missing=mapHarness("driver");missing.context.fetch=async()=>({ok:false,json:async()=>({})});
+    await missing.map.update(routeData());assert.equal(missing.notices.at(-1).state,"error");assert.match(missing.notices.at(-1).message,/não foi configurado/);
+});
 test("cliente vê van, partida e destino com acompanhamento automático da linha azul", async () => {
     const h=mapHarness(),data=routeData();
     const pending=h.map.update(data);await settle();h.map.hide();h.ready();await pending;

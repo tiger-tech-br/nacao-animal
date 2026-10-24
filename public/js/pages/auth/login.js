@@ -43,7 +43,9 @@ async function handleLogin(event) {
         saveToken(response.data.token);
         saveUser(response.data.user);
 
-        window.location.href = "/admin/pages/dashboard/dashboard.html";
+        const next = new URLSearchParams(window.location.search || "").get("next");
+        window.location.href = next === "/admin/testar-gps"
+            ? next : "/admin/pages/dashboard/dashboard.html";
     } catch (error) {
         alert(error.message || "Erro ao realizar login.");
     }
