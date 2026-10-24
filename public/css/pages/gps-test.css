@@ -12,3 +12,6 @@
     color: #eef7ff;
     font-size: 12px;
 }
+.gps-quality{margin:16px 0;padding:14px 16px;border:1px solid #c8ded6;border-radius:14px;background:#f2faf6;color:#29453e;font-size:14px}
+.gps-quality summary{cursor:pointer;font-weight:750}.gps-quality textarea{width:100%;min-height:220px;padding:12px;border:1px solid #a7c7bd;border-radius:10px;background:#fff;color:#183c31;font:12px/1.5 ui-monospace,monospace;resize:vertical}
+.gps-test-page.navigation-active .gps-quality{display:none}

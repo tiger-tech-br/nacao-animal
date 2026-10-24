@@ -10,9 +10,11 @@
     } });
     // Um segundo de margem sobre a reserva de 15 s do servidor evita recalcular por fix.
     const PUBLISH_INTERVAL = 2000, GPS_MAX_AGE = 15000, ROUTE_COOLDOWN = 16000;
-    const navigation = window.PetFlowDeliveryNavigation({map,recalculate:()=>{if(Date.now()-lastRouteAttempt>=ROUTE_COOLDOWN) getRoute();}});
+    const navigation = window.PetFlowDeliveryNavigation({map,recalculate:queueRoute});
     let running = false, pendingGeneration = null, routeGeneration = null, timer, publishTimer, watchId = null, watchGeneration = 0, generation = 0, trip, lastRouteAttempt = 0, wakeLock, paused = false, ended = false;
     let latestFix, lastFixTime = 0, attemptedFixTime = 0, sharedFixTime = 0, lastPublishAt = -Infinity, gpsMessage = "", publishMessage = "", publicationController, gpsUsable = false, wakeRequest = 0, wakePending = false;
+    let routeEpoch = 0, routeController, routeRetryTimer = null;
+    const routeOptions = window.PetFlowDeliveryRouteOptions?.({onSelect:selectRoute});
     async function api(path, method = "GET", body, signal) {
         const timeout = AbortSignal.timeout(path === "localizacao" && method === "POST" ? 5000 : 15000);
         const response = await fetch(`/api/public/entregas/${path}`, { method, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
@@ -23,15 +25,56 @@
     }
     function halt() {
         running = false; generation++; stopWatching(); clearInterval(timer); retryRoute.disabled = true;
+        cancelRoute(); routeOptions?.clear();
         publicationController?.abort(); publicationController = null;
         pendingGeneration = routeGeneration = null;
         navigation.stop();
         releaseScreen();
     }
     function stopWatching() {
+        map.pauseMotion?.();
+        cancelRoute();
         watchGeneration++;
         if (watchId !== null) navigator.geolocation.clearWatch(watchId);
         watchId = null; latestFix = null; gpsUsable = false; clearTimeout(publishTimer); publishTimer = null;
+    }
+    function cancelRoute() {
+        routeEpoch++; routeController?.abort(); routeController = null; routeGeneration = null;
+        if (routeRetryTimer !== null) clearTimeout(routeRetryTimer);
+        routeRetryTimer = null; routeOptions?.setBusy(false);
+    }
+    function queueRoute() {
+        if (!running || document.hidden || !gpsUsable || !isFresh(latestFix) || routeGeneration === generation) return;
+        const remaining = Math.max(0,ROUTE_COOLDOWN-(Date.now()-lastRouteAttempt));
+        if (!remaining) { getRoute(); return; }
+        if (routeRetryTimer !== null) return;
+        const current = generation;
+        routeRetryTimer = setTimeout(() => { routeRetryTimer = null; if (current === generation) getRoute(); },remaining+50);
+        showStatus(routeStatus,"Atualizando o trajeto a partir da sua posição. Aguarde alguns segundos.");
+    }
+    function applyRoute(route) {
+        trip = {...trip,rota:route}; routeOptions?.render(route);
+        if (!document.hidden) {
+            map.update(trip);
+            if (gpsUsable && isFresh(latestFix)) navigation.update(trip); else navigation.pause();
+        }
+    }
+    async function selectRoute(option) {
+        if (!running || document.hidden || routeGeneration === generation) return;
+        const current=generation,epoch=++routeEpoch;
+        const controller=new AbortController();routeController=controller;routeGeneration=current;routeOptions?.setBusy(true);
+        try {
+            const route=await api("rota","PATCH",{rotaId:option.id,calculadaEm:option.calculadaEm},controller.signal);
+            if (!running || current!==generation || epoch!==routeEpoch || document.hidden) return;
+            applyRoute(route);showStatus(routeStatus,"Trajeto selecionado. A navegação continua pela opção escolhida.",false);
+        } catch(error) {
+            if (current!==generation || epoch!==routeEpoch) return;
+            if (trip?.rota) routeOptions?.render(trip.rota);
+            showStatus(routeStatus,error.message);
+            if ([401,410].includes(error.status)) {ended=true;halt();map.hide();start.disabled=stop.disabled=true;}
+        } finally {
+            if (current===generation && epoch===routeEpoch) {routeGeneration=null;routeController=null;routeOptions?.setBusy(false);}
+        }
     }
     function renderGpsStatus() {
         const message = gpsMessage || publishMessage;
@@ -55,24 +98,24 @@
     }
     async function getRoute() {
         if (!running || document.hidden || !isFresh(latestFix) || latestFix.precisao_m>50 || !sharedFixTime || !isFresh({time:sharedFixTime}) || routeGeneration === generation) return;
-        if (Date.now()-lastRouteAttempt < ROUTE_COOLDOWN) return;
-        const current = generation;
+        if (Date.now()-lastRouteAttempt < ROUTE_COOLDOWN) { queueRoute(); return; }
+        if (routeRetryTimer !== null) clearTimeout(routeRetryTimer); routeRetryTimer=null;
+        const current = generation, epoch=++routeEpoch;
+        const controller=new AbortController(); routeController=controller;
         routeGeneration = current; retryRoute.disabled = true; lastRouteAttempt = Date.now();
+        routeOptions?.setBusy(true);
         try {
-            const route = await api("rota", "POST");
-            if (!running || current !== generation) return;
-            trip.rota = route;
-            if (!document.hidden) {
-                map.update(trip);
-                if (gpsUsable && isFresh(latestFix)) navigation.update(trip);
-                else navigation.pause();
-            }
+            const route = await api("rota", "POST", undefined, controller.signal);
+            if (!running || current !== generation || epoch!==routeEpoch || document.hidden) return;
+            if (!route || typeof route.polyline!=="string" || !route.polyline)
+                throw new Error("Não foi possível obter um trajeto. Atualize a rota para tentar novamente.");
+            applyRoute(route);
             showStatus(routeStatus, "Rota até o endereço da entrega atualizada.", false);
         } catch (error) {
-            if (current !== generation) return;
+            if (current !== generation || epoch!==routeEpoch) return;
             showStatus(routeStatus, `${error.message} Use Atualizar rota para tentar novamente.`);
             if ([401,410].includes(error.status)) { ended = true; halt(); start.disabled = stop.disabled = true; map.hide(); showStatus(routeStatus, "", false); showStatus(status, error.message); }
-        } finally { if (routeGeneration === current) { routeGeneration = null; retryRoute.disabled = !running; } }
+        } finally { if (routeGeneration === current && epoch===routeEpoch) { routeGeneration = null; routeController=null; retryRoute.disabled = !running; routeOptions?.setBusy(false); } }
     }
     function queuePublish() {
         if (!running || document.hidden || pendingGeneration === generation || !isFresh(latestFix) || latestFix.time <= attemptedFixTime) return;
@@ -106,6 +149,8 @@
     function gpsError(error, current, watch) {
         if (!running || current !== generation || watch !== watchGeneration || document.hidden) return;
         gpsUsable = false; latestFix = null; sharedFixTime = 0;
+        map.pauseMotion?.();
+        cancelRoute();
         clearTimeout(publishTimer); publishTimer = null;
         navigation.pause();
         gpsMessage = error.code === 1 ? "Acesso ao GPS negado. Permita a localização nas configurações do navegador e tente iniciar novamente." : `GPS sem atualização: ${error.message || "não foi possível obter a posição"}. Aguardando um novo sinal do aparelho.`;
@@ -147,7 +192,7 @@
         if (!running || document.hidden || !lastFixTime || Date.now()-lastFixTime <= GPS_MAX_AGE) return;
         gpsUsable = false;
         gpsMessage = "GPS sem atualização recente. Aguardando uma nova posição do aparelho para continuar as orientações.";
-        navigation.pause(); renderGpsStatus();
+        map.pauseMotion?.(); navigation.pause(); renderGpsStatus();
     }
     start.addEventListener("click", async () => {
         if (ended || running) return;
@@ -159,6 +204,7 @@
             const nextTrip = await api("viagem");
             if (current !== generation) return;
             trip = nextTrip;
+            if (trip.rota) routeOptions?.render(trip.rota);
             sharedFixTime = 0;
             running = true; stop.disabled = false; retryRoute.hidden = false;
             gpsMessage = "Permita a localização para iniciar a viagem e mostrar o mapa."; publishMessage = "";

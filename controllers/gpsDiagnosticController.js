@@ -3,10 +3,12 @@
 const MAX_POSITION_AGE_MS = 30000;
 const MAX_FUTURE_SKEW_MS = 5000;
 const MAX_ACCURACY_METERS = 100;
-const POSITION_FIELDS = new Set(["latitude", "longitude", "precisao", "timestamp"]);
+const POSITION_FIELDS = new Set(["latitude", "longitude", "precisao", "timestamp", "entregadorId"]);
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function positionFromBody(body, now) {
     if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some(field => !POSITION_FIELDS.has(field))) return null;
+    if (Object.hasOwn(body, "entregadorId") && (typeof body.entregadorId !== "string" || !UUID.test(body.entregadorId))) return null;
     const { latitude, longitude, precisao, timestamp } = body;
     if (!Number.isFinite(latitude) || Math.abs(latitude) > 90 || !Number.isFinite(longitude) || Math.abs(longitude) > 180 ||
         !Number.isFinite(precisao) || precisao < 0 || precisao > MAX_ACCURACY_METERS) return null;
@@ -29,7 +31,8 @@ function storeAddress(store) {
 
 function createGpsDiagnosticController({
     db = { query: (...args) => require("../database/connection").query(...args) },
-    calcularRota = (...args) => require("../services/entregaRotaService").calcularRota(...args),
+    calcularRota = (...args) => require("../services/entregaRotaService").calcularRotaDiagnostico(...args),
+    calcularRotaEntrega = (...args) => require("../services/entregaRotaService").calcularRotaEntrega(...args),
     now = Date.now
 } = {}) {
     return async function rota(req, res) {
@@ -47,8 +50,17 @@ function createGpsDiagnosticController({
             if (!rows[0]) return reject(404, "A loja desta sessão não foi encontrada.");
             const address = storeAddress(rows[0]);
             if (!address) return reject(422, "Complete o endereço da loja nas configurações antes de testar a rota.");
-            const route = await calcularRota({ latitude: position.latitude, longitude: position.longitude }, address);
-            return res.json({ success: true, data: route });
+            const origin = { latitude: position.latitude, longitude: position.longitude };
+            let route, entregadorNome;
+            if (req.body.entregadorId) {
+                const { rows: drivers } = await db.query(`SELECT id,meio_transporte,nome FROM entregadores
+                    WHERE id=$1 AND empresa_id=$2 AND ativo=TRUE LIMIT 1`, [req.body.entregadorId, req.user.empresaId]);
+                if (!drivers[0]) return reject(404, "O entregador ativo não foi encontrado nesta loja.");
+                route = await calcularRotaEntrega(origin, address, drivers[0].meio_transporte);
+                entregadorNome = typeof drivers[0].nome === "string"
+                    ? drivers[0].nome.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 150) : "";
+            } else route = await calcularRota(origin, address);
+            return res.json({ success: true, data: { ...route, ...(entregadorNome ? { entregadorNome } : {}) } });
         } catch {
             // Nao encaminha erros brutos ao logger: o provedor pode incluir
             // localizacao, endereco ou credenciais no texto de uma falha.

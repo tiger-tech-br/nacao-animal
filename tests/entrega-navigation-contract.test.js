@@ -2,7 +2,7 @@
 const { test, afterEach } = require("node:test");
 const assert = require("node:assert/strict");
 require.cache[require.resolve("../config/env")] = { exports: { JWT_SECRET: "isolated-route-contract-fixture" } };
-const { calcularRota } = require("../services/entregaRotaService");
+const { calcularRota, calcularRotaDiagnostico, calcularRotaEntrega } = require("../services/entregaRotaService");
 const engineApi = require("../public/js/pages/delivery/navigation-engine");
 const originalFetch = global.fetch, originalKey = process.env.GOOGLE_MAPS_API_KEY;
 afterEach(() => {
@@ -75,6 +75,17 @@ test("Google Routes convertido alimenta curva, ordem das manobras, progresso e c
     const arrival = engine.update(fix(destination, now + 18000), now + 18000);
     assert.equal(arrival.state, "arrived");
     assert.equal(arrival.remainingMeters, 0);
+});
+
+test("rota do cadastro de moto ou bicicleta mantém geometria real e progresso das manobras",async()=>{
+    for(const [meio,mode] of [["MOTO","TWO_WHEELER"],["BICICLETA","BICYCLE"]]){
+        mockGoogle(googleRoute(),request=>assert.equal(request.travelMode,mode));
+        const converted=await calcularRotaEntrega(a,frozenAddress,meio),engine=engineApi.create(converted),now=Date.now();
+        assert.equal(converted.modo,mode);assert.ok(engine);
+        const first=engine.update(fix(a,now),now),second=engine.update(fix(b,now+6000),now+6000);
+        assert.equal(second.current.instrucao,"Vire à esquerda");assert.ok(second.remainingMeters<first.remainingMeters);
+        assert.equal(engine.update(fix(destination,now+18000),now+18000).state,"arrived");
+    }
 });
 
 test("duas leituras de desvio, rota nova e GPS contemporaneo mantem destino congelado e retomam manobras", async () => {
@@ -172,4 +183,84 @@ test("rota de distancia zero omitida pelo proto permanece zero sem inventar traj
     assert.equal(converted.distanciaMetros, 0);
     assert.deepEqual(converted.origem, converted.destino);
     assert.deepEqual(converted.etapas, []);
+});
+
+test("diagnóstico WALK conserva acesso colapsado de 19m mesmo quando Google omite o modo das etapas",async()=>{
+    for(const omitMode of [false,true]){
+    const payload=googleRoute();payload.distanceMeters+=19;payload.duration="107s";
+    if(!omitMode)for(const step of payload.legs[0].steps)step.travelMode="WALK";
+    const access=googleStep([a],19,"7s","Atravesse o acesso de pedestres.");
+    if(!omitMode)access.travelMode="WALK";
+    payload.legs[0].steps.unshift(access);
+    const raw=structuredClone(payload),firstPath=payload.legs[0].steps[1].polyline.encodedPolyline;
+    mockGoogle(payload,request=>{
+        assert.equal(request.polylineQuality,"HIGH_QUALITY");assert.equal(request.travelMode,"WALK");
+        assert.equal(Object.hasOwn(request,"routingPreference"),false);
+    });
+    const converted=await calcularRotaDiagnostico(a,frozenAddress);
+    assert.equal(converted.modo,"WALK");assert.equal(converted.etapas[0].modo,"WALK");
+    assert.equal(converted.etapas.length,3);
+    assert.equal(converted.etapas[0].polyline,firstPath,"A etapa continua usando apenas a geometria navegável do provedor");
+    assert.deepEqual(converted.etapas[0].origem,a);assert.deepEqual(converted.etapas[0].destino,b);
+    assert.equal(converted.etapas[0].distanciaMetros,119);assert.equal(converted.etapas[0].duracao,"47s");
+    assert.match(converted.etapas[0].instrucao,/Atravesse o acesso de pedestres.*Siga pela curva/);
+    assert.equal(converted.etapas[0].eventos[0].distanciaMetros,19);
+    assert.deepEqual(payload,raw,"Normalizar não altera o JSON original do Google");
+    const engine=engineApi.create(converted),now=Date.now();assert.ok(engine);
+    assert.equal(engine.update(fix(a,now),now).state,"navigating");
+    assert.equal(engine.update(fix(destination,now+20000),now+20000).state,"arrived");
+    }
+});
+
+test("eventos WALK de transferência do TRANSIT vão à etapa conectada e terminal conserva aviso",async()=>{
+    const payload=googleRoute();
+    const [walk,bus,finalWalk]=payload.legs[0].steps;
+    walk.travelMode=finalWalk.travelMode="WALK";bus.travelMode="TRANSIT";
+    bus.navigationInstruction.instructions="Siga na linha 10 até a próxima parada.";
+    const event=(anchor,instruction)=>{
+        const step={...googleStep([anchor],0,"0s",instruction),travelMode:"WALK"};
+        delete step.distanceMeters;return step;
+    };
+    payload.legs[0].steps=[walk,event(b,"Embarque pela plataforma indicada."),bus,
+        event(c,"Desembarque e use a passagem de transferência."),finalWalk,event(destination,"Saia pelo acesso indicado da estação.")];
+    const paths=[walk,bus,finalWalk].map(step=>step.polyline.encodedPolyline);
+    mockGoogle(payload);
+    const converted=await calcularRota(a,frozenAddress);
+    assert.equal(converted.etapas.length,3);assert.deepEqual(converted.etapas.map(step=>step.polyline),paths);
+    assert.equal(converted.etapas[1].modo,"TRANSIT");assert.equal(converted.etapas[1].eventos.length,1);
+    assert.match(converted.etapas[1].instrucao,/Embarque pela plataforma indicada.*Siga na linha 10/);
+    assert.equal(converted.etapas[2].eventos.length,2);
+    assert.match(converted.etapas[2].instrucao,/Desembarque.*Vire à direita.*Saia pelo acesso indicado/);
+    assert.equal(converted.etapas.reduce((sum,step)=>sum+step.distanciaMetros,0),270);
+    const engine=engineApi.create(converted),now=Date.now();assert.ok(engine);
+    assert.equal(engine.update(fix(a,now),now).state,"navigating");
+    assert.equal(engine.update(fix(destination,now+20000),now+20000).state,"arrived");
+});
+
+test("normalização de eventos não encobre DRIVE positivo, caminhada distante ou geometria desconectada",async()=>{
+    for(const calculate of [calcularRota,calcularRotaDiagnostico]){
+    for(const scenario of ["drive","distant-end","disconnected","long-access","broken-polyline"]){
+        const payload=googleRoute();for(const step of payload.legs[0].steps)step.travelMode="WALK";
+        const access={...googleStep([a],19,"7s","Acesso com geometria ausente."),travelMode:"WALK"};
+        if(scenario==="drive")access.travelMode="DRIVE";
+        if(scenario==="distant-end")access.endLocation.latLng=b;
+        if(scenario==="disconnected")access.startLocation.latLng=access.endLocation.latLng=c;
+        if(scenario==="long-access")access.distanceMeters=26;
+        if(scenario==="broken-polyline")access.polyline.encodedPolyline="~";
+        payload.legs[0].steps.unshift(access);mockGoogle(payload);
+        const converted=await calculate(a,frozenAddress);
+        assert.equal(converted.etapas.length,4,scenario);
+        assert.equal(engineApi.create(converted),null,`${scenario} continua sem geometria navegável e não recebe segmento fictício`);
+    }
+    }
+});
+
+test("evento WALK terminal positivo curto agrega ao anterior apenas na mesma âncora do destino",async()=>{
+    const payload=googleRoute();for(const step of payload.legs[0].steps)step.travelMode="WALK";
+    payload.legs[0].steps.push({...googleStep([destination],19,"7s","Use o acesso final."),travelMode:"WALK"});
+    payload.distanceMeters+=19;payload.duration="107s";mockGoogle(payload);
+    const converted=await calcularRota(a,frozenAddress);
+    assert.equal(converted.etapas.length,3);assert.equal(converted.etapas[2].distanciaMetros,99);
+    assert.equal(converted.etapas[2].duracao,"37s");assert.match(converted.etapas[2].instrucao,/Vire à direita.*Use o acesso final/);
+    assert.deepEqual(converted.etapas[2].destino,destination);assert.ok(engineApi.create(converted));
 });

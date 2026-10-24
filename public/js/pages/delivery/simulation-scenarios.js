@@ -63,6 +63,50 @@
         });
     }
     const stopped = position => ({ type:"position", latitude:position.latitude, longitude:position.longitude, heading:null, velocidade_mps:0, precisao_m:position.precisao_m, label:"Parado no destino simulado" });
+    function drivingFrames(points, speedKmh) {
+        const targetSpeed=speedKmh/3.6, intervals=[500,1000,1500];
+        const frames=[{type:"position",...points[0],heading:null,velocidade_mps:0,precisao_m:4,intervalMs:1000,label:`Partida artificial: até ${speedKmh} km/h`}];
+        for(let segment=1;segment<points.length;segment++) {
+            const start=points[segment-1],end=points[segment],length=distance(start,end);
+            let travelled=0;
+            while(travelled<length-.01) {
+                // Reduz a velocidade perto das curvas. O intervalo representa
+                // a chegada irregular de leituras, não uma previsão do GPS.
+                const speed=(travelled<12 || length-travelled<30) ? Math.min(targetSpeed,5.5) : targetSpeed;
+                const requested=intervals[(frames.length-1)%intervals.length];
+                const moved=Math.min(length-travelled,speed*requested/1000);
+                const intervalMs=Math.max(100,Math.round(moved/speed*1000));
+                travelled+=moved;
+                const fraction=Math.min(1,travelled/length),prior=frames.at(-1);
+                const position={latitude:start.latitude+(end.latitude-start.latitude)*fraction,longitude:start.longitude+(end.longitude-start.longitude)*fraction};
+                frames.push({type:"position",...position,heading:bearing(prior,position),velocidade_mps:distance(prior,position)/(intervalMs/1000),precisao_m:4,intervalMs,
+                    label:speed<targetSpeed ? "Velocidade reduzida na curva simulada" : `Trecho artificial a aproximadamente ${speedKmh} km/h`});
+            }
+            if(segment===1) for(let second=1;second<=3;second++) frames.push({...stopped(frames.at(-1)),intervalMs:1000,label:`Parada artificial: segundo ${second} de 3; depois o percurso retoma`});
+        }
+        frames.push({...stopped(frames.at(-1)),intervalMs:1000});
+        return frames;
+    }
+    function irregularGpsFrames(points) {
+        const frames=[{type:"position",...points[0],heading:null,velocidade_mps:null,precisao_m:8,
+            intervalMs:3000,sampleAgeMs:2000,label:"Partida artificial com leitura recebida dois segundos depois da captura"}];
+        for(let segment=1;segment<points.length;segment++) {
+            const start=points[segment-1],end=points[segment],pairs=Math.max(1,Math.round(distance(start,end)/8));
+            let travelled=0;
+            for(let pair=0;pair<pairs;pair++)for(const intervalMs of [3000,5000]) {
+                travelled+=intervalMs/1000;
+                const fraction=Math.min(1,travelled/(pairs*8)),index=frames.length;
+                frames.push({type:"position",latitude:start.latitude+(end.latitude-start.latitude)*fraction,
+                    longitude:start.longitude+(end.longitude-start.longitude)*fraction,heading:null,
+                    // O sensor pode omitir velocidade ou informar zero mesmo
+                    // quando as coordenadas recebidas mostram deslocamento.
+                    velocidade_mps:index%2 ? 0 : null,precisao_m:index%2 ? 20 : 8,intervalMs,sampleAgeMs:2000,
+                    label:`Caminhada artificial: leitura a cada ${intervalMs/1000} s, precisão informada de ${index%2 ? 20 : 8} m`});
+            }
+        }
+        frames.push({...stopped(frames.at(-1)),intervalMs:3000,sampleAgeMs:2000,label:"Parada no destino após leituras irregulares"});
+        return frames;
+    }
     function closestSegment(position,path) {
         const x=(position.longitude-BASE.longitude)*METERS_LNG, y=(position.latitude-BASE.latitude)*METERS_LAT;
         let best={index:0,offset:Infinity};
@@ -90,7 +134,11 @@
         { id:"curvas-chegada", title:"Curvas e chegada", description:"Percurso artificial com duas curvas, avanço, parada e chegada ao destino." },
         { id:"desvio-recalculo", title:"Desvio e recálculo", description:"Duas posições realmente fora da rota sintética acionam um novo trajeto até o mesmo destino." },
         { id:"sinal-parada-retomada", title:"Perda de sinal e retomada", description:"Parada, ausência de leituras por 16 segundos e retomada sem inventar posições durante a perda de sinal." },
-        { id:"passos-curtos-retorno", title:"Passos curtos e retorno", description:"Passos artificiais menores que cinco metros, sem rumo nativo, com curva e retorno para testar a direção estimada." }
+        { id:"passos-curtos-retorno", title:"Passos curtos e retorno", description:"Passos artificiais menores que cinco metros, sem rumo nativo, com curva e retorno para testar a direção estimada." },
+        { id:"conducao-30", title:"Condução · até 30 km/h", description:"Leituras artificiais em intervalos de 0,5 a 1,5 segundo, condução de até 30 km/h, curvas com redução de velocidade e uma parada de três segundos antes da retomada." },
+        { id:"conducao-50", title:"Condução · até 50 km/h", description:"Percurso artificial com trechos de até 50 km/h, curvas mais lentas, parada e retomada. Os intervalos variáveis ajudam a verificar a resposta do mapa sem usar seu GPS." },
+        { id:"conducao-80", title:"Condução · até 80 km/h", description:"Teste artificial de atualização em trechos de até 80 km/h, com redução nas curvas, parada e retomada. Usa leituras em intervalos variáveis, sem trânsito em tempo real." },
+        { id:"gps-irregular", title:"GPS irregular · caminhada", description:"Caminhada artificial com curvas, leituras a cada 3 ou 5 segundos e atraso de 2 segundos. A precisão varia entre 8 e 20 metros, sem direção nativa e com velocidade ausente ou informada como zero." }
     ];
     function create(id) {
         const definition=definitions.find(item=>item.id===id);
@@ -117,10 +165,18 @@
                 ...Array.from({length:16},(_,index)=>({type:"signal-loss",label:`Sem leitura GPS: segundo ${index+1} de 16`})),
                 ...moving.slice(5)];
             frames.push(stopped(frames.at(-1)));
-        } else {
+        } else if(id==="passos-curtos-retorno") {
             speed=2.5;
             path=[point(0,0),point(12,0),point(12,12),point(12,0),point(62,0)];
             frames=framesFrom(path,{spacing:2.5,nullHeading:true}); frames.push(stopped(frames.at(-1)));
+        } else if(id==="gps-irregular") {
+            speed=1;
+            path=[point(0,0),point(32,0),point(32,24),point(64,24)];
+            frames=irregularGpsFrames(path);
+        } else {
+            const speedKmh=Number(id.slice("conducao-".length)); speed=speedKmh/3.6;
+            path=[point(0,0),point(120,0),point(120,140),point(300,140),point(300,260)];
+            frames=drivingFrames(path,speedKmh);
         }
         return { ...definition, route:routeFrom(path,speed), frames, reroute:rerouter(path,speed) };
     }

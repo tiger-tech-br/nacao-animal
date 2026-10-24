@@ -416,10 +416,17 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         const afterDuplicate=(await pool.query("SELECT latitude,precisao_m,atualizado_em FROM entrega_rastreamento WHERE venda_id=$1",[order])).rows[0];
         assert.equal(Number(afterDuplicate.latitude),position.latitude,"Fix duplicado divergente não desloca o veículo");
         assert.equal(Number(afterDuplicate.precisao_m),position.precisao,"Fix duplicado preserva a precisão original");
-        assert.equal((await request("/api/public/entregas/rota", "POST", {}, driverToken)).status, 200);
+        const firstRoute = await request("/api/public/entregas/rota", "POST", {}, driverToken);
+        assert.equal(firstRoute.status, 200);
         assert.equal((await request("/api/public/entregas/rota", "POST", {}, driverToken)).status, 200);
         assert.equal((await request(`/api/public/pedidos/${order}/rastreamento`, "GET", null, token)).body.data.rota.tipoOrigem, "GPS_ENTREGADOR");
         assert.equal(routeCalls, 1, "Consultas repetidas reaproveitam rota e limitam custo");
+        const beforeSelection=routeCalls;
+        const selected=await request("/api/public/entregas/rota","PATCH",{rotaId:firstRoute.body.data.id,calculadaEm:firstRoute.body.data.calculadaEm},driverToken);
+        assert.equal(selected.status,200,"Escolher opção armazenada funciona no PostgreSQL sem criar outra venda");
+        assert.equal(selected.body.data.id,firstRoute.body.data.id);
+        assert.equal(routeCalls,beforeSelection,"Escolha da rota não consulta novamente o Google");
+        assert.equal((await request("/api/public/entregas/rota","PATCH",{rotaId:firstRoute.body.data.id,calculadaEm:"2000-01-01T00:00:00.000Z"},driverToken)).status,409);
         const tracking = `/api/public/pedidos/${order}/rastreamento`;
         assert.equal((await request(tracking)).status, 401);
         const otherToken = jwt.sign({ id: crypto.randomUUID(), empresaId, type: "customer", sv: 1 }, process.env.JWT_SECRET);

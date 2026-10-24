@@ -40,10 +40,11 @@ test("resposta de rota pendente não reativa orientações depois de perder GPS"
     const h=driverHarness();let finishRoute;
     h.respond(async(url)=>url.endsWith("/rota")?new Promise(resolve=>{finishRoute=resolve;}):response(url.endsWith("/viagem")?{id:"order"}:{}));
     await h.elements.startGps.events.click();h.fix();await settle();
-    const count=h.navigationUpdates.length;h.watches[0].error({code:2,message:"Sinal perdido"});
+    const count=h.navigationUpdates.length,routeRequest=h.calls.find(call=>call.url.endsWith("/rota"));h.watches[0].error({code:2,message:"Sinal perdido"});
     finishRoute(response({tipoOrigem:"GPS_ENTREGADOR",polyline:"new-route"}));await settle();
     assert.equal(h.navigationUpdates.length,count);assert.ok(h.pauses()>0);assert.match(h.elements.gpsStatus.textContent,/Sinal perdido/);
-    await h.time.advance(1);h.fix();assert.equal(h.navigationUpdates.at(-1).rota.polyline,"new-route","Um novo fix real pode usar a rota recebida durante a pausa");
+    assert.equal(routeRequest.options.signal.aborted,true,"A consulta anterior é cancelada junto com a perda de sinal");
+    await h.time.advance(1);h.fix();assert.notEqual(h.navigationUpdates.at(-1).rota?.polyline,"new-route","Retomar aguarda novo cálculo e não reaproveita a resposta cancelada");
 });
 
 test("GPS com erro elimina posição enfileirada e rota que retorna na aba oculta não redesenha",async()=>{

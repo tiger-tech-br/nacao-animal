@@ -8,23 +8,31 @@
     <title>Nação Animal | Testar GPS</title>
     <link rel="icon" href="/images/logo/nacao-animal-logo-transparent.png" type="image/png">
     <link rel="stylesheet" href="/css/pages/delivery.css">
-    <link rel="stylesheet" href="/css/pages/gps-test.css?v=20261024-4">
+    <link rel="stylesheet" href="/css/pages/gps-test.css?v=20261024-7">
     <link rel="stylesheet" href="/css/layout/copyright.css">
-</head>
+<link rel="stylesheet" href="/css/pages/delivery-route-options.css?v=20261024-7"></head>
 <body class="driver-page gps-test-page">
 <main class="delivery-card">
     <header class="driver-intro">
         <span class="eyebrow">Nação Animal · Teste administrativo</span>
         <h1>Teste o GPS no celular</h1>
-        <p>Veja sua posição, a linha da rota e as orientações de navegação até a loja, sem criar uma compra.</p>
+        <p>Veja sua posição, a linha da rota e as orientações até a loja. A seta acompanha cada nova posição recebida do celular. Nenhuma compra é criada.</p>
         <p><strong>Ao tocar em testar, você permite obter sua localização neste aparelho. Sua posição será processada pelo Google para calcular uma rota de teste até a loja. O teste não cria pedido nem grava sua localização no banco.</strong></p>
-        <p>Mantenha a página aberta, a tela ativa e a localização permitida. Ao sair desta tela, o teste será pausado e só retomará com um novo toque. Cada recálculo manual consulta o Google novamente.</p>
+        <p>Mantenha a página aberta, a tela ativa e a localização permitida. Ao sair desta tela, o teste será pausado e só retomará com um novo toque. O trajeto será recalculado automaticamente se você mudar de caminho, com intervalo mínimo de 16 segundos entre consultas ao Google.</p>
         <p>Ao seguir sua posição, a seta fica centralizada e as ruas se movem por baixo dela. Use <strong>Ver rota completa</strong> para observar a seta avançando pelo trajeto. O teste mostra o deslocamento estimado desde o início e a idade da última leitura, sem exibir suas coordenadas.</p>
         <a href="/admin/pages/dashboard/dashboard.html">Voltar ao painel</a>
         <p><a href="/admin/simular-navegacao">Abrir o simulador de percursos sem usar o GPS do aparelho</a></p>
         <p id="testLogin" hidden><a href="/admin/?next=%2Fadmin%2Ftestar-gps">Entrar no painel administrativo</a> para continuar o teste.</p>
     </header>
     <button id="startGps" type="button" disabled>Testar GPS e navegação</button>
+    <details id="gpsDiagnostics" class="gps-quality" hidden>
+        <summary>Qualidade do último teste</summary>
+        <p id="gpsDiagnosticSummary"></p>
+        <p>O resumo mede as leituras recebidas e a resposta do mapa. Não inclui coordenadas, endereço, trajeto ou dados da sua conta. Fica somente nesta página até iniciar outro teste ou recarregar.</p>
+        <button id="copyGpsDiagnostic" type="button" disabled>Copiar diagnóstico sem localização</button>
+        <p id="gpsDiagnosticStatus" role="status" hidden></p>
+        <textarea id="gpsDiagnosticReport" aria-label="Relatório técnico sem localização" readonly hidden></textarea>
+    </details>
     <section class="navigation-stage" aria-label="Mapa e navegação de teste até a loja">
         <div id="deliveryMap" aria-label="Sua posição GPS e rota de teste até a loja" hidden></div>
         <div id="navigationPanel" class="navigation-guidance" role="status" hidden>
@@ -37,7 +45,7 @@
         <div><strong id="navigationTime">—</strong><div><span id="navigationRemaining">—</span> · <span id="navigationArrival">—</span></div><small>Teste até a loja · Estimativa sem trânsito em tempo real</small></div>
     </div>
     <div class="navigation-controls">
-        <button id="showFullRoute" type="button" aria-label="Ver rota completa" title="Ver rota completa" hidden><span class="control-icon" aria-hidden="true">⌖</span><span class="sr-only">Ver rota completa</span></button>
+<button id="showFullRoute" type="button" aria-label="Ver rota completa" title="Ver rota completa" hidden><span class="control-icon" aria-hidden="true">⌖</span><span class="sr-only">Ver rota completa</span></button>
         <button id="recenterMap" type="button" aria-label="Centralizar em mim" title="Centralizar em mim" hidden><span class="control-icon" aria-hidden="true">➤</span><span class="sr-only">Centralizar em mim</span></button>
         <button id="toggleVoice" type="button" aria-label="Ligar orientação por voz" title="Ligar orientação por voz" aria-pressed="false"><span class="control-icon" aria-hidden="true">🔇</span><span class="sr-only">Voz desligada</span></button>
         <button id="refreshRoute" type="button" aria-label="Recalcular rota de teste até a loja" title="Recalcular rota até a loja" hidden disabled><span class="control-icon" aria-hidden="true">↻</span><span class="sr-only">Recalcular rota de teste</span></button>
@@ -49,12 +57,21 @@
         <p id="routeStatus" role="status" hidden></p>
         <p id="mapStatus" role="status" hidden></p>
     </div>
-    <details class="navigation-details"><summary>Como conferir o teste</summary><p id="originAddress"></p><p id="destinationAddress">Destino do teste: loja Nação Animal.</p><p>A seta mostra sua posição, a linha indica o trajeto, o ponto verde marca a partida e o laranja marca a loja. Use apenas como conferência, respeitando o trânsito. Nenhuma entrega será iniciada.</p></details>
+    <details class="navigation-details"><summary>Como conferir o teste e informações da rota</summary><p id="originAddress"></p><p id="destinationAddress">Destino do teste: loja Nação Animal.</p><p>A seta mostra sua posição, a linha indica o trajeto, o ponto verde marca a partida e o laranja marca a loja. Use apenas como conferência, respeitando o trânsito. Nenhuma entrega será iniciada.</p>
+        <section class="route-options" aria-label="Rotas alternativas">
+            <h2>Rotas alternativas</h2><p id="routeWarnings" hidden></p>
+            <p id="routeOptionsStatus" role="status">As rotas disponíveis aparecerão após calcular o percurso.</p>
+            <div id="routeAlternatives" aria-label="Trajetos disponíveis"></div>
+        </section>
+    </details>
     <footer><a href="/politica-de-privacidade">Privacidade</a> · <a href="/termos-de-uso">Termos de uso</a><p class="site-copyright">© 2026 Nação Animal. Todos os direitos reservados.</p></footer>
 </main>
-<script src="/js/pages/delivery/map.js?v=20261024-4"></script>
-<script src="/js/pages/delivery/navigation-engine.js?v=20261024-4"></script>
-<script src="/js/pages/delivery/navigation.js?v=20261024-4"></script>
-<script src="/js/pages/delivery/gps-test.js?v=20261024-4"></script>
+
+<script src="/js/pages/delivery/map.js?v=20261024-7"></script>
+<script src="/js/pages/delivery/navigation-engine.js?v=20261024-7"></script>
+<script src="/js/pages/delivery/route-options.js?v=20261024-7"></script>
+<script src="/js/pages/delivery/navigation.js?v=20261024-7"></script>
+<script src="/js/pages/delivery/gps-quality.js?v=20261024-7"></script>
+<script src="/js/pages/delivery/gps-test.js?v=20261024-7"></script>
 </body>
 </html>

@@ -5,6 +5,8 @@
     window.PetFlowDeliveryNavigation = function ({map,recalculate}) {
         const ids=["navigationPanel","navigationInstruction","navigationDistance","navigationManeuver","navigationNext","navigationSummary","navigationTime","navigationRemaining","navigationArrival","navigationSpeed","toggleVoice"];
         const el=Object.fromEntries(ids.map(id=>[id,document.getElementById(id)]));
+        const routeNotice=document.getElementById("navigationRouteNotice");
+        const baseRouteNotice=routeNotice?.textContent || "";
         let trip,engine,routeKey="",active=false,voice=false,followed=false,lastState;
         const spoken=new Set();
         const speech=window.speechSynthesis;
@@ -14,14 +16,29 @@
             spoken.add(key);speech.cancel();const utterance=new window.SpeechSynthesisUtterance(text);utterance.lang="pt-BR";speech.speak(utterance);
             return true;
         }
+        function renderRouteNotice(route) {
+            if(!routeNotice) return;
+            const notices=baseRouteNotice ? [baseRouteNotice] : [];
+            if(Array.isArray(route?.avisos)) {
+                for(const value of route.avisos) {
+                    if(typeof value!=="string" || !value.trim()) continue;
+                    const notice=value.trim();
+                    if(!notices.includes(notice)) notices.push(notice);
+                }
+            }
+            const text=notices.join(" · ");
+            if(routeNotice.textContent!==text) routeNotice.textContent=text;
+        }
         function render() {
             if(!active || !trip || document.hidden) return;
+            renderRouteNotice(trip.rota);
             const result=engine?.update(trip) || {state:"missing"};lastState=result;
             el.navigationPanel.hidden=false;el.navigationSummary.hidden=false;
             el.navigationTime.textContent=el.navigationRemaining.textContent=el.navigationArrival.textContent=el.navigationSpeed.textContent="—";
             if(!["navigating","arrived"].includes(result.state)) {
-                const messages={missing:"Aguardando as orientações da rota. Use Atualizar rota se necessário.",stale:"GPS sem atualização recente. Aguardando sua posição.",imprecise:"GPS impreciso. Aguarde uma posição mais precisa.","off-route":"Fora da rota. Aguardando atualização do trajeto."};
+                const messages={missing:"Aguardando as orientações da rota. Use Atualizar rota se necessário.",stale:"GPS sem atualização recente. Aguardando sua posição.",imprecise:"GPS impreciso. Aguarde uma posição mais precisa.","off-route":"Atualizando o trajeto para continuar até o destino."};
                 el.navigationInstruction.textContent=messages[result.state];el.navigationDistance.textContent="";el.navigationNext.textContent="";el.navigationManeuver.textContent="!";
+                if(result.state==="off-route" && Number.isFinite(trip.velocidade_mps) && trip.velocidade_mps>=0) el.navigationSpeed.textContent=String(Math.round(trip.velocidade_mps*3.6));
                 if(voice) speech.cancel();if(result.recalculate) recalculate();return;
             }
             if(!followed) followed=map.follow()!==false;
@@ -64,10 +81,10 @@
         setInterval(render,1000);document.addEventListener("visibilitychange",()=>{if(document.hidden){if(voice)speech.cancel();}else render();});
         return {
             start(){active=true;document.body.classList.add("navigation-active");},
-            update(data){trip=data;const key=data.rota ? JSON.stringify([data.rota.calculadaEm,data.rota.polyline,data.rota.etapas]) : "";
+            update(data){trip=data;const key=data.rota ? JSON.stringify([data.rota.calculadaEm,data.rota.polyline,data.rota.etapas,data.rota.modo]) : "";
                 if(key!==routeKey){routeKey=key;engine=window.PetFlowNavigationEngine.create(data.rota);spoken.clear();}render();},
-            stop(){active=false;followed=false;trip=null;engine=null;routeKey="";spoken.clear();if(speech)speech.cancel();el.navigationPanel.hidden=el.navigationSummary.hidden=true;document.body.classList.remove("navigation-active");},
-            pause(){if(trip){trip={...trip,atualizado_em:null};render();}},
+            stop(){map.pauseMotion?.();active=false;followed=false;trip=null;engine=null;routeKey="";spoken.clear();if(speech)speech.cancel();renderRouteNotice(null);el.navigationPanel.hidden=el.navigationSummary.hidden=true;document.body.classList.remove("navigation-active");},
+            pause(){map.pauseMotion?.();if(trip){trip={...trip,atualizado_em:null};render();}},
             needsRoute(){return lastState?.recalculate || !engine;}
         };
     };

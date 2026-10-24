@@ -5,14 +5,35 @@
     const routeStatus = document.getElementById("routeStatus"), mapStatus = document.getElementById("mapStatus");
     const login = document.getElementById("testLogin"), destination = document.getElementById("destinationAddress");
     const movementStatus = document.getElementById("gpsMovementStatus");
-    const COOLDOWN_MS = 60000;
+    const diagnostics = document.getElementById("gpsDiagnostics"), diagnosticSummary = document.getElementById("gpsDiagnosticSummary");
+    const diagnosticReport = document.getElementById("gpsDiagnosticReport"), copyDiagnostic = document.getElementById("copyGpsDiagnostic");
+    const diagnosticStatus = document.getElementById("gpsDiagnosticStatus");
+    const quality = window.PetFlowGpsQuality?.create();
+    let diagnosticVersion = 0;
+    const COOLDOWN_MS = 16000;
     let running = false, preparing = false, generation = 0, watchId = null, trip = null;
     let routeController = null, routePending = false, routeAttempted = false, lastRouteAt = null;
+    let routeEpoch = 0, routeTimer = null, routeTimeout = null, routeQueued = false, queuedManual = false, automaticBlocked = false;
     let token = "", mapReady = false, routeReady = false, paused = false, wakeLock = null;
     let movementOrigin = null, summaryTimer = null, gpsMessage = "";
     const canNavigate = () => running && !document.hidden && !gpsMessage && trip && Date.now() - trip.timestamp <= 15000 && trip.precisao_m <= 50;
+    const canRoute = () => canNavigate() && trip.timestamp-Date.now() <= 5000;
     let view = { following: false, overview: true };
     const show = (element, message) => { element.textContent = message; element.hidden = !message; };
+    const durationText = value => Number.isFinite(value) ? `${(value/1000).toLocaleString("pt-BR",{maximumFractionDigits:1})} s` : "aguardando outra leitura";
+    function renderQuality() {
+        if (!quality || !diagnostics) return;
+        const report = quality.snapshot();
+        diagnostics.hidden = running || report.reads === 0;
+        copyDiagnostic.disabled = report.reads === 0;
+        diagnosticSummary.textContent = `${report.reads} leituras · Intervalo médio: ${durationText(report.intervals.receiptMeanMs)} · Maior intervalo: ${durationText(report.intervals.receiptMaxMs)} · Maior idade ao receber: ${durationText(report.age.maxMs)} · Maior tempo de desenho: ${Math.round(report.motion.maxRenderDelayMs)} ms.`;
+    }
+    function clearQuality() {
+        diagnosticVersion++; quality?.reset();
+        if (diagnosticReport) { diagnosticReport.value = ""; diagnosticReport.hidden = true; }
+        if (diagnosticStatus) show(diagnosticStatus, "");
+        renderQuality();
+    }
     function summary() {
         if (!running) return;
         const age = trip ? Math.max(0, Math.floor((Date.now() - trip.timestamp) / 1000)) : 0;
@@ -28,19 +49,48 @@
         const camera = view.following ? "Seguindo você: o mapa anda por baixo da seta centralizada."
             : view.overview ? "Rota completa: acompanhe a seta avançando no trajeto."
                 : "Mapa livre: toque em Centralizar em mim para voltar a acompanhar.";
-        show(movementStatus, `Precisão: ${Math.round(trip.precisao_m)} m · ${age <= 2 ? "Leitura agora" : `Leitura há ${age} s`}\n${movement}\n${camera}`);
+        const timing = quality?.snapshot().latest;
+        const cadence = timing && Number.isFinite(timing.receiptIntervalMs) ? ` · Intervalo: ${durationText(timing.receiptIntervalMs)}` : "";
+        show(movementStatus, `Precisão: ${Math.round(trip.precisao_m)} m · ${age <= 2 ? "Leitura agora" : `Leitura há ${age} s`}${cadence}\n${movement}\n${camera}`);
         if (mapReady && routeReady && !stale && !gpsMessage) status.hidden = true;
-        if (stale) navigation.pause();
+        if (stale) { suspendRoute(); map.pauseMotion?.(); navigation.pause(); }
     }
-    const map = window.PetFlowDeliveryMap({ mode: "driver", onViewChange(nextView) { view = nextView; summary(); }, onStatus(notice) {
+    const map = window.PetFlowDeliveryMap({ mode: "driver", onMotion(motion) {
+        quality?.recordMotion(motion);
+        if (motion.phase !== "frame" || !motion.active) renderQuality();
+    }, onViewChange(nextView) { view = nextView; summary(); }, onStatus(notice) {
         if (!running) { show(mapStatus, ""); return; }
         mapReady = notice.state === "ready" && Boolean(notice.message);
         mapStatus.classList.toggle("is-error", notice.state === "error");
         show(mapStatus, ["error", "loading"].includes(notice.state) ? notice.message : "");
         summary();
     } });
-    // O teste nunca recalcula a rota automaticamente para evitar consultas repetidas ao Google.
-    const navigation = window.PetFlowDeliveryNavigation({ map, recalculate() {} });
+    const routeOptions = window.PetFlowDeliveryRouteOptions?.({onSelect:selectRoute});
+    const navigation = window.PetFlowDeliveryNavigation({ map, recalculate() { requestRoute({automatic:true}); } });
+    function cancelRoute() {
+        routeEpoch++; routeController?.abort(); routeController = null; routePending = false;
+        if (routeTimer !== null) clearTimeout(routeTimer);
+        if (routeTimeout !== null) clearTimeout(routeTimeout);
+        routeTimer = routeTimeout = null; routeQueued = queuedManual = false;
+        retry.disabled = !running;
+        routeOptions?.setBusy(false);
+    }
+    function suspendRoute() {
+        if (routePending || routeTimer !== null || routeQueued) cancelRoute();
+        if (!routeReady) routeAttempted = false;
+    }
+    function selectRoute(option) {
+        if (!running || document.hidden || !trip?.rota || routePending) return;
+        const alternatives = trip.rota.alternativas || [];
+        const selected = alternatives.find(item => item.id === option?.id);
+        if (!selected) return;
+        cancelRoute(); automaticBlocked = false;
+        trip = {...trip,rota:{...selected,alternativas:alternatives,...(trip.rota.enderecoDestino ? {enderecoDestino:trip.rota.enderecoDestino} : {})}};
+        routeReady = true; map.update(trip);
+        if (canNavigate()) navigation.update(trip); else navigation.pause();
+        routeOptions?.render(trip.rota);
+        show(routeStatus,"Rota alternativa selecionada. A navegação acompanha o novo trajeto.");
+    }
     async function api(path, options = {}) {
         const response = await fetch(path, { cache: "no-store", ...options,
             headers: { Authorization: `Bearer ${token}`, ...(options.body ? { "Content-Type": "application/json" } : {}) } });
@@ -56,13 +106,15 @@
         if (!["ADMIN", "GERENTE"].includes(user?.cargo || user?.perfil)) throw Object.assign(new Error("O teste é exclusivo para administradores e gerentes."), { status: 403 });
         login.hidden = true; return true;
     }
-    function clearTest() {
+    function clearTest(keepDiagnostics = false) {
         running = preparing = false; generation++;
         if (watchId !== null) navigator.geolocation?.clearWatch(watchId);
-        watchId = null; routeController?.abort(); routeController = null; routePending = false;
+        watchId = null; cancelRoute(); routeOptions?.clear(); automaticBlocked = false;
         if (summaryTimer !== null) clearInterval(summaryTimer);
         summaryTimer = null; movementOrigin = null; gpsMessage = ""; show(movementStatus, "");
+        if (!keepDiagnostics) clearQuality(); else quality?.finish();
         trip = null; mapReady = routeReady = false; navigation.stop(); map.hide();
+        renderQuality();
         wakeLock?.release().catch(() => {}); wakeLock = null;
         retry.disabled = true; retry.hidden = true; stop.disabled = true;
         show(routeStatus, ""); show(mapStatus, "");
@@ -88,43 +140,68 @@
             Number.isFinite(coords.accuracy) && coords.accuracy >= 0 &&
             Number.isFinite(timestamp) && timestamp > 0 && Date.now() - timestamp <= 30000 && timestamp - Date.now() <= 5000;
     }
-    async function requestRoute() {
-        if (!running || !trip || routePending) return;
-        if (Date.now() - trip.timestamp > 30000 || trip.precisao_m > 100) {
-            show(routeStatus, "Aguarde um GPS recente com precisão de até 100 m para calcular a rota."); return;
+    async function requestRoute({automatic=false}={}) {
+        if (!running || document.hidden || !trip || routePending || automatic && automaticBlocked) return;
+        if (!automatic) automaticBlocked = false;
+        if (!canRoute()) {
+            if (!automatic) show(routeStatus, "Aguarde um GPS recente com precisão de até 50 m para calcular a rota.");
+            return;
         }
         const remaining = lastRouteAt === null ? 0 : COOLDOWN_MS - (Date.now() - lastRouteAt);
-        if (remaining > 0) { show(routeStatus, `Aguarde ${Math.ceil(remaining / 1000)} segundos antes de consultar outra rota.`); return; }
-        const current = generation;
+        if (remaining > 0) {
+            routeQueued = true; queuedManual ||= !automatic;
+            show(routeStatus, `Aguarde ${Math.ceil(remaining / 1000)} segundos. O novo trajeto será calculado automaticamente com o GPS recente.`);
+            if (routeTimer === null) {
+                const current = generation, epoch = routeEpoch;
+                routeTimer = setTimeout(() => {
+                    if (current !== generation || epoch !== routeEpoch) return;
+                    routeTimer = null;
+                    if (!routeQueued || !canRoute()) return;
+                    const manual = queuedManual; routeQueued = queuedManual = false;
+                    requestRoute({automatic:!manual});
+                },remaining);
+            }
+            return;
+        }
+        if (routeTimer !== null) clearTimeout(routeTimer);
+        routeTimer = null; routeQueued = queuedManual = false;
+        const current = generation, epoch = ++routeEpoch;
         routePending = true; retry.disabled = true; lastRouteAt = Date.now();
+        routeOptions?.setBusy(true);
         const controller = new AbortController(); routeController = controller;
-        const timeout = setTimeout(() => controller.abort(), 15000);
-        show(routeStatus, "Calculando uma rota de teste até a loja. Seu GPS continua atualizando nesta tela.");
+        const timeout = routeTimeout = setTimeout(() => controller.abort(), 15000);
+        show(routeStatus, "Calculando rotas de teste até a loja. Seu GPS continua atualizando nesta tela.");
         try {
             const route = await api("/api/gps-diagnostico/rota", { method: "POST", signal: controller.signal,
                 body: JSON.stringify({ latitude: trip.latitude, longitude: trip.longitude, precisao: trip.precisao_m, timestamp: trip.timestamp }) });
-            if (!running || current !== generation) return;
+            if (!running || document.hidden || current !== generation || epoch !== routeEpoch) return;
+            if (!canRoute()) { routeAttempted = Boolean(routeReady); return; }
+            if (!route || typeof route !== "object" || typeof route.polyline !== "string" || !route.polyline)
+                throw new Error("A consulta não retornou uma rota utilizável para este percurso.");
             trip.rota = route; routeReady = true;
             if (route.enderecoDestino && typeof route.enderecoDestino === "object") trip.endereco_entrega = route.enderecoDestino;
+            routeOptions?.render(route);
             map.update(trip);
             if (canNavigate()) navigation.update(trip);
             else navigation.pause();
             if (!trip.endereco_entrega) destination.textContent = "Destino do teste: loja Nação Animal.";
             show(routeStatus, ""); summary();
         } catch (error) {
-            if (current !== generation) return;
+            if (current !== generation || epoch !== routeEpoch) return;
             if ([401, 403].includes(error.status)) { authFailure(error); return; }
-            show(routeStatus, error.name === "AbortError" ? "A rota demorou para responder. Seu GPS continua disponível; tente recalcular em um minuto." : `${error.message} Seu GPS continua disponível nesta tela.`);
+            automaticBlocked = true; routeQueued = queuedManual = false;
+            show(routeStatus, error.name === "AbortError" ? "A rota demorou para responder. Seu GPS continua disponível; use Atualizar rota para tentar novamente." : `${error.message} Seu GPS continua disponível nesta tela. Use Atualizar rota para tentar novamente.`);
         } finally {
             clearTimeout(timeout);
-            if (current === generation) { routePending = false; routeController = null; retry.disabled = !running; }
+            if (current === generation && epoch === routeEpoch) { routePending = false; routeController = null; routeTimeout = null; retry.disabled = !running; routeOptions?.setBusy(false); }
         }
     }
     function receivePosition(position, current) {
         if (!running || current !== generation || document.hidden) return;
-        if (!validFix(position)) { gpsMessage = "Aguardando uma posição GPS válida e recente. Confira a localização do aparelho."; navigation.pause(); summary(); return; }
+        if (!validFix(position)) { gpsMessage = "Aguardando uma posição GPS válida e recente. Confira a localização do aparelho."; suspendRoute(); map.pauseMotion?.(); navigation.pause(); summary(); return; }
         if (trip && Number(position.timestamp) <= trip.timestamp) return;
         const coords = position.coords;
+        quality?.recordFix({timestamp:Number(position.timestamp),accuracy:coords.accuracy,speed:coords.speed,heading:coords.heading},Date.now());
         trip = { ...trip, latitude: coords.latitude, longitude: coords.longitude, precisao_m: coords.accuracy,
             heading: Number.isFinite(coords.heading) ? coords.heading : null,
             velocidade_mps: Number.isFinite(coords.speed) && coords.speed >= 0 ? coords.speed : null,
@@ -134,7 +211,11 @@
         // Renderização local vem antes de qualquer chamada da rota ao servidor.
         map.update(trip); navigation.update(trip); summary();
         if (!trip.endereco_entrega) destination.textContent = "Destino do teste: loja Nação Animal.";
-        if (!routeAttempted && trip.precisao_m <= 100) { routeAttempted = true; requestRoute(); }
+        if (!routeAttempted && !automaticBlocked && canRoute()) { routeAttempted = true; requestRoute({automatic:true}); }
+        else if (routeQueued && routeTimer === null && canRoute()) {
+            const manual = queuedManual; routeQueued = queuedManual = false;
+            requestRoute({automatic:!manual});
+        }
     }
     function positionError(error, current) {
         if (!running || current !== generation) return;
@@ -142,7 +223,7 @@
             clearTest(); start.disabled = false; start.textContent = "Tentar GPS novamente";
             show(status, "Localização negada. Permita a localização para este site e para o navegador nas configurações do celular.");
         } else {
-            navigation.pause(); gpsMessage = "GPS temporariamente indisponível. Aguardando o sinal do aparelho; o teste não envia posições inventadas."; summary();
+            suspendRoute(); map.pauseMotion?.(); navigation.pause(); gpsMessage = "GPS temporariamente indisponível. Aguardando o sinal do aparelho; o teste não envia posições inventadas."; summary();
         }
     }
     start.addEventListener("click", async () => {
@@ -153,6 +234,7 @@
         try {
             if (!await validateSession(current) || current !== generation || document.hidden) return;
             preparing = paused = false; running = true; routeAttempted = false;
+            clearQuality();
             gpsMessage = "";
             stop.disabled = false; retry.hidden = false; retry.disabled = false;
             navigation.start(); summary(); keepScreenOn(current);
@@ -163,12 +245,27 @@
         } catch (error) { if (current === generation) authFailure(error); }
     });
     stop.addEventListener("click", () => {
-        paused = false; clearTest(); start.disabled = false; start.textContent = "Testar GPS e navegação";
+        paused = false; clearTest(true); start.disabled = false; start.textContent = "Testar GPS e navegação";
         show(status, "Teste encerrado. A posição foi removida desta tela. Nenhum pedido foi criado.");
     });
-    retry.addEventListener("click", requestRoute);
+    retry.addEventListener("click", () => requestRoute());
+    copyDiagnostic?.addEventListener("click", async () => {
+        if (!quality || !quality.snapshot().reads) return;
+        const current = generation, version = diagnosticVersion;
+        const text = JSON.stringify({type:"nacao-animal-gps-quality",version:1,...quality.snapshot()},null,2);
+        diagnosticReport.value = text; diagnosticReport.hidden = false;
+        try {
+            if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+            await navigator.clipboard.writeText(text);
+            if (current !== generation || version !== diagnosticVersion || document.hidden) return;
+            show(diagnosticStatus,"Diagnóstico copiado. Ele não contém coordenadas, endereço ou dados da sua conta.");
+        } catch {
+            if (current !== generation || version !== diagnosticVersion || document.hidden) return;
+            show(diagnosticStatus,"Selecione e copie o relatório abaixo. Ele não contém sua localização.");
+        }
+    });
     function pause() {
-        if (!running && !preparing) return;
+        if (!running && !preparing) { clearQuality(); return; }
         paused = true; clearTest(); start.disabled = false; start.textContent = "Retomar teste";
         show(status, "Teste pausado. Toque em Retomar teste para permitir o GPS novamente.");
     }

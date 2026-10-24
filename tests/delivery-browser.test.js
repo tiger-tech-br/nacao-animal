@@ -9,11 +9,11 @@ function element() {
         addEventListener(name,fn) { this.events[name]=fn; }, setAttribute(name,value){this[name]=value;}, removeAttribute(name) { delete this[name]; }
     };
 }
-function driverHarness() {
+function driverHarness({routeOptions=false}={}) {
     const elements = Object.fromEntries(["startGps","stopGps","refreshRoute","gpsStatus","routeStatus","mapStatus"].map(id => [id,element()]));
-    const calls = [], updates = [], gps = [], intervals = new Set(), timeouts = new Map(), clearedWatches=[];
+    const calls = [], updates = [], gps = [], intervals = new Set(), timeouts = new Map(), clearedWatches=[], motionPauses=[];
     const route = { tipoOrigem:"GPS_ENTREGADOR", polyline: "route", destino: { latitude: -23.6, longitude: -46.5 } };
-    const navigationCalls=[], events={}, documentEvents={}; let mapOptions;
+    const navigationCalls=[], events={}, documentEvents={},routeUI={renders:[],busy:[],clears:0}; let mapOptions,routeCallbacks,navigationOptions;
     let now=Date.now(),nextTimeout=0;
     class ClockDate extends Date { constructor(value){super(arguments.length ? value : now);} static now(){return now;} }
     const context = { URLSearchParams, AbortSignal, AbortController, Date:ClockDate, console,
@@ -27,17 +27,22 @@ function driverHarness() {
         isSecureContext: true, addEventListener(name,fn) {events[name]=fn;},
         setInterval(fn) { intervals.add(fn); return fn; }, clearInterval(fn) { intervals.delete(fn); },
         setTimeout(fn,delay){const id=++nextTimeout;timeouts.set(id,{fn,at:now+delay});return id;},clearTimeout(id){timeouts.delete(id);},
-        PetFlowDeliveryMap: options => { mapOptions=options; assert.equal(options.mode,"driver"); return { update(data) { updates.push(JSON.parse(JSON.stringify(data))); }, hide() {elements.mapStatus.textContent="";options.onStatus?.({message:"",state:"ready"});} }; },
-        PetFlowDeliveryNavigation:()=>({start(){navigationCalls.push("start");},update(data){navigationCalls.push({update:JSON.parse(JSON.stringify(data))});},stop(){navigationCalls.push("stop");},pause(){navigationCalls.push("pause");},needsRoute(){return false;}}),
+        PetFlowDeliveryMap: options => { mapOptions=options; assert.equal(options.mode,"driver"); return { update(data) { updates.push(JSON.parse(JSON.stringify(data))); }, pauseMotion(){motionPauses.push(now);}, hide() {elements.mapStatus.textContent="";options.onStatus?.({message:"",state:"ready"});} }; },
+        PetFlowDeliveryNavigation:options=>{navigationOptions=options;return {start(){navigationCalls.push("start");},update(data){navigationCalls.push({update:JSON.parse(JSON.stringify(data))});},stop(){navigationCalls.push("stop");},pause(){navigationCalls.push("pause");},needsRoute(){return false;}};},
         fetch: async (url,options) => {
             calls.push({url,options});
             const data = url.endsWith("/viagem") ? { id: "order", endereco_entrega: { endereco: "Rua", numero: "123" } } : url.endsWith("/rota") ? route : {};
             return { ok: true, json: async () => ({data}) };
         }
     };
+    if(routeOptions)context.PetFlowDeliveryRouteOptions=callbacks=>{
+        routeCallbacks=callbacks;
+        return {render(route){routeUI.renders.push(JSON.parse(JSON.stringify(route)));},
+            setBusy(value){routeUI.busy.push(value);},clear(){routeUI.clears++;}};
+    };
     context.window = context; vm.runInNewContext(source("driver"),context);
-    return { context,elements,calls,updates,gps,intervals,navigationCalls,events,documentEvents,timeouts,clearedWatches,
-        now:()=>now,
+    return { context,elements,calls,updates,gps,intervals,navigationCalls,motionPauses,events,documentEvents,timeouts,clearedWatches,
+        now:()=>now,routeUI,recalculate(){return navigationOptions.recalculate();},selectRoute(option){return routeCallbacks.onSelect(option);},
         async advance(ms){const target=now+ms;let ready;while((ready=[...timeouts].filter(([,timer])=>timer.at<=target).sort((a,b)=>a[1].at-b[1].at)[0])){now=ready[1].at;timeouts.delete(ready[0]);ready[1].fn();await settle();}now=target;await settle();},
         fix(coords={},index=gps.length-1,timestamp=now){gps[index].resolve({timestamp,coords:{latitude:-23.66,longitude:-46.55,accuracy:10,...coords}});},
         mapNotice(notice){elements.mapStatus.textContent=notice.message;mapOptions.onStatus(notice);} };
@@ -300,19 +305,23 @@ test("sessão de cliente não permite abrir acompanhamento administrativo", asyn
     assert.equal(h.elements.trackingLogin.href,"/admin/index.html");
     assert.match(h.elements.trackingStatus.textContent,/Entre no painel administrativo/);
 });
-function mapHarness(mode = "tracking", delayMarker = false, cameraRelative = false, delayPan = false) {
+function mapHarness(mode = "tracking", delayMarker = false, cameraRelative = false, delayPan = false, { animate = false, reducedMotion = false, decodedPaths={} } = {}) {
     const elements=Object.fromEntries(["deliveryMap","mapStatus","originAddress","destinationAddress","recenterMap","centerTrackingMap","showFullRoute"].map(id=>[id,element()]));
-    const paths=[], centers=[], vehicles=[], circles=[], polylines=[], maps=[], pans=[], cameraCenters=[], fits=[], notices=[], viewChanges=[]; let ready;
+    const paths=[], centers=[], vehicles=[], circles=[], polylines=[], maps=[], pans=[], cameraCenters=[], fits=[], notices=[], viewChanges=[], motions=[], documentEvents={}; let ready;
+    let now=Date.UTC(2026,9,24,12),elapsed=0,nextFrame=0;const frames=new Map();
+    class MotionDate extends Date { constructor(value){super(arguments.length?value:now);}static now(){return now;} }
+    const clock={now:()=>now,elapse(ms){now+=ms;elapsed+=ms;},frame(ms=16){this.elapse(ms);const queued=[...frames];frames.clear();for(const [,callback] of queued)callback(elapsed);},pendingFrames:()=>frames.size};
     const domElement = () => ({ ...element(), style: {}, children: [], setAttribute() {}, appendChild(child) { this.children.push(child); }, remove() {} });
-    const ctx={URLSearchParams,console,setTimeout,clearTimeout,document:{getElementById:id=>elements[id],createElement:domElement,head:{appendChild(){ready=()=>ctx.petflowMapsReady();}}},fetch:async()=>({ok:true,json:async()=>({data:{browserKey:"public-key"}})}),google:{maps:{
+    const ctx={URLSearchParams,console,setTimeout,clearTimeout,document:{hidden:false,getElementById:id=>elements[id],createElement:domElement,addEventListener(name,callback){documentEvents[name]=callback;},head:{appendChild(){ready=()=>ctx.petflowMapsReady();}}},fetch:async()=>({ok:true,json:async()=>({data:{browserKey:"public-key"}})}),google:{maps:{
         Map:class{constructor(el,options){this.options=options;this.events={};this.zoom=options.zoom;this.center={...options.center};maps.push(this);}fitBounds(b){fits.push(b);}getBounds(){return{contains:()=>this.inside!==false};}panTo(p){pans.push(p);if(!delayPan)this.setCenter(p);}setCenter(p){cameraCenters.push({...p});this.center={...p};if(cameraRelative)vehicles.filter(marker=>marker.map===this).forEach(marker=>marker.draw());}getZoom(){return this.zoom;}setZoom(value){this.zoom=value;}addListener(name,fn){this.events[name]=fn;}},
         Circle:class{constructor(){circles.push(this);}setCenter(p){this.center=p;centers.push(p);}setRadius(){}setVisible(v){this.visible=v;}},
         OverlayView:class{setMap(map){this.map=map;vehicles.push(this);if(!delayMarker)this.onAdd();}getPanes(){return{overlayMouseTarget:{appendChild(){}}};}getProjection(){return{fromLatLngToDivPixel:p=>cameraRelative ? {x:160+(p.lng-this.map.center.lng)*100000,y:240-(p.lat-this.map.center.lat)*100000} : {x:p.lng*100,y:p.lat*100}};}},
         LatLng:class{constructor(p){Object.assign(this,p);}},
-        Polyline:class{constructor(options){this.options=options;polylines.push(this);}setPath(p){this.path=p;paths.push(p);}getPath(){return this.path;}},LatLngBounds:class{constructor(){this.points=[];}extend(p){this.points.push(p);return this;}},geometry:{encoding:{decodePath:()=>[{lat:-23,lng:-46}]}}
+        Polyline:class{constructor(options){this.options=options;this.map=options.map;this.path=options.path||[];polylines.push(this);if(options.path)paths.push(options.path);}setPath(p){this.path=p;paths.push(p);}getPath(){return this.path;}setMap(map){this.map=map;}},LatLngBounds:class{constructor(){this.points=[];}extend(p){this.points.push(p);return this;}union(other){this.points.push(...other.points);return this;}},geometry:{encoding:{decodePath:encoded=>decodedPaths[encoded]||[{lat:-23,lng:-46}]}}
     }}};
+    if(animate)Object.assign(ctx,{Date:MotionDate,performance:{now:()=>elapsed},matchMedia:()=>({matches:reducedMotion}),requestAnimationFrame(callback){const id=++nextFrame;frames.set(id,callback);return id;},cancelAnimationFrame(id){frames.delete(id);}});
     ctx.window=ctx;vm.runInNewContext(source("map"),ctx);
-    return { elements,paths,centers,vehicles,circles,polylines,maps,pans,cameraCenters,fits,notices,viewChanges,context:ctx,map:ctx.PetFlowDeliveryMap({mode,onStatus:notice=>notices.push(notice),onViewChange:view=>viewChanges.push(JSON.parse(JSON.stringify(view)))}),ready:()=>ready() };
+    return { elements,paths,centers,vehicles,circles,polylines,maps,pans,cameraCenters,fits,notices,viewChanges,motions,documentEvents,clock,context:ctx,map:ctx.PetFlowDeliveryMap({mode,onStatus:notice=>notices.push(notice),onViewChange:view=>viewChanges.push(JSON.parse(JSON.stringify(view))),onMotion:motion=>motions.push(JSON.parse(JSON.stringify(motion)))}),ready:()=>ready() };
 }
 const routeData = () => ({latitude:-23.66,longitude:-46.55,precisao_m:10,endereco_entrega:{endereco:"Rua",numero:"123"},rota:{tipoOrigem:"GPS_ENTREGADOR",polyline:"route",distanciaMetros:1500,duracao:"300s",origem:{latitude:-23.66,longitude:-46.55},destino:{latitude:-23.67,longitude:-46.56}}});
 test("mapa informa carregamento, recusa do Google e sucesso pelo callback opcional", async () => {
@@ -578,4 +587,461 @@ test("navegação descarta rota antiga que estava fixada na loja", async () => {
     assert.equal(h.circles[1].visible,false);
     assert.equal(h.vehicles[0].element.hidden,false,"GPS continua visível");
     await h.map.update(data);assert.equal(h.paths.at(-1).length,1);
+});
+
+const motionFix = (h, overrides={}) => ({...routeData(),precisao_m:2,heading:90,velocidade_mps:5,
+    atualizado_em:new Date(h.clock.now()).toISOString(),...overrides});
+async function animatedDriverMap(options={}) {
+    const h=mapHarness("driver",false,true,true,{animate:true,...options}),first=motionFix(h);
+    const pending=h.map.update(first);await settle();h.ready();await pending;
+    assert.equal(h.vehicles[0].position.lat,first.latitude,"A primeira posição aparece sem animação de uma origem fictícia");
+    assert.equal(h.clock.pendingFrames(),0);
+    return h;
+}
+const motionAngle = marker => Number(marker.icon.style.transform.match(/rotate\((.+)deg\)/)[1]);
+const normalizedAngle = value => (value%360+360)%360;
+
+test("animação visual mantém seta e câmera juntas, termina em até 160 ms e não extrapola GPS",async()=>{
+    const h=await animatedDriverMap(),marker=h.vehicles[0],camera=h.maps[0];
+    const first={...marker.position},pixel={left:marker.element.style.left,top:marker.element.style.top};
+    h.clock.elapse(1000);
+    const next=motionFix(h,{latitude:first.lat+.0001,longitude:first.lng+.0001});
+    const original=JSON.stringify(next);Object.freeze(next);
+    await h.map.update(next);
+    assert.equal(marker.position.lat,first.lat,"Uma nova leitura inicia no ponto já exibido");
+    assert.equal(h.clock.pendingFrames(),1);
+    const motion=h.motions.findLast(item=>item.active);
+    assert.ok(motion.durationMs>0&&motion.durationMs<=160);
+    h.clock.frame(motion.durationMs/2);
+    assert.ok(marker.position.lat>first.lat&&marker.position.lat<next.latitude,"O quadro intermediário está entre as leituras reais");
+    assert.equal(camera.center.lat,marker.position.lat);assert.equal(camera.center.lng,marker.position.lng);
+    assert.deepEqual({left:marker.element.style.left,top:marker.element.style.top},pixel,"A seta permanece centralizada em cada quadro");
+    h.clock.frame(320);
+    assert.equal(marker.position.lat,next.latitude);assert.equal(marker.position.lng,next.longitude);
+    assert.deepEqual(camera.center,{...marker.position});assert.equal(h.clock.pendingFrames(),0);
+    const final={...marker.position},centers=h.cameraCenters.length;
+    h.clock.frame(10000);
+    assert.deepEqual({...marker.position},final);assert.equal(h.cameraCenters.length,centers,"Relógio não projeta novas coordenadas sem fix");
+    assert.equal(JSON.stringify(next),original,"Interpolação não altera o fix bruto utilizado pela navegação e publicação");
+    assert.equal(h.motions.at(-1).active,false);
+    for(const item of h.motions){
+        assert.equal(typeof item.active,"boolean");
+        for(const key of ["sampleAgeMs","durationMs","remainingMeters","renderDelayMs"])assert.ok(Number.isFinite(item[key])&&item[key]>=0,`${key} é uma métrica numérica válida`);
+        assert.ok(!Object.keys(item).some(key=>/latitude|longitude|^lat$|^lng$|position|coordinates/i.test(key)),"Métricas não expõem coordenadas");
+    }
+});
+
+test("alta velocidade reduz a duração da animação para limitar atraso visual",async()=>{
+    async function durationAt(speed){
+        const h=await animatedDriverMap();h.clock.elapse(1000);
+        await h.map.update(motionFix(h,{latitude:-23.6599,velocidade_mps:speed}));
+        const duration=h.motions.findLast(item=>item.active).durationMs;
+        h.clock.frame(320);assert.equal(h.clock.pendingFrames(),0);return duration;
+    }
+    const slow=await durationAt(2),fast=await durationAt(35);
+    assert.ok(fast>0&&fast<slow&&slow<=160,`Velocidade maior deve reduzir o atraso (${fast} ms versus ${slow} ms)`);
+});
+
+test("novo fix substitui animação em andamento a partir do quadro exibido sem formar fila",async()=>{
+    const h=await animatedDriverMap(),marker=h.vehicles[0];h.clock.elapse(1000);
+    const second=motionFix(h,{latitude:-23.6599,longitude:-46.5499});await h.map.update(second);
+    h.clock.frame(h.motions.findLast(item=>item.active).durationMs/2);
+    const displayed={...marker.position};h.clock.elapse(1);
+    // A nova leitura se desloca menos de um metro em ~80ms. Um salto de
+    // dezenas de metros nesse intervalo exigiria recuperação direta, não tween.
+    const latest=motionFix(h,{latitude:-23.659895,longitude:-46.549895});await h.map.update(latest);
+    assert.deepEqual({...marker.position},displayed,"Trocar o alvo não salta para o início ou fim da animação anterior");
+    assert.equal(h.clock.pendingFrames(),1,"Só o alvo mais recente mantém um quadro agendado");
+    h.clock.frame(320);
+    assert.equal(marker.position.lat,latest.latitude);assert.equal(marker.position.lng,latest.longitude);
+    assert.deepEqual(h.maps[0].center,{...marker.position});assert.equal(h.clock.pendingFrames(),0);
+});
+
+test("direção 359→1 e 1→359 cruza norte pelo menor arco sem inventar deslocamento",async()=>{
+    const h=await animatedDriverMap(),marker=h.vehicles[0];h.clock.elapse(1000);
+    await h.map.update(motionFix(h,{heading:359}));h.clock.frame(320);
+    const position={...marker.position},center={...h.maps[0].center};h.clock.elapse(1000);
+    await h.map.update(motionFix(h,{heading:1}));
+    h.clock.frame(h.motions.findLast(item=>item.active).durationMs/2);
+    const middle=normalizedAngle(motionAngle(marker));
+    assert.ok(middle<2||middle>358,`A direção intermediária deve passar pelo norte, recebeu ${middle}°`);
+    assert.deepEqual({...marker.position},position);assert.deepEqual(h.maps[0].center,center);
+    h.clock.frame(320);assert.ok(Math.abs(normalizedAngle(motionAngle(marker))-1)<1e-6);
+    h.clock.elapse(1000);await h.map.update(motionFix(h,{heading:359}));
+    h.clock.frame(h.motions.findLast(item=>item.active).durationMs/2);
+    const reverseMiddle=normalizedAngle(motionAngle(marker));
+    assert.ok(reverseMiddle<2||reverseMiddle>358,`O arco inverso também passa pelo norte, recebeu ${reverseMiddle}°`);
+    h.clock.frame(320);assert.ok(Math.abs(normalizedAngle(motionAngle(marker))-359)<1e-6);
+    assert.deepEqual({...marker.position},position);assert.deepEqual(h.maps[0].center,center);
+});
+
+test("rota nova com a mesma amostra não reinicia nem prolonga a animação",async()=>{
+    const h=await animatedDriverMap(),marker=h.vehicles[0];h.clock.elapse(1000);
+    const next=motionFix(h,{latitude:-23.6599});await h.map.update(next);
+    const duration=h.motions.findLast(item=>item.active).durationMs;
+    h.clock.frame(duration/2);const displayed={...marker.position};
+    await h.map.update({...next,rota:{...next.rota,polyline:"updated-route"}});
+    assert.deepEqual({...marker.position},displayed);assert.equal(h.clock.pendingFrames(),1);
+    h.clock.frame(duration/2+1);
+    assert.equal(marker.position.lat,next.latitude);assert.equal(h.clock.pendingFrames(),0,"A rota recebida não reinicia o prazo da leitura GPS");
+});
+
+test("pausar movimento conserva o quadro e aguarda amostra nova para retomar diretamente",async()=>{
+    const h=await animatedDriverMap(),marker=h.vehicles[0];h.clock.elapse(1000);
+    const next=motionFix(h,{latitude:-23.6599});await h.map.update(next);
+    h.clock.frame(h.motions.findLast(item=>item.active).durationMs/2);
+    const displayed={...marker.position},center={...h.maps[0].center};h.map.pauseMotion();
+    assert.equal(h.clock.pendingFrames(),0);h.clock.frame(1000);
+    assert.deepEqual({...marker.position},displayed);assert.deepEqual(h.maps[0].center,center);
+    await h.map.update({...next,rota:{...next.rota,polyline:"late-route"}});
+    assert.deepEqual({...marker.position},displayed);assert.equal(h.clock.pendingFrames(),0,"Uma rota tardia não equivale a uma amostra nova");
+    h.clock.elapse(1);const resumed=motionFix(h,{latitude:-23.6598});await h.map.update(resumed);
+    assert.equal(marker.position.lat,resumed.latitude);assert.equal(h.maps[0].center.lat,resumed.latitude);
+    assert.equal(h.clock.pendingFrames(),0,"A primeira leitura após a pausa não interpola sobre a interrupção do sinal");
+});
+
+test("hide, página oculta, GPS inválido e erro de autenticação cancelam quadros pendentes",async()=>{
+    for(const reason of ["hide","hidden","invalid","authentication"]){
+        const h=await animatedDriverMap(),marker=h.vehicles[0];h.clock.elapse(1000);
+        const next=motionFix(h,{latitude:-23.6599});await h.map.update(next);
+        h.clock.frame(h.motions.findLast(item=>item.active).durationMs/2);
+        const displayed={...marker.position},center={...h.maps[0].center};
+        if(reason==="hide")h.map.hide();
+        else if(reason==="hidden"){
+            h.context.document.hidden=true;
+            h.documentEvents.visibilitychange?.();
+        }else if(reason==="invalid")await h.map.update({...next,latitude:NaN});
+        else h.context.gm_authFailure();
+        h.clock.frame(1000);
+        assert.deepEqual({...marker.position},displayed,`${reason} impede movimento residual da seta`);
+        assert.deepEqual(h.maps[0].center,center,`${reason} impede movimento residual da câmera`);
+        assert.equal(h.clock.pendingFrames(),0,`${reason} não mantém animação agendada`);
+    }
+});
+
+test("mapa manual conserva câmera durante animação e follow usa o ponto visual atual",async()=>{
+    const h=await animatedDriverMap(),marker=h.vehicles[0],camera=h.maps[0];h.clock.elapse(1000);
+    await h.map.update(motionFix(h,{latitude:-23.6599}));
+    const duration=h.motions.findLast(item=>item.active).durationMs;h.clock.frame(duration/3);
+    camera.events.dragstart();const held={...camera.center};h.clock.frame(duration/3);
+    assert.deepEqual(camera.center,held,"Arrastar interrompe somente o acompanhamento da câmera");
+    assert.notEqual(marker.position.lat,held.lat);assert.equal(h.map.follow(),false,"Navegação não desfaz escolha manual");
+    const visual={...marker.position};h.elements.recenterMap.events.click();
+    assert.deepEqual(camera.center,visual,"Recentralizar acompanha o ponto desenhado, sem saltar ao alvo futuro");
+    h.clock.frame(320);assert.deepEqual(camera.center,{...marker.position});
+    h.elements.showFullRoute.events.click();const fits=h.fits.length,overviewCenter={...camera.center};
+    h.clock.elapse(1000);await h.map.update(motionFix(h,{latitude:-23.6598}));h.clock.frame(320);
+    assert.deepEqual(camera.center,overviewCenter);assert.equal(h.fits.length,fits);
+    assert.equal(h.map.follow(),false,"Novas leituras preservam a visão completa escolhida");
+});
+
+test("GPS impreciso ou antigo aparece diretamente sem interpolação e sem direção estimada ruim",async()=>{
+    for(const kind of ["imprecise","stale"]){
+        const h=await animatedDriverMap(),marker=h.vehicles[0];h.clock.elapse(20000);
+        const next=motionFix(h,{latitude:-23.6599,heading:null,...(kind==="imprecise"?{precisao_m:80}:{atualizado_em:new Date(h.clock.now()-16000).toISOString()})});
+        await h.map.update(next);
+        assert.equal(marker.position.lat,next.latitude);assert.equal(h.maps[0].center.lat,next.latitude);
+        assert.equal(h.clock.pendingFrames(),0,`${kind} não anima uma posição sem confiança temporal ou espacial`);
+        assert.equal(normalizedAngle(motionAngle(marker)),90,"A leitura recusada para animação não inventa direção a partir do salto");
+    }
+});
+
+test("preferência por movimento reduzido mostra cada posição diretamente sem agendar animação",async()=>{
+    const h=await animatedDriverMap({reducedMotion:true});h.clock.elapse(1000);
+    const next=motionFix(h,{latitude:-23.6599,heading:180});await h.map.update(next);
+    assert.equal(h.vehicles[0].position.lat,next.latitude);assert.equal(h.maps[0].center.lat,next.latitude);
+    assert.equal(motionAngle(h.vehicles[0]),180);assert.equal(h.clock.pendingFrames(),0);
+    assert.ok(h.motions.every(item=>!item.active),"Movimento reduzido não emite uma animação visual ativa");
+});
+
+test("fluxo GPS pausa movimento visual em erro, leitura vencida, ocultação e parada",async()=>{
+    const h=driverHarness();await h.elements.startGps.events.click();h.fix();await settle();
+    let pauses=h.motionPauses.length;
+    h.gps[0].reject({code:2,message:"Sem sinal"});
+    assert.ok(h.motionPauses.length>pauses,"Erro de GPS cancela a animação visual pendente");
+    await h.advance(1);h.fix();await settle();pauses=h.motionPauses.length;
+    await h.advance(16000);[...h.intervals][0]();
+    assert.ok(h.motionPauses.length>pauses,"Leitura vencida interrompe o movimento visual");
+    pauses=h.motionPauses.length;h.context.document.hidden=true;h.documentEvents.visibilitychange();
+    assert.ok(h.motionPauses.length>pauses,"Ocultar a página interrompe animação junto com o GPS");
+    h.context.document.hidden=false;h.documentEvents.visibilitychange();await h.advance(1);h.fix();await settle();
+    pauses=h.motionPauses.length;await h.elements.stopGps.events.click();
+    assert.ok(h.motionPauses.length>pauses,"Encerrar o compartilhamento também cancela movimento visual");
+});
+
+test("caminhada com precisão variável e velocidade ausente ou zero suaviza leituras de três e cinco segundos",async()=>{
+    for(const precision of [8,20])for(const speed of [null,0])for(const interval of [3000,5000]){
+        const h=mapHarness("driver",false,true,true,{animate:true});
+        const first=motionFix(h,{heading:null,velocidade_mps:speed,precisao_m:precision});
+        const pending=h.map.update(first);await settle();h.ready();await pending;
+        const marker=h.vehicles[0],camera=h.maps[0],started=h.clock.now();
+        const pixels={left:marker.element.style.left,top:marker.element.style.top};
+        for(let step=1;step<=3;step++){
+            h.clock.elapse(started+step*interval-h.clock.now());
+            const next=motionFix(h,{latitude:first.latitude+step*interval/1000/111320,
+                heading:null,velocidade_mps:speed,precisao_m:precision});
+            const before={...marker.position},original=JSON.stringify(next);Object.freeze(next);
+            await h.map.update(next);
+            const motion=h.motions.at(-1);
+            assert.equal(motion.active,true,`accuracy=${precision}, speed=${speed}, interval=${interval}, ponto=${step}`);
+            assert.ok(motion.durationMs>0&&motion.durationMs<=160,"Suavização de um fix esparso continua curta");
+            assert.equal(motion.sensorIntervalMs,interval);assert.equal(motion.receiptIntervalMs,interval);
+            assert.equal(h.clock.pendingFrames(),1);
+            assert.deepEqual({...marker.position},before,"Receber a leitura não salta diretamente ao ponto novo");
+            h.clock.frame(motion.durationMs/2);
+            assert.ok(marker.position.lat>before.lat&&marker.position.lat<next.latitude);
+            assert.deepEqual(camera.center,{...marker.position});
+            assert.deepEqual({left:marker.element.style.left,top:marker.element.style.top},pixels);
+            h.clock.frame(320);
+            assert.equal(marker.position.lat,next.latitude);assert.equal(marker.position.lng,next.longitude);
+            assert.deepEqual(camera.center,{...marker.position});assert.equal(h.clock.pendingFrames(),0);
+            assert.equal(JSON.stringify(next),original,"Leituras artificiais do replay permanecem intactas");
+        }
+        const end={...marker.position},centers=h.cameraCenters.length;
+        h.clock.frame(5000);
+        assert.deepEqual({...marker.position},end);assert.equal(h.cameraCenters.length,centers,"Nenhuma previsão de posição entre leituras");
+    }
+});
+
+test("passos de caminhada sem velocidade nativa começam a acompanhar prontamente e alcançam o último GPS sem inventar avanço",async()=>{
+    for(const interval of [3000,5000])for(const speed of [null,0]){
+        const h=mapHarness("driver",false,true,true,{animate:true});
+        const first=motionFix(h,{heading:null,velocidade_mps:speed,precisao_m:8});
+        const pending=h.map.update(first);await settle();h.ready();await pending;
+        h.clock.elapse(interval);
+        const next=motionFix(h,{latitude:first.latitude+interval/1000/111320,heading:null,velocidade_mps:speed,precisao_m:8});
+        await h.map.update(next);const motion=h.motions.at(-1);
+        assert.equal(motion.active,true);assert.ok(motion.durationMs<=160,"A caminhada não ganha uma animação longa por falta de velocidade do sensor");
+        h.clock.frame(16);
+        assert.ok(h.vehicles[0].position.lat>first.latitude,"O primeiro quadro já move a posição recebida");
+        assert.deepEqual(h.maps[0].center,{...h.vehicles[0].position});
+        h.clock.frame(64);
+        const observedFraction=(h.vehicles[0].position.lat-first.latitude)/(next.latitude-first.latitude);
+        assert.ok(observedFraction>=.5-1e-6,"Após 80ms, ao menos metade do passo recebido já aparece");
+        assert.deepEqual(h.maps[0].center,{...h.vehicles[0].position});
+        h.clock.frame(80);
+        assert.equal(h.vehicles[0].position.lat,next.latitude);assert.equal(h.clock.pendingFrames(),0);
+        const displayed={...h.vehicles[0].position},centers=h.cameraCenters.length;
+        h.clock.frame(interval);
+        assert.deepEqual({...h.vehicles[0].position},displayed);assert.equal(h.cameraCenters.length,centers,
+            "A seta aguarda a próxima posição real em vez de multiplicar a velocidade para parecer mais rápida");
+    }
+});
+
+test("leitura realista de dois segundos ainda suaviza, sem estender animação pela idade da amostra",async()=>{
+    const h=mapHarness("driver",false,true,true,{animate:true});
+    const first=motionFix(h,{atualizado_em:new Date(h.clock.now()-2000).toISOString(),heading:null,velocidade_mps:null,precisao_m:12});
+    const pending=h.map.update(first);await settle();h.ready();await pending;
+    h.clock.elapse(1000);
+    const next=motionFix(h,{latitude:first.latitude+.00003,atualizado_em:new Date(h.clock.now()-2000).toISOString(),
+        heading:null,velocidade_mps:null,precisao_m:12});
+    await h.map.update(next);
+    const motion=h.motions.at(-1);
+    assert.equal(motion.active,true);assert.equal(motion.receivedAgeMs,2000);
+    assert.equal(motion.sensorIntervalMs,1000);assert.equal(motion.receiptIntervalMs,1000);
+    assert.ok(motion.durationMs>0&&motion.durationMs<=160);
+    h.clock.frame(320);
+    assert.equal(h.vehicles[0].position.lat,next.latitude);assert.equal(h.clock.pendingFrames(),0);
+});
+
+test("limites de cinco segundos entre leituras e três segundos de idade separam suavização de atualização direta",async()=>{
+    for(const item of [
+        {label:"intervalo de cinco segundos",interval:5000,age:0,animated:true},
+        {label:"intervalo acima de cinco segundos",interval:5001,age:0,animated:false},
+        {label:"idade de três segundos",interval:5000,age:3000,animated:true},
+        {label:"idade acima de três segundos",interval:5000,age:3001,animated:false}
+    ]){
+        const h=await animatedDriverMap();h.clock.elapse(item.interval);
+        const next=motionFix(h,{latitude:-23.6599,atualizado_em:new Date(h.clock.now()-item.age).toISOString()});
+        await h.map.update(next);
+        assert.equal(h.motions.at(-1).active,item.animated,item.label);
+        assert.equal(h.clock.pendingFrames(),item.animated?1:0,item.label);
+        if(item.animated)h.clock.frame(320);
+        assert.equal(h.vehicles[0].position.lat,next.latitude,item.label);
+        assert.equal(h.maps[0].center.lat,next.latitude,item.label);
+        const position={...h.vehicles[0].position},centers=h.cameraCenters.length;
+        h.clock.frame(2000);
+        assert.deepEqual({...h.vehicles[0].position},position);assert.equal(h.cameraCenters.length,centers,item.label);
+    }
+});
+
+test("novo horário sem mudança de posição ou direção não agenda animação inútil",async()=>{
+    for(const speed of [null,0,5]){
+        const h=await animatedDriverMap(),position={...h.vehicles[0].position},heading=motionAngle(h.vehicles[0]);
+        h.clock.elapse(1000);
+        await h.map.update(motionFix(h,{velocidade_mps:speed}));
+        assert.equal(h.clock.pendingFrames(),0,`speed=${speed} não anima coordenadas idênticas`);
+        assert.equal(h.motions.at(-1).active,false);
+        assert.deepEqual({...h.vehicles[0].position},position);assert.equal(motionAngle(h.vehicles[0]),heading);
+    }
+});
+
+test("métricas de apresentação identificam decisão e intervalos sem revelar coordenadas nem inventar novas amostras",async()=>{
+    const h=await animatedDriverMap();h.clock.elapse(3000);
+    const next=motionFix(h,{latitude:-23.6599,heading:null,velocidade_mps:0,precisao_m:8});
+    await h.map.update(next);
+    const motion=h.motions.at(-1);
+    assert.equal(motion.active,true);assert.equal(typeof motion.reason,"string");assert.ok(motion.reason.length>0);
+    assert.equal(motion.sensorIntervalMs,3000);assert.equal(motion.receiptIntervalMs,3000);
+    h.clock.frame(motion.durationMs/2);h.clock.frame(320);
+    for(const sample of h.motions){
+        assert.equal(typeof sample.reason,"string");
+        for(const key of ["sensorIntervalMs","receiptIntervalMs"])assert.ok(Number.isFinite(sample[key])&&sample[key]>=0,key);
+        assert.ok(!Object.keys(sample).some(key=>/latitude|longitude|^lat$|^lng$|position|coordinates/i.test(key)));
+    }
+    const last=h.motions.at(-1);
+    assert.equal(last.sensorIntervalMs,motion.sensorIntervalMs,"Quadros de animação não viram leituras de sensor");
+    assert.equal(last.receiptIntervalMs,motion.receiptIntervalMs);
+});
+
+const routeResponse=(data,status=200)=>({ok:status<400,status,json:async()=>status<400?{data}:{message:data}});
+function driverRouteSet(stamp="2026-10-24T12:00:00.000Z"){
+    const alternatives=[0,1].map(index=>({id:`rota-${index}`,modo:"DRIVE",calculadaEm:stamp,tipoOrigem:"GPS_ENTREGADOR",
+        polyline:`stored-route-${index}`,origem:{latitude:-23.66,longitude:-46.55},destino:{latitude:-23.67,longitude:-46.56},
+        distanciaMetros:1000+index*200,duracao:`${300+index*60}s`,resumo:index?"Alternativa":"Principal",etapas:[]}));
+    return {...alternatives[0],alternativas:alternatives};
+}
+
+test("entregador recalcula após desvio com intervalo controlado sem interromper o GPS ou enviar opções de locomoção",async()=>{
+    const h=driverHarness({routeOptions:true}),base=h.context.fetch,pending=[],initial=driverRouteSet();
+    h.context.fetch=async(url,options)=>{
+        const fallback=await base(url,options);
+        if(url.endsWith("/rota")&&options.method==="POST"){
+            if(!h.routeUI.renders.length)return routeResponse(initial);
+            return new Promise(resolve=>pending.push({resolve,options}));
+        }
+        return fallback;
+    };
+    await h.elements.startGps.events.click();h.fix();await settle();
+    assert.equal(h.routeUI.renders.at(-1).id,"rota-0");assert.equal(pending.length,0);
+    await h.advance(1000);h.recalculate();h.recalculate();h.recalculate();
+    assert.equal(h.gps.length,1);assert.equal(h.clearedWatches.length,0);
+    await h.advance(14000);h.fix({latitude:-23.6599});await settle();
+    assert.equal(pending.length,0,"O recálculo respeita o intervalo da consulta já iniciada");
+    await h.advance(1050);assert.equal(pending.length,1,"Vários avisos do motor compartilham um recálculo agendado");
+    assert.deepEqual(JSON.parse(pending[0].options.body||"{}"),{},"O usuário não precisa escolher transporte para acompanhar sua posição");
+    await h.advance(1);h.fix({latitude:-23.6598});await settle();
+    assert.equal(h.updates.at(-1).latitude,-23.6598,"O aparelho continua movendo a seta enquanto aguarda a rota");
+    const updated={...driverRouteSet("2026-10-24T12:00:20.000Z"),polyline:"recalculated-route"};
+    pending[0].resolve(routeResponse(updated));await settle();
+    assert.equal(h.updates.at(-1).rota.polyline,"recalculated-route");assert.equal(h.routeUI.renders.at(-1).polyline,"recalculated-route");
+    assert.equal(h.updates.at(-1).latitude,-23.6598,"A resposta conserva o GPS mais recente do aparelho");
+    assert.equal(h.gps.length,1);assert.equal(h.clearedWatches.length,0);
+    assert.equal(h.routeUI.busy.at(-1),false);
+});
+
+test("entregador seleciona alternativa por PATCH mínimo e usa a rota devolvida pelo servidor",async()=>{
+    const h=driverHarness({routeOptions:true}),base=h.context.fetch,initial=driverRouteSet();
+    const selected={...initial.alternativas[1],polyline:"geometry-stored-by-server",alternativas:initial.alternativas};
+    h.context.fetch=async(url,options)=>{
+        const fallback=await base(url,options);
+        if(url.endsWith("/rota"))return routeResponse(options.method==="PATCH"?selected:initial);
+        return fallback;
+    };
+    await h.elements.startGps.events.click();h.fix();await settle();
+    const option={...initial.alternativas[1],polyline:"untrusted-client-geometry",destino:{latitude:80,longitude:80}};
+    await h.selectRoute(option);await settle();
+    const patch=h.calls.find(call=>call.url.endsWith("/rota")&&call.options.method==="PATCH");
+    assert.ok(patch);assert.deepEqual(JSON.parse(patch.options.body),{rotaId:option.id,calculadaEm:option.calculadaEm});
+    assert.equal(h.updates.at(-1).rota.polyline,"geometry-stored-by-server");
+    assert.equal(h.navigationCalls.at(-1).update.rota.polyline,"geometry-stored-by-server");
+    assert.equal(h.routeUI.renders.at(-1).id,"rota-1");
+    assert.equal(h.routeUI.busy.at(-1),false,"A lista permanece disponível após confirmar a alternativa");
+    assert.equal(h.calls.filter(call=>call.url.endsWith("/rota")&&call.options.method==="POST").length,1,
+        "Escolher uma alternativa não provoca novo cálculo");
+    assert.equal(h.gps.length,1);assert.equal(h.clearedWatches.length,0);
+    const clears=h.routeUI.clears;await h.elements.stopGps.events.click();
+    assert.ok(h.routeUI.clears>clears,"Encerrar a viagem limpa as alternativas da sessão");
+});
+
+test("falha ao selecionar alternativa restaura a opção anterior; link encerrado interrompe a viagem",async()=>{
+    for(const status of [409,410]){
+        const h=driverHarness({routeOptions:true}),base=h.context.fetch,initial=driverRouteSet();
+        h.context.fetch=async(url,options)=>{
+            const fallback=await base(url,options);
+            if(url.endsWith("/rota"))return options.method==="PATCH"?routeResponse("Não foi possível selecionar o trajeto.",status):routeResponse(initial);
+            return fallback;
+        };
+        await h.elements.startGps.events.click();h.fix();await settle();
+        await h.selectRoute(initial.alternativas[1]);await settle();
+        assert.equal(h.routeUI.renders.at(-1).id,"rota-0","A interface volta à rota confirmada anteriormente");
+        assert.equal(h.updates.at(-1).rota.id,"rota-0","A seleção recusada não troca a geometria ativa");
+        assert.match(h.elements.routeStatus.textContent,/Não foi possível selecionar/);
+        if(status===410){
+            assert.deepEqual(h.clearedWatches,[0]);assert.equal(h.elements.startGps.disabled,true);assert.equal(h.elements.stopGps.disabled,true);
+            assert.equal(h.intervals.size,0);assert.ok(h.routeUI.clears>0);
+        }else{
+            assert.equal(h.clearedWatches.length,0);assert.equal(h.elements.stopGps.disabled,false);
+            assert.equal(h.routeUI.busy.at(-1),false);
+        }
+    }
+});
+
+test("ocultar a página invalida resposta de rota e seleção de alternativa pendentes",async()=>{
+    for(const method of ["POST","PATCH"]){
+        const h=driverHarness({routeOptions:true}),base=h.context.fetch,initial=driverRouteSet();
+        let finish,request,selection;
+        h.context.fetch=async(url,options)=>{
+            const fallback=await base(url,options);
+            if(url.endsWith("/rota")){
+                if(options.method===method){request=options;return new Promise(resolve=>{finish=resolve;});}
+                return routeResponse(initial);
+            }
+            return fallback;
+        };
+        await h.elements.startGps.events.click();h.fix();await settle();
+        if(method==="PATCH"){selection=h.selectRoute(initial.alternativas[1]);await settle();}
+        assert.ok(request);const rendered=h.routeUI.renders.length,updated=h.updates.length;
+        h.context.document.hidden=true;h.documentEvents.visibilitychange();
+        assert.equal(request.signal.aborted,true);assert.deepEqual(h.clearedWatches,[0]);
+        assert.equal(h.routeUI.busy.at(-1),false,"Cancelar ao ocultar a página libera o estado da lista sem modal");
+        finish(routeResponse({...initial.alternativas[1],alternativas:initial.alternativas}));if(selection)await selection;await settle();
+        assert.equal(h.routeUI.renders.length,rendered);assert.equal(h.updates.length,updated,
+            "Uma resposta antiga não desenha o mapa enquanto a aba está oculta");
+    }
+});
+
+test("mapa desenha alternativas em cinza, conserva a escolhida em ciano e enquadra todas sem refazer a cada GPS",async()=>{
+    const paths={chosen:[{lat:-23.66,lng:-46.55},{lat:-23.67,lng:-46.56}],
+        alternate:[{lat:-23.61,lng:-46.50},{lat:-23.67,lng:-46.56}],
+        other:[{lat:-23.70,lng:-46.59},{lat:-23.67,lng:-46.56}]};
+    const h=mapHarness("driver",false,false,false,{decodedPaths:paths}),data=routeData();
+    const options=[{id:"rota-0",modo:"DRIVE",polyline:"chosen"},{id:"rota-1",modo:"DRIVE",polyline:"alternate"},{id:"rota-2",modo:"DRIVE",polyline:"other"}];
+    data.rota={...data.rota,...options[0],calculadaEm:"2026-10-24T12:00:00.000Z",alternativas:options};
+    const pending=h.map.update(data);await settle();h.ready();await pending;
+    assert.equal(h.polylines.length,3);
+    assert.equal(h.polylines[0].options.strokeColor,"#00d7f2");assert.deepEqual(h.polylines[0].path,paths.chosen);
+    const firstAlternates=h.polylines.slice(1);
+    for(const line of firstAlternates){assert.equal(line.options.strokeColor,"#8fa5b1");assert.equal(line.options.clickable,false);assert.equal(line.map,h.maps[0]);}
+    h.elements.showFullRoute.events.click();
+    assert.ok(h.fits.at(-1).points.some(point=>point.lat===-23.61&&point.lng===-46.50));
+    assert.ok(h.fits.at(-1).points.some(point=>point.lat===-23.70&&point.lng===-46.59));
+    const pathCount=h.paths.length,lineCount=h.polylines.length;
+    await h.map.update({...data,latitude:-23.6599});await h.map.update({...data,latitude:-23.6598});
+    assert.equal(h.polylines.length,lineCount);assert.equal(h.paths.length,pathCount,"Novos fixes não refazem caminhos do mesmo lote");
+    await h.map.update({...data,rota:{...data.rota,...options[1]}});
+    assert.ok(firstAlternates.every(line=>line.map===null),"Trocar a escolhida remove as alternativas antigas");
+    assert.deepEqual(h.polylines[0].path,paths.alternate,"A geometria escolhida ocupa o traço ciano");
+    const currentAlternates=h.polylines.filter(line=>line!==h.polylines[0]&&line.map!==null);
+    assert.equal(currentAlternates.length,2);h.map.hide();
+    assert.ok(currentAlternates.every(line=>line.map===null),"Encerrar remove os outros caminhos da sessão");
+    await h.map.update(data);const revived=h.polylines.filter(line=>line!==h.polylines[0]&&line.map!==null);
+    await h.map.update({...data,rota:null});
+    assert.ok(revived.every(line=>line.map===null),"Limpar a rota não conserva alternativas antigas");
+    assert.equal(h.polylines[0].path.length,0);
+});
+
+test("visão completa reenquadra alternativas novas mesmo quando a rota escolhida conserva a geometria",async()=>{
+    const geometry={same:[{lat:-23.66,lng:-46.55},{lat:-23.67,lng:-46.56}],
+        near:[{lat:-23.665,lng:-46.555}],far:[{lat:-23.50,lng:-46.40}]};
+    const h=mapHarness("driver",false,false,false,{decodedPaths:geometry}),data=routeData();
+    const options=[{id:"rota-0",modo:"DRIVE",polyline:"same"},{id:"rota-1",modo:"DRIVE",polyline:"near"}];
+    data.rota={...data.rota,...options[0],calculadaEm:"2026-10-24T12:00:00.000Z",alternativas:options};
+    const pending=h.map.update(data);await settle();h.ready();await pending;h.elements.showFullRoute.events.click();
+    const fits=h.fits.length;
+    await h.map.update({...data,rota:{...data.rota,calculadaEm:"2026-10-24T12:00:20.000Z",
+        alternativas:[options[0],{...options[1],polyline:"far"}]}});
+    assert.equal(h.fits.length,fits+1,"Novo conjunto não deixa a alternativa fora do enquadramento escolhido");
+    assert.ok(h.fits.at(-1).points.some(point=>point.lat===-23.50&&point.lng===-46.40));
+    assert.equal(h.map.follow(),false,"Reenquadrar as opções mantém a visão completa em vez de seguir a seta");
 });

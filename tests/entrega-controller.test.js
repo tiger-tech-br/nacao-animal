@@ -35,6 +35,10 @@ function harness({ tracking = {}, valid = true, recent = false, existingRoute = 
                 Object.assign(state, { latitude, longitude, precisao_m: precision, atualizado_em: capture || new Date() });
                 return { rowCount: 1, rows: [] };
             }
+            if (statement.startsWith("SELECT 1 FROM entrega_rastreamento r JOIN vendas")) {
+                assert.deepEqual(values,[tokenHash]);
+                return {rows:state.valid?[{exists:1}]:[]};
+            }
             if (statement.startsWith("SELECT 1 FROM entrega_rastreamento")) {
                 assert.match(statement, /atualizado_em>=\$3::timestamptz/);
                 assert.deepEqual(values.slice(0, 2), [saleId, tokenHash]);
@@ -174,6 +178,6 @@ test("resposta de rota antiga nao substitui recalculo posterior ja salvo", async
     releases[1](latestRoute);
     assert.equal((await second).error, undefined);
     releases[0](route);
-    assert.equal((await first).error.status, 410);
+    assert.equal((await first).error.status, 409,"Uma rota substituída não encerra um link que continua válido");
     assert.equal(h.state.rota, latestRoute);
 });

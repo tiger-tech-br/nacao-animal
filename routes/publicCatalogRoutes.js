@@ -27,6 +27,7 @@ router.post("/entregas/localizacao", entregaController.localizacao);
 router.delete("/entregas/localizacao", entregaController.localizacao);
 router.get("/entregas/viagem", entregaController.viagem);
 router.post("/entregas/rota", entregaController.rota);
+router.patch("/entregas/rota", entregaController.selecionarRota);
 router.get("/entregas/mapa-config", entregaController.mapaConfig);
 const verificationLimiter = require("express-rate-limit")({
     windowMs: 15 * 60 * 1000, limit: 5,

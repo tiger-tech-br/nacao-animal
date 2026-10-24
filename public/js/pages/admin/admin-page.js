@@ -8,6 +8,8 @@
     }
 
     const isSalesPage = config.key === "vendas";
+    const courierTransportLabels = Object.freeze({ CARRO: "Carro", MOTO: "Moto", BICICLETA: "Bicicleta", A_PE: "A pé" });
+    const courierIsActive = record => record?.ativo === true || record?.ativo === "true";
 
     const isReadOnlyPage = config.readOnly === true;
 
@@ -137,6 +139,7 @@
         const nav = sidebar?.querySelector(".sidebar-nav");
         if (!nav) return;
         const links = [
+            ["entregadores", "/admin/pages/entregadores/entregadores.html", "fa-motorcycle", "Entregadores"],
             ["cupons", "/admin/pages/cupons/cupons.html", "fa-ticket", "Cupons"],
             ["usuarios", "/admin/pages/usuarios/usuarios.html", "fa-user-shield", "Usuários"],
             ["auditoria", "/admin/pages/auditoria/auditoria.html", "fa-clock-rotate-left", "Auditoria"]
@@ -149,7 +152,9 @@
             link.href = href;
             link.dataset.activePage = key;
             link.innerHTML = `<i class="fa-solid ${icon}"></i>${label}`;
-            nav.appendChild(link);
+            const ordersLink = key === "entregadores" && nav.querySelector('[data-active-page="vendas"]');
+            if (ordersLink) nav.insertBefore(link, ordersLink);
+            else nav.appendChild(link);
         }
     }
 
@@ -880,12 +885,12 @@
             return;
         }
 
-        setStatus("Removendo...");
+        setStatus(config.deleteLoadingMessage || "Removendo...");
 
         try {
             await apiDelete(`${config.endpoint}/${id}`);
             await loadData();
-            setStatus("Registro removido com sucesso.");
+            setStatus(config.deleteSuccessMessage || "Registro removido com sucesso.");
         } catch (error) {
             setStatus(error.message || "Não foi possível remover.");
         }
@@ -1276,7 +1281,11 @@
                     <i class="fa-solid fa-ban"></i>Cancelar</button>`;
         }
 
+        const courier = config.key === "entregadores";
+        const courierTest = courier && courierIsActive(record) && /^[0-9a-f-]{36}$/i.test(String(id))
+            ? `<a class="btn btn-small" href="/admin/testar-gps?entregador=${encodeURIComponent(id)}">Testar GPS</a>` : "";
         return `
+            ${courierTest}
             ${config.allowEdit === false ? "" : `<button
                 class="icon-btn"
                 type="button"
@@ -1286,13 +1295,13 @@
                 <i class="fa-solid fa-pen"></i>
             </button>`}
 
-            ${config.allowDelete === false ? "" : `<button
+            ${config.allowDelete === false || courier && !courierIsActive(record) ? "" : `<button
                 class="icon-btn"
                 type="button"
                 data-action="delete"
                 data-id="${escapeHtml(id)}"
                 title="${escapeHtml(config.deleteLabel || "Excluir")}">
-                <i class="fa-solid fa-trash"></i>
+                <i class="fa-solid ${courier ? "fa-user-slash" : "fa-trash"}"></i>
             </button>`}
         `;
     }
@@ -1480,7 +1489,12 @@
                 ${currentStatus === "SAIU_PARA_ENTREGA" ? `<div class="form-group">
                     <label>GPS da entrega</label>
                     <a class="btn btn-primary" href="/admin/acompanhar-entrega?pedido=${encodeURIComponent(sale.id)}">Acompanhar entrega</a>
-                    <button class="btn" type="button" id="createDriverLink">Gerar link para o entregador</button>
+                    <label for="deliveryCourier">Entregador</label>
+                    <select class="form-control" id="deliveryCourier" disabled><option value="">Carregando entregadores...</option></select>
+                    <small>O transporte é definido no cadastro do entregador. Ao trocar o entregador ou seu transporte, gere um novo link.</small>
+                    <a class="btn" href="/admin/pages/entregadores/entregadores.html">Gerenciar entregadores</a>
+                    <button class="btn" type="button" id="reloadDeliveryCouriers">Recarregar entregadores</button>
+                    <button class="btn" type="button" id="createDriverLink" disabled>Gerar link para o entregador</button>
                     <p>O link vale por 12 horas. Gerar outro invalida o anterior. Envie apenas ao entregador deste pedido.</p>
                     <input class="form-control" id="driverLink" aria-label="Link do entregador" readonly hidden>
                     <div id="driverLinkActions" hidden>
@@ -1609,32 +1623,104 @@
                 </div>
             </section>
         `;
-        container.querySelector("#createDriverLink")?.addEventListener("click", async event => {
-            const button = event.currentTarget;
-            const status = container.querySelector("#driverLinkStatus");
-            button.disabled = true;
+        setupSaleDelivery(container, sale);
+    }
+
+    function setupSaleDelivery(container, sale) {
+        const select = container.querySelector("#deliveryCourier");
+        if (!select) return;
+        const button = container.querySelector("#createDriverLink"), reload = container.querySelector("#reloadDeliveryCouriers");
+        const input = container.querySelector("#driverLink"), actions = container.querySelector("#driverLinkActions");
+        const open = container.querySelector("#openDriverLink"), status = container.querySelector("#driverLinkStatus");
+        const revision = saleDetailsRevision;
+        const isCurrent = () => revision === saleDetailsRevision && selectedSaleId === sale.id && container.querySelector("#deliveryCourier") === select;
+        let couriers = [], loaded = false, creating = false, listRevision = 0, linkCourierId = "";
+        const selectedCourier = () => couriers.find(item => item.id === select.value);
+        const clearLink = () => {
+            linkCourierId = ""; input.value = ""; input.hidden = true; actions.hidden = true; open.removeAttribute("href");
+        };
+        const syncControls = () => {
+            select.disabled = creating || !loaded || !couriers.length;
+            button.disabled = creating || !loaded || !selectedCourier();
+            reload.disabled = creating;
+        };
+        const hasCurrentLink = () => isCurrent() && !creating && input.value && linkCourierId === select.value;
+        async function loadCouriers() {
+            if (!isCurrent() || creating) return;
+            const current = ++listRevision;
+            loaded = false; clearLink(); syncControls(); reload.disabled = true;
+            select.innerHTML = '<option value="">Carregando entregadores...</option>';
+            status.textContent = "Carregando entregadores cadastrados...";
             try {
-                const payload = await apiPost(`/vendas/${sale.id}/rastreamento`, {});
-                const input = container.querySelector("#driverLink");
-                input.value = payload.data.url; input.hidden = false;
-                container.querySelector("#driverLinkActions").hidden = false;
-                container.querySelector("#openDriverLink").href = payload.data.url;
+                const [response, trackingResponse] = await Promise.all([apiGet("/entregadores"), apiGet(`/vendas/${sale.id}/rastreamento`)]);
+                if (!isCurrent() || current !== listRevision) return;
+                if (!Array.isArray(response) && !Array.isArray(response?.data)) throw new Error("A lista de entregadores não pôde ser carregada.");
+                const tracking = trackingResponse?.data || trackingResponse;
+                if (!tracking || tracking.status !== "SAIU_PARA_ENTREGA") throw new Error("Confira o status atual do pedido antes de gerar um link.");
+                couriers = normalizeResponse(response).filter(item => courierIsActive(item) &&
+                    /^[0-9a-f-]{36}$/i.test(String(item.id)) && typeof (item.nome || item.name) === "string" &&
+                    (item.nome || item.name).trim() && Object.hasOwn(courierTransportLabels, item.meio_transporte));
+                select.innerHTML = '<option value="">Selecione o entregador</option>' + couriers.map(item =>
+                    `<option value="${escapeHtml(item.id)}">${escapeHtml(item.nome || item.name)} · ${courierTransportLabels[item.meio_transporte]}</option>`).join("");
+                select.value = couriers.some(item => item.id === tracking.entregador_id) ? tracking.entregador_id : "";
+                loaded = true;
+                button.textContent = tracking.entregador_id ? "Gerar novo link para o entregador" : "Gerar link para o entregador";
+                const previousTransport = courierTransportLabels[tracking.meio_transporte];
+                status.textContent = !couriers.length ? "Cadastre ou reative um entregador para gerar o link deste pedido."
+                    : tracking.entregador_id && !select.value ? "O entregador anterior está indisponível. Selecione um entregador ativo e gere um novo link."
+                    : select.value ? `Entregador atual selecionado${previousTransport ? ` · Transporte do link atual: ${previousTransport}` : ""}. Gere um novo link para aplicar alterações e compartilhá-lo.`
+                    : "Selecione quem fará a entrega. O link utilizará o transporte desse cadastro.";
+            } catch (error) {
+                if (!isCurrent() || current !== listRevision) return;
+                couriers = []; select.value = ""; select.innerHTML = '<option value="">Entregadores indisponíveis</option>';
+                status.textContent = `${error.message || "Não foi possível carregar os entregadores."} Use Recarregar entregadores para tentar novamente.`;
+            } finally {
+                if (isCurrent() && current === listRevision) syncControls();
+            }
+        }
+        select.addEventListener("change", () => {
+            if (!isCurrent()) return;
+            clearLink(); syncControls();
+            if (!creating) status.textContent = selectedCourier() ? "Gere um novo link para este entregador. O link anterior não será reutilizado." : "Selecione o entregador antes de gerar o link.";
+        });
+        reload.addEventListener("click", loadCouriers);
+        button.addEventListener("click", async () => {
+            if (!isCurrent() || creating || !loaded) return;
+            const courier = selectedCourier();
+            if (!courier) { clearLink(); syncControls(); status.textContent = "Selecione um entregador cadastrado antes de gerar o link."; return; }
+            creating = true; clearLink(); syncControls(); status.textContent = "Gerando link exclusivo para este entregador...";
+            try {
+                const payload = await apiPost(`/vendas/${sale.id}/rastreamento`, { entregadorId: courier.id });
+                if (!isCurrent() || select.value !== courier.id) return;
+                const url = payload?.data?.url;
+                if (typeof url !== "string" || !/^https?:\/\/[^\s]+\/entregador#[a-f0-9]{64}$/.test(url)) throw new Error("O servidor não retornou um link válido.");
+                linkCourierId = courier.id; input.value = url; input.hidden = false; actions.hidden = false; open.href = url;
+                button.textContent = "Gerar novo link para o entregador";
                 input.focus(); input.select();
-                status.textContent = "Link pronto. Compartilhe com o entregador. Ele deve abrir no próprio celular e tocar em Iniciar viagem. O cliente já pode acessar Rastrear pedido pelo e-mail e pelas notificações.";
-            } catch (error) { status.textContent = error.message; }
-            finally { button.disabled = false; }
+                status.textContent = `Link pronto para ${courier.nome || courier.name} · ${courierTransportLabels[courier.meio_transporte]}. Compartilhe apenas com esse entregador. Ele deve abrir no próprio celular e tocar em Iniciar viagem. O cliente pode usar Rastrear pedido.`;
+            } catch (error) {
+                if (!isCurrent()) return;
+                loaded = false; clearLink();
+                status.textContent = `${error.message || "Não foi possível gerar o link."} Recarregue os entregadores para conferir os dados antes de tentar novamente.`;
+            } finally {
+                creating = false;
+                if (isCurrent()) syncControls();
+            }
         });
         const copyLink = async () => {
-            const input = container.querySelector("#driverLink"), message = container.querySelector("#driverLinkStatus");
-            try { await navigator.clipboard.writeText(input.value); message.textContent = "Link copiado. Envie apenas ao entregador deste pedido."; }
-            catch { input.focus(); input.select(); message.textContent = "Selecione e copie o link acima."; }
+            if (!hasCurrentLink()) return;
+            const url = input.value;
+            try { await navigator.clipboard.writeText(url); if (hasCurrentLink() && input.value === url) status.textContent = "Link copiado. Envie apenas ao entregador selecionado."; }
+            catch { if (hasCurrentLink() && input.value === url) { input.focus(); input.select(); status.textContent = "Selecione e copie o link acima."; } }
         };
         container.querySelector("#copyDriverLink")?.addEventListener("click", copyLink);
         container.querySelector("#shareDriverLink")?.addEventListener("click", async () => {
+            if (!hasCurrentLink()) return;
             if (!navigator.share) return copyLink();
-            try { await navigator.share({ title: "Nação Animal — iniciar viagem", text: "Abra no celular da entrega e toque em Iniciar viagem. Link exclusivo do entregador.", url: container.querySelector("#driverLink").value }); }
+            try { await navigator.share({ title: "Nação Animal — iniciar viagem", text: "Abra no celular da entrega e toque em Iniciar viagem. Link exclusivo do entregador.", url: input.value }); }
             catch (error) { if (error.name !== "AbortError") await copyLink(); }
         });
+        loadCouriers();
     }
 
     function buildSaleStatusOptions(currentStatus) {
@@ -1892,6 +1978,10 @@
     function formatValue(value, column = {}) {
         if (value === null || value === undefined || value === "") {
             return "-";
+        }
+
+        if (column.labels && Object.hasOwn(column.labels, String(value))) {
+            return escapeHtml(column.labels[String(value)]);
         }
 
         if (typeof value === "boolean") {

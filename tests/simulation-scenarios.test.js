@@ -8,8 +8,8 @@ function replay(id,{reroute=true}={}) {
     let engine=navigation.create(scenario.route),latest=null,now=Date.parse(scenario.route.calculadaEm);
     assert.ok(engine,"O motor de produção aceita o trajeto");
     for(const [index,frame] of scenario.frames.entries()) {
-        now+=1000;
-        if(frame.type==="position") latest={...frame,atualizado_em:new Date(now).toISOString()};
+        now+=frame.intervalMs||1000;
+        if(frame.type==="position") latest={...frame,atualizado_em:new Date(now-(frame.sampleAgeMs||0)).toISOString()};
         const result=latest ? engine.update(latest,now) : {state:"missing"};
         records.push({index,frame,result,latest:latest&&{...latest},now});
         if(reroute&&result.recalculate) {
@@ -23,13 +23,13 @@ function replay(id,{reroute=true}={}) {
     return {scenario,records,reroutes};
 }
 
-test("quatro percursos artificiais têm tamanho útil, dados isolados e formato aceito pela navegação",()=>{
+test("oito percursos artificiais têm tamanho útil, dados isolados e formato aceito pela navegação",()=>{
     const catalog=scenarios.list();
-    assert.deepEqual(catalog.map(item=>item.id),["curvas-chegada","desvio-recalculo","sinal-parada-retomada","passos-curtos-retorno"]);
+    assert.deepEqual(catalog.map(item=>item.id),["curvas-chegada","desvio-recalculo","sinal-parada-retomada","passos-curtos-retorno","conducao-30","conducao-50","conducao-80","gps-irregular"]);
     for(const meta of catalog) {
         assert.deepEqual(Object.keys(meta).sort(),["description","id","title"]);
         const scenario=scenarios.create(meta.id);
-        assert.ok(scenario.frames.length>=20&&scenario.frames.length<=40);
+        assert.ok(scenario.frames.length>=20&&scenario.frames.length<100);
         assert.ok(navigation.create(scenario.route));
         assert.equal(scenario.route.tipoOrigem,"GPS_ENTREGADOR");
         assert.ok(Number.isFinite(Date.parse(scenario.route.calculadaEm)));
@@ -40,10 +40,13 @@ test("quatro percursos artificiais têm tamanho útil, dados isolados e formato 
                 assert.deepEqual(Object.keys(frame).sort(),["label","type"],"Ausência de sinal não fornece coordenadas inventadas");
                 continue;
             }
-            assert.deepEqual(Object.keys(frame).sort(),["heading","label","latitude","longitude","precisao_m","type","velocidade_mps"]);
+            const keys=["heading","label","latitude","longitude","precisao_m","type","velocidade_mps"];
+            if(meta.id.startsWith("conducao-")) keys.push("intervalMs");
+            if(meta.id==="gps-irregular") keys.push("intervalMs","sampleAgeMs");
+            assert.deepEqual(Object.keys(frame).sort(),keys.sort());
             assert.ok(frame.latitude>=40.78&&frame.latitude<40.784);
             assert.ok(frame.longitude>=-73.97&&frame.longitude< -73.965);
-            assert.ok(frame.precisao_m>0&&frame.velocidade_mps>=0);
+            assert.ok(frame.precisao_m>0&&(frame.velocidade_mps===null||frame.velocidade_mps>=0));
         }
         const copy=scenarios.create(meta.id);
         scenario.frames[0].latitude=0;scenario.route.destino.latitude=0;
@@ -54,17 +57,62 @@ test("quatro percursos artificiais têm tamanho útil, dados isolados e formato 
     assert.throws(()=>scenarios.create("inexistente"),RangeError);
 });
 
-test("velocidade corresponde ao deslocamento por frame de um segundo, sem previsão de GPS",()=>{
+test("velocidade corresponde ao deslocamento por intervalo de leitura, sem previsão de GPS",()=>{
     for(const {id} of scenarios.list()) {
+        if(id==="gps-irregular") continue; // Este caso exercita informação de velocidade ausente/inconsistente.
         let previous;
         for(const frame of scenarios.create(id).frames) {
             if(frame.type!=="position") continue;
             const moved=previous?navigation.distance(previous,frame):0;
-            assert.ok(Math.abs(frame.velocidade_mps-moved)<.000001,"Velocidade usa somente duas posições artificiais consecutivas");
-            if(moved>.05) assert.ok(id==="passos-curtos-retorno"?moved<5:moved>=8&&moved<=15);
+            assert.ok(Math.abs(frame.velocidade_mps-moved/((frame.intervalMs||1000)/1000))<.000001,"Velocidade usa somente duas posições artificiais consecutivas e o intervalo real do cenário");
+            if(moved>.05&&!id.startsWith("conducao-")) assert.ok(id==="passos-curtos-retorno"?moved<5:moved>=8&&moved<=15);
             previous=frame;
         }
     }
+});
+
+test("GPS irregular reproduz caminhada com intervalos de três e cinco segundos, precisão variável e atraso sem desvio fictício",()=>{
+    const {scenario,records,reroutes}=replay("gps-irregular");
+    assert.ok(scenario.route.distanciaMetros>=80&&scenario.route.distanciaMetros<=100);
+    assert.ok(scenario.frames.length>=20&&scenario.frames.length<=30);
+    assert.deepEqual([...new Set(scenario.frames.map(frame=>frame.intervalMs))].sort((a,b)=>a-b),[3000,5000]);
+    assert.deepEqual([...new Set(scenario.frames.map(frame=>frame.precisao_m))].sort((a,b)=>a-b),[8,20]);
+    assert.ok(scenario.frames.every(frame=>frame.type==="position"&&frame.heading===null&&frame.sampleAgeMs===2000));
+    assert.ok(scenario.frames.some(frame=>frame.velocidade_mps===null));
+    assert.ok(scenario.frames.some(frame=>frame.velocidade_mps===0));
+    for(let index=1;index<scenario.frames.length;index++) {
+        const current=scenario.frames[index],previous=scenario.frames[index-1],moved=navigation.distance(previous,current);
+        if(index===scenario.frames.length-1) assert.equal(moved,0,"A chegada termina com uma leitura estacionária própria");
+        else assert.ok(Math.abs(moved/(current.intervalMs/1000)-1)<.02,"As coordenadas avançam aproximadamente 1 m/s, mesmo sem velocidade nativa útil");
+    }
+    assert.ok(records.every(item=>item.now-Date.parse(item.latest.atualizado_em)===2000),"O motor recebe cada fix com a idade artificial real do cenário");
+    assert.ok(records.every(item=>["navigating","arrived"].includes(item.result.state)),"Leituras esparsas ainda percorrem a rota usando somente coordenadas recebidas");
+    assert.deepEqual([...new Set(records.map(item=>item.result.index))],[0,1,2]);
+    assert.equal(reroutes.length,0);assert.equal(records.at(-1).result.state,"arrived");
+    assert.equal(records.at(-1).result.speedKmh,0);
+    assert.deepEqual({latitude:records.at(-1).latest.latitude,longitude:records.at(-1).latest.longitude},scenario.route.destino);
+    assert.ok(records.slice(1).every((item,index)=>item.result.remainingMeters<=records[index].result.remainingMeters+.01));
+});
+
+for(const speedKmh of [30,50,80]) test(`condução até ${speedKmh} km/h varia leituras, reduz nas curvas, para e chega sem desvio`,()=>{
+    const {scenario,records,reroutes}=replay(`conducao-${speedKmh}`);
+    const speeds=scenario.frames.map(frame=>frame.velocidade_mps*3.6);
+    assert.ok(Math.abs(Math.max(...speeds)-speedKmh)<.1,"O cenário realmente atinge a velocidade anunciada");
+    const intervals=new Set(scenario.frames.map(frame=>frame.intervalMs));
+    for(const interval of [500,1000,1500]) assert.ok(intervals.has(interval),"Há leituras espaçadas de forma irregular");
+    assert.ok(scenario.frames.every(frame=>Number.isInteger(frame.intervalMs)&&frame.intervalMs>=100&&frame.intervalMs<=1500));
+    const slow=scenario.frames.filter(frame=>frame.label==="Velocidade reduzida na curva simulada");
+    assert.ok(slow.length>=4);assert.ok(slow.every(frame=>frame.velocidade_mps*3.6<=20));
+    const stopped=scenario.frames.map((frame,index)=>({frame,index})).filter(item=>item.frame.label.startsWith("Parada artificial"));
+    assert.equal(stopped.length,3);
+    assert.ok(stopped.every(item=>item.frame.velocidade_mps===0&&item.frame.intervalMs===1000));
+    assert.ok(scenario.frames[stopped.at(-1).index+1].velocidade_mps>0,"O movimento retoma após as leituras estacionárias");
+    assert.deepEqual([...new Set(records.map(item=>item.result.index))],[0,1,2,3]);
+    assert.ok(records.every(item=>["navigating","arrived"].includes(item.result.state)),"Curvas e paradas reais do cenário são aceitas pelo motor de produção");
+    assert.equal(reroutes.length,0);assert.equal(records.at(-1).result.state,"arrived");
+    assert.equal(records.at(-1).result.speedKmh,0);
+    const remaining=records.map(item=>item.result.remainingMeters);
+    assert.ok(remaining.slice(1).every((meters,index)=>meters<=remaining[index]+.01),"O progresso não regride nas mudanças de intervalo ou nas curvas");
 });
 
 test("curvas e chegada percorrem as três etapas e terminam parados no destino",()=>{
@@ -128,7 +176,7 @@ test("módulo também funciona no navegador sem acessar sensor, rede ou armazena
     for(const name of ["navigator","fetch","localStorage","sessionStorage"]) for(const target of [context,context.window]) Object.defineProperty(target,name,{get(){assert.fail(`Simulação não deve acessar ${name}`);}});
     vm.runInNewContext(fs.readFileSync("public/js/pages/delivery/simulation-scenarios.js","utf8"),context);
     const api=context.window.PetFlowDeliveryScenarios;
-    assert.equal(api.list().length,4);
+    assert.equal(api.list().length,8);
     const scenario=api.create("desvio-recalculo");
     const off=scenario.frames.find(frame=>frame.label.startsWith("Segunda posição"));
     const route=scenario.reroute(off);

@@ -42,6 +42,7 @@ const itemVendaRoutes = require("./routes/itemVendaRoutes");
 
 
 const fornecedorRoutes = require("./routes/fornecedorRoutes");
+const entregadorRoutes = require("./routes/entregadorRoutes");
 
 const compraRoutes = require("./routes/compraRoutes");
 
@@ -297,6 +298,7 @@ app.use("/api/itens-venda", itemVendaRoutes);
 
 
 app.use("/api/fornecedores", fornecedorRoutes);
+app.use("/api/entregadores", entregadorRoutes);
 
 app.use("/api/compras", compraRoutes);
 

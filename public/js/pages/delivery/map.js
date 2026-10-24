@@ -78,13 +78,116 @@
         const lat = number(data?.latitude), lng = number(data?.longitude);
         return Number.isFinite(lat) && Math.abs(lat) <= 90 && Number.isFinite(lng) && Math.abs(lng) <= 180 ? { lat, lng } : null;
     }
-    window.PetFlowDeliveryMap = function ({ mode = "tracking", onStatus, onViewChange } = {}) {
+    function metersBetween(a, b) {
+        if (!a || !b) return 0;
+        const rad = Math.PI / 180, dlat = (b.lat-a.lat)*rad, dlng = (b.lng-a.lng)*rad;
+        const value = Math.sin(dlat/2)**2 + Math.cos(a.lat*rad)*Math.cos(b.lat*rad)*Math.sin(dlng/2)**2;
+        return 12742000 * Math.asin(Math.sqrt(Math.min(1, value)));
+    }
+    const angleBetween = (from, to) => ((to-from+540)%360)-180;
+    const normalizedAngle = value => (value%360+360)%360;
+    window.PetFlowDeliveryMap = function ({ mode = "tracking", onStatus, onViewChange, onMotion } = {}) {
         const navigation = mode === "driver";
         const element = document.getElementById("deliveryMap"), message = document.getElementById("mapStatus");
         const recenter = document.getElementById(navigation ? "recenterMap" : "centerTrackingMap");
         const showRoute = navigation ? document.getElementById("showFullRoute") : null;
         let map, driver, origin, destination, route, accuracy, lastPolyline, lastDestination, routeBounds, version = 0;
+        let alternateRoutes = [], alternativeKey;
         let currentPosition, currentDestination, headingOrigin, heading = null, following = true, overview = !navigation, manualView = false;
+        let lastStatus, lastStatusState;
+        // Apenas a apresentação interpola. Motor, chegada e compartilhamento
+        // continuam recebendo exclusivamente as leituras originais do aparelho.
+        let visualPosition, visualHeading = null, targetPosition, targetTime = null;
+        let motionFrame = null, motionEpoch = 0, motionPaused = false, snapNext = true;
+        let lastMotionTime = null, lastReceiptAt = null, receivedAge = 0, duration = 0, renderDelay = 0;
+        let motionReason = "first-fix", sensorInterval = 0, receiptInterval = 0;
+        const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+        const motionClock = () => window.performance?.now?.() ?? Date.now();
+        function motionNotice(active = false, phase = "frame") {
+            onMotion?.({ active, phase, reason: motionReason, sensorIntervalMs: sensorInterval, receiptIntervalMs: receiptInterval,
+                sampleAgeMs: targetTime === null ? 0 : Math.max(0, Date.now()-targetTime),
+                receivedAgeMs: receivedAge, durationMs: duration, renderDelayMs: renderDelay,
+                remainingMeters: metersBetween(visualPosition, targetPosition) });
+        }
+        function cancelMotion() {
+            motionEpoch++;
+            if (motionFrame !== null) window.cancelAnimationFrame?.(motionFrame);
+            motionFrame = null;
+        }
+        function pauseMotion() {
+            const wasPaused = motionPaused;
+            cancelMotion(); motionPaused = true; snapNext = true;
+            if (!wasPaused) { motionReason = "paused"; motionNotice(false, "paused"); }
+        }
+        function drawPosition(position, direction) {
+            visualPosition = { ...position }; visualHeading = direction;
+            // Marcador, círculo e câmera usam exatamente o mesmo ponto visual.
+            if (following) map.setCenter(visualPosition);
+            driver.setPosition(visualPosition); driver.setHeading(visualHeading);
+            accuracy.setCenter(visualPosition);
+        }
+        function movePosition(position, direction, data, precision) {
+            const rawTime = data.atualizado_em ? Date.parse(data.atualizado_em) : data.timestamp;
+            const time = Number.isFinite(rawTime) ? rawTime : null;
+            // Uma rota que terminou de carregar não constitui uma leitura GPS.
+            if (time !== null && lastMotionTime !== null && time <= lastMotionTime) return;
+            if (motionPaused && lastMotionTime !== null && (time === null || time <= lastMotionTime)) return;
+            if (document.hidden) { pauseMotion(); return; }
+            const receipt = motionClock(), previousTime = lastMotionTime, previousReceipt = lastReceiptAt;
+            const previousTarget = targetPosition;
+            const resuming = motionPaused;
+            cancelMotion(); motionPaused = false;
+            targetPosition = { ...position }; targetTime = time;
+            lastMotionTime = time; lastReceiptAt = receipt;
+            receivedAge = time === null ? 0 : Math.max(0, Date.now()-time);
+            duration = renderDelay = 0;
+            const interval = receiptInterval = previousReceipt === null ? 0 : Math.max(0, receipt-previousReceipt);
+            const sampleInterval = sensorInterval = previousTime === null || time === null ? 0 : time-previousTime;
+            const distance = metersBetween(visualPosition, position);
+            const usable = precision !== null && time !== null && Date.now()-time <= 3000 && time-Date.now() <= 5000;
+            // Uma velocidade zero isolada não invalida o deslocamento observado.
+            // GPS real pode atualizar mais devagar que os pontos do simulador.
+            motionReason = !visualPosition ? "first-fix" : resuming ? "resume"
+                : !window.requestAnimationFrame || !window.cancelAnimationFrame ? "unsupported"
+                : reducedMotion?.matches ? "reduced-motion" : precision === null ? "imprecise"
+                : time === null ? "no-timestamp" : !usable ? "old-fix"
+                : snapNext ? "resume" : sampleInterval <= 0 || sampleInterval > 5000 ? "sample-gap"
+                : interval <= 0 || interval > 5000 ? "receipt-gap" : distance > 120 ? "large-jump"
+                : distance < .005 && Math.abs(angleBetween(visualHeading ?? 0, direction ?? 0)) < .01 ? "stationary" : "animated";
+            snapNext = !usable;
+            if (motionReason !== "animated") { drawPosition(position, direction); motionNotice(false, "sample"); return; }
+            const speed = Math.max(Number.isFinite(data.velocidade_mps) ? data.velocidade_mps : 0,
+                metersBetween(previousTarget, position) / (sampleInterval/1000));
+            // Resposta curta também ao caminhar: até 160 ms após receber o fix.
+            // Em velocidade alta, reduz o atraso visual para um orçamento de ~4 m.
+            // Nunca avança além da última coordenada nem enfileira panTo.
+            duration = Math.min(160, interval*.65, speed > .1 ? 4000/speed : 160);
+            if (duration < 30) { duration = 0; motionReason = "fast-catch-up"; drawPosition(position, direction); motionNotice(false, "sample"); return; }
+            const from = { ...visualPosition }, fromHeading = visualHeading ?? direction ?? 0;
+            const toHeading = direction ?? fromHeading, turn = angleBetween(fromHeading, toHeading);
+            let longitudeDelta = position.lng-from.lng;
+            if (longitudeDelta > 180) longitudeDelta -= 360;
+            if (longitudeDelta < -180) longitudeDelta += 360;
+            const epoch = motionEpoch, started = motionClock();
+            function frame() {
+                if (epoch !== motionEpoch) return;
+                if (document.hidden || element.hidden || motionPaused) { pauseMotion(); return; }
+                renderDelay = Math.max(0, motionClock()-started);
+                const progress = Math.min(1, renderDelay/duration);
+                let longitude = from.lng+longitudeDelta*progress;
+                if (longitude > 180) longitude -= 360;
+                if (longitude < -180) longitude += 360;
+                const point = progress === 1 ? position : {lat:from.lat+(position.lat-from.lat)*progress,lng:longitude};
+                drawPosition(point, progress === 1 ? direction : normalizedAngle(fromHeading+turn*progress));
+                motionFrame = null;
+                motionNotice(progress < 1);
+                if (progress < 1) motionFrame = window.requestAnimationFrame(frame);
+            }
+            motionNotice(true, "sample");
+            motionFrame = window.requestAnimationFrame(frame);
+        }
+        document.addEventListener?.("visibilitychange", () => { if (document.hidden) pauseMotion(); });
+        window.addEventListener?.("pagehide", pauseMotion);
         function announceView() {
             if (recenter) {
                 recenter.setAttribute("aria-pressed", String(following));
@@ -101,10 +204,13 @@
             onViewChange?.({ following, overview });
         }
         function setStatus(text, state = "ready") {
+            if (text === lastStatus && state === lastStatusState) return;
+            lastStatus = text; lastStatusState = state;
             message.textContent = text;
             onStatus?.({ message: text, state });
         }
         authenticationListeners.add(error => {
+            pauseMotion();
             version++; element.hidden = true;
             if (recenter) recenter.hidden = true;
             if (showRoute) showRoute.hidden = true;
@@ -124,26 +230,33 @@
             if (!navigation && currentDestination) {
                 const bounds = new google.maps.LatLngBounds(); bounds.extend(currentPosition); bounds.extend(currentDestination);
                 map.fitBounds(bounds, { top: 72, right: 42, bottom: 190, left: 42 });
-            } else { map.setZoom(17); map.setCenter(currentPosition); }
+            } else { map.setZoom(17); map.setCenter(visualPosition || currentPosition); }
             announceView();
             return true;
+        }
+        function fullBounds() {
+            const bounds = new google.maps.LatLngBounds();
+            bounds.union(routeBounds);
+            if (currentPosition) bounds.extend(currentPosition);
+            return bounds;
         }
         recenter?.addEventListener("click", () => followPosition(true));
         showRoute?.addEventListener("click", () => {
             if (!map || !routeBounds || element.hidden) return;
-            manualView = true; following = false; overview = true; map.fitBounds(routeBounds, 40);
+            manualView = true; following = false; overview = true; map.fitBounds(fullBounds(), 40);
             announceView();
         });
         announceView();
         return {
             follow: followPosition,
-            hide() { version++; element.hidden = true; setStatus(""); headingOrigin = null; heading = null; following = true; overview = !navigation; manualView = false; if (recenter) recenter.hidden = true; if (showRoute) showRoute.hidden = true; announceView(); },
+            pauseMotion,
+            hide() { pauseMotion(); alternateRoutes.forEach(line=>line.setMap?.(null)); alternateRoutes=[];alternativeKey=undefined; version++; element.hidden = true; setStatus(""); headingOrigin = null; heading = null; visualPosition = targetPosition = undefined; visualHeading = null; lastMotionTime = targetTime = lastReceiptAt = null; following = true; overview = !navigation; manualView = false; if (recenter) recenter.hidden = true; if (showRoute) showRoute.hidden = true; announceView(); },
             resize() {
                 if (!map || element.hidden) return;
                 google.maps.event?.trigger(map, "resize");
                 if (!navigation) followPosition();
-                else if (following) map.setCenter(currentPosition);
-                else if (overview && routeBounds) map.fitBounds(routeBounds, 40);
+                else if (following) map.setCenter(visualPosition || currentPosition);
+                else if (overview && routeBounds) map.fitBounds(fullBounds(), 40);
             },
             async update(data) {
                 const current = ++version, address = data.endereco_entrega;
@@ -161,12 +274,13 @@
                 const hasRoute = Boolean(hasDestination && data.rota.polyline && startPosition);
                 if (originElement) originElement.textContent = hasPosition ? (hasRoute ? "Partida da rota: posição GPS usada no último cálculo." : "Localização do entregador: última posição GPS recebida.") : "Aguardando a localização do entregador.";
                 if (!hasPosition) {
+                    pauseMotion();
                     element.hidden = true; if (recenter) recenter.hidden = true; if (showRoute) showRoute.hidden = true;
                     setStatus(locationProvided ? "A localização recebida não é válida. Aguarde uma nova posição GPS." : "Aguardando o entregador compartilhar o GPS para mostrar o mapa.", locationProvided ? "error" : "waiting");
                     return;
                 }
                 try {
-                    setStatus("Carregando mapa...", "loading");
+                    if (!map) setStatus("Carregando mapa...", "loading");
                     await loadMaps();
                     if (current !== version) return;
                     element.hidden = false;
@@ -184,19 +298,19 @@
                     }
                     if (navigation) {
                         const precision = Number.isFinite(data.precisao_m) && data.precisao_m >= 0 && data.precisao_m <= 50 ? data.precisao_m : null;
+                        const fixTime = data.atualizado_em ? Date.parse(data.atualizado_em) : data.timestamp;
+                        const freshDirection = !Number.isFinite(fixTime) || Date.now()-fixTime <= 15000 && fixTime-Date.now() <= 5000;
                         const nativeHeading = Number.isFinite(data.heading) && data.heading >= 0 && data.heading < 360 ? data.heading : null;
-                        const nextHeading = nativeHeading ?? (precision !== null ? movementHeading(headingOrigin, position, precision) : null);
+                        const nextHeading = freshDirection ? nativeHeading ?? (precision !== null ? movementHeading(headingOrigin, position, precision) : null) : null;
                         if (nextHeading !== null) heading = nextHeading;
-                        driver.setHeading(heading);
                         // Sem rumo nativo, conserva a referência até o movimento
                         // observado superar a precisão; passos curtos também contam.
-                        if (precision !== null && (!headingOrigin || nextHeading !== null)) headingOrigin = { ...position, precision };
-                        // Cada leitura real define a câmera diretamente, sem
-                        // enfileirar animações de pan que podem atrasar no celular.
-                        if (following) map.setCenter(position);
+                        if (precision !== null && freshDirection && (!headingOrigin || nextHeading !== null)) headingOrigin = { ...position, precision };
+                        movePosition(position, heading, data, precision);
                     }
                     if (recenter) recenter.hidden = false;
-                    driver.setPosition(position); accuracy.setCenter(currentPosition); accuracy.setRadius(hasPosition ? Math.max(0, Number(data.precisao_m) || 0) : 0);
+                    if (!navigation) { driver.setPosition(position); accuracy.setCenter(position); }
+                    accuracy.setRadius(hasPosition ? Math.max(0, Number(data.precisao_m) || 0) : 0);
                     destination.setVisible(hasDestination);
                     currentDestination = destinationPosition;
                     if (hasDestination) destination.setCenter(destinationPosition);
@@ -211,20 +325,36 @@
                         route.setPath(path);
                         lastPolyline = data.rota.polyline;
                     }
-                    if (hasRoute) {
+                    const alternatives = navigation && hasRoute && Array.isArray(data.rota.alternativas) ? data.rota.alternativas.filter(option=>option.id!==data.rota.id && option.modo===data.rota.modo && typeof option.polyline==="string") : [];
+                    const nextAlternativeKey = hasRoute ? `${data.rota.calculadaEm || ""}|${data.rota.id || ""}|${data.rota.modo || ""}|${alternatives.length}` : "";
+                    const alternativesChanged = nextAlternativeKey!==alternativeKey;
+                    if (alternativesChanged) {
+                        alternateRoutes.forEach(line=>line.setMap?.(null)); alternateRoutes=[];alternativeKey=nextAlternativeKey;
+                        for (const option of alternatives) {
+                            try {
+                                const path=google.maps.geometry.encoding.decodePath(option.polyline);
+                                alternateRoutes.push(new google.maps.Polyline({map,path,strokeColor:"#8fa5b1",strokeOpacity:.65,strokeWeight:5,zIndex:1,clickable:false}));
+                            } catch { /* Uma alternativa inválida não remove o trajeto escolhido. */ }
+                        }
+                    }
+                    if (hasRoute && (routeChanged || alternativesChanged || !routeBounds)) {
                         routeBounds = new google.maps.LatLngBounds();
                         route.getPath().forEach(point => routeBounds.extend(point));
                         routeBounds.extend(startPosition);
-                        routeBounds.extend(destinationPosition); routeBounds.extend(position);
-                        if (navigation && overview && (routeChanged || !map.getBounds()?.contains(position))) map.fitBounds(routeBounds, 40);
+                        routeBounds.extend(destinationPosition);
+                        alternateRoutes.forEach(line=>line.getPath().forEach(point=>routeBounds.extend(point)));
+                    }
+                    if (hasRoute && navigation && overview && (routeChanged || alternativesChanged || !map.getBounds()?.contains(position))) {
+                        map.fitBounds(fullBounds(), 40);
                     }
                     if (!navigation && hasDestination && (following || lastDestination !== JSON.stringify(destinationPosition))) {
                         followPosition(); lastDestination = JSON.stringify(destinationPosition);
                     }
-                    setStatus(navigation
+                    const routeWarnings=Array.isArray(data.rota?.avisos) ? data.rota.avisos.filter(value=>typeof value==="string").join(" ") : "";
+                    setStatus((navigation
                         ? `Seta azul: sua posição GPS · Verde: partida da rota · Laranja: destino. ${hasRoute ? "Siga a linha azul da rota." : "Aguardando a rota até o destino."} ${heading === null ? "Aguardando a primeira direção do GPS; a seta está voltada para cima." : "Sem uma nova direção, a seta mantém a última direção conhecida."}`
-                        : `Van: última posição recebida do entregador. ${hasRoute ? "Linha azul: trajeto da partida verde até o destino laranja." : (hasDestination ? "Ponto laranja: endereço da entrega. Aguardando o trajeto." : "Aguardando a localização do endereço da entrega.")}`);
-                } catch (error) { if (current === version) { element.hidden = true; if (recenter) recenter.hidden = true; if (showRoute) showRoute.hidden = true; setStatus(error.message, "error"); } }
+                        : `Van: última posição recebida do entregador. ${hasRoute ? "Linha azul: trajeto da partida verde até o destino laranja." : (hasDestination ? "Ponto laranja: endereço da entrega. Aguardando o trajeto." : "Aguardando a localização do endereço da entrega.")}`) + (routeWarnings ? ` ${routeWarnings}` : ""));
+                } catch (error) { if (current === version) { pauseMotion(); element.hidden = true; if (recenter) recenter.hidden = true; if (showRoute) showRoute.hidden = true; setStatus(error.message, "error"); } }
             }
         };
     };

@@ -28,14 +28,23 @@ async function consultarCep(req, res, next) {
 async function criarLink(req, res, next) {
     try {
         if (!uuid(req.params.id)) throw fail("Pedido inválido.", 400);
+        const body = req.body;
+        if (!body || Array.isArray(body) || Object.keys(body).some(key => key !== "entregadorId") || !uuid(body.entregadorId))
+            throw fail("Selecione um entregador cadastrado para gerar o link.", 400);
         const token = crypto.randomBytes(32).toString("hex");
         await db.transaction(async client => {
             const { rows } = await client.query("SELECT status FROM vendas WHERE id=$1 AND empresa_id=$2 FOR UPDATE", [req.params.id, req.user.empresaId]);
             if (!rows[0]) throw fail("Pedido não encontrado.", 404);
             if (rows[0].status !== "SAIU_PARA_ENTREGA") throw fail("Marque o pedido como Saiu para entrega antes de gerar o link.", 409);
-            await client.query(`INSERT INTO entrega_rastreamento (venda_id,token_hash,expira_em) VALUES ($1,$2,NOW()+INTERVAL '12 hours')
+            const driver = await client.query(`SELECT id,meio_transporte FROM entregadores
+                WHERE id=$1 AND empresa_id=$2 AND ativo=TRUE FOR SHARE`, [body.entregadorId,req.user.empresaId]);
+            if (!driver.rows[0]) throw fail("Selecione um entregador ativo desta loja.", 404);
+            await client.query(`INSERT INTO entrega_rastreamento (venda_id,token_hash,expira_em,entregador_id,meio_transporte)
+                VALUES ($1,$2,NOW()+INTERVAL '12 hours',$3,$4)
                 ON CONFLICT (venda_id) DO UPDATE SET token_hash=EXCLUDED.token_hash,expira_em=EXCLUDED.expira_em,
-                latitude=NULL,longitude=NULL,precisao_m=NULL,atualizado_em=NULL,rota=NULL,rota_solicitada_em=NULL`, [req.params.id, hash(token)]);
+                entregador_id=EXCLUDED.entregador_id,meio_transporte=EXCLUDED.meio_transporte,
+                latitude=NULL,longitude=NULL,precisao_m=NULL,atualizado_em=NULL,rota=NULL,rota_solicitada_em=NULL`,
+                [req.params.id,hash(token),driver.rows[0].id,driver.rows[0].meio_transporte]);
         });
         res.set("Cache-Control", "no-store").json({ success: true, data: { url: `${APP_URL}/entregador#${token}` } });
     } catch (e) { next(e); }
@@ -84,7 +93,7 @@ async function acompanhar(req, res, next) {
 async function acompanharAdmin(req, res, next) {
     try {
         if (!uuid(req.params.id)) throw fail("Pedido inválido.", 400);
-        const { rows } = await db.query(`SELECT v.status,v.endereco_entrega,r.latitude,r.longitude,r.precisao_m,r.atualizado_em,r.rota FROM vendas v
+        const { rows } = await db.query(`SELECT v.status,v.endereco_entrega,r.entregador_id,r.meio_transporte,r.latitude,r.longitude,r.precisao_m,r.atualizado_em,r.rota FROM vendas v
             LEFT JOIN entrega_rastreamento r ON r.venda_id=v.id AND r.expira_em>NOW() AND v.status='SAIU_PARA_ENTREGA'
             WHERE v.id=$1 AND v.empresa_id=$2`, [req.params.id,req.user.empresaId]);
         if (!rows[0]) throw fail("Pedido não encontrado.", 404);
@@ -98,7 +107,7 @@ function driverHash(req) {
 }
 async function viagem(req, res, next) {
     try {
-        const { rows } = await db.query(`SELECT v.id,v.status,v.endereco_entrega,r.latitude,r.longitude,r.precisao_m,r.atualizado_em,r.rota
+        const { rows } = await db.query(`SELECT v.id,v.status,v.endereco_entrega,r.meio_transporte,r.latitude,r.longitude,r.precisao_m,r.atualizado_em,r.rota
             FROM entrega_rastreamento r JOIN vendas v ON v.id=r.venda_id
             WHERE r.token_hash=$1 AND r.expira_em>NOW() AND v.status='SAIU_PARA_ENTREGA'`, [driverHash(req)]);
         if (!rows[0]) throw fail("Link expirado ou entrega encerrada.", 410);
@@ -129,16 +138,46 @@ async function rota(req, res, next) {
             return { ...row, reservation: reservation.rows[0].rota_solicitada_em };
         });
         if (trip.cached) return res.set("Cache-Control", "no-store").json({ success: true, data: trip.cached });
-        const route = await require("../services/entregaRotaService").calcularRota(trip,trip.endereco_entrega);
+        const route = await require("../services/entregaRotaService").calcularRotaEntrega(trip,trip.endereco_entrega,trip.meio_transporte || "CARRO");
         const saved = await db.query(`UPDATE entrega_rastreamento SET rota=$1 WHERE venda_id=$2 AND token_hash=$3
             AND expira_em>NOW() AND rota_solicitada_em=$4
             AND EXISTS (SELECT 1 FROM vendas WHERE id=$2 AND status='SAIU_PARA_ENTREGA')`, [route,trip.id,tokenHash,trip.reservation]);
-        if (!saved.rowCount) throw fail("Link expirado ou entrega encerrada.", 410);
+        if (!saved.rowCount) {
+            const active = await db.query(`SELECT 1 FROM entrega_rastreamento r JOIN vendas v ON v.id=r.venda_id
+                WHERE r.token_hash=$1 AND r.expira_em>NOW() AND v.status='SAIU_PARA_ENTREGA'`, [tokenHash]);
+            throw fail(active.rows[0] ? "A rota foi substituída por outra opção. Atualize os trajetos." : "Link expirado ou entrega encerrada.", active.rows[0] ? 409 : 410);
+        }
         res.set("Cache-Control", "no-store").json({ success: true, data: route });
+    } catch (e) { next(e); }
+}
+async function selecionarRota(req, res, next) {
+    try {
+        const tokenHash = driverHash(req), body = req.body;
+        if (!body || Array.isArray(body) || Object.keys(body).some(key => !["rotaId","calculadaEm"].includes(key)) ||
+            typeof body.rotaId !== "string" || !/^rota-[0-3]$/.test(body.rotaId) ||
+            typeof body.calculadaEm !== "string" || !Number.isFinite(Date.parse(body.calculadaEm)))
+            throw fail("Selecione uma rota disponível na lista atual.", 400);
+        const selected = await db.transaction(async client => {
+            const {rows} = await client.query(`SELECT v.id,r.rota FROM vendas v JOIN entrega_rastreamento r ON r.venda_id=v.id
+                WHERE r.token_hash=$1 AND r.expira_em>NOW() AND v.status='SAIU_PARA_ENTREGA' FOR UPDATE OF v,r`, [tokenHash]);
+            const row = rows[0];
+            if (!row) throw fail("Link expirado ou entrega encerrada.", 410);
+            if (row.rota?.calculadaEm !== body.calculadaEm) throw fail("A lista de rotas foi atualizada. Escolha uma das opções atuais.", 409);
+            const options = Array.isArray(row.rota.alternativas) ? row.rota.alternativas : [row.rota];
+            const option = options.find(item => item.id === body.rotaId);
+            if (!option) throw fail("Essa opção não está disponível na lista de rotas.", 400);
+            const route = {...option,alternativas:options};
+            // Invalida um cálculo anterior sem liberar a reserva de frequência.
+            await client.query(`UPDATE entrega_rastreamento SET rota=$1,
+                rota_solicitada_em=GREATEST(COALESCE(rota_solicitada_em,NOW()),NOW())+INTERVAL '1 millisecond'
+                WHERE venda_id=$2 AND token_hash=$3`, [route,row.id,tokenHash]);
+            return route;
+        });
+        res.set("Cache-Control", "no-store").json({success:true,data:selected});
     } catch (e) { next(e); }
 }
 function mapaConfig(req, res) {
     // Chave pública restrita por domínio. Nunca publicar a chave de Routes usada pelo servidor.
     res.set("Cache-Control", "no-store").json({ success: true, data: { browserKey: process.env.GOOGLE_MAPS_BROWSER_API_KEY?.trim() || "" } });
 }
-module.exports = { cotar, consultarCep, criarLink, localizacao, acompanhar, acompanharAdmin, viagem, rota, mapaConfig };
+module.exports = { cotar, consultarCep, criarLink, localizacao, acompanhar, acompanharAdmin, viagem, rota, selecionarRota, mapaConfig };

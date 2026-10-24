@@ -90,7 +90,11 @@
                     if(!match || score<match.score) match={...candidate,at,index:segment.index,score,direction};
                 }
                 const nearDestination=match && total-match.at<40 && distance(position,route.destino)<Math.max(25,position.precisao_m);
-                if(!match || match.offset>Math.max(50,position.precisao_m*2) || (!nearDestination && heading!==null && match.direction>110)) {
+                // Um caminho a pé pode se separar da rua por poucos metros.
+                // Mantém uma margem proporcional ao erro do GPS sem exigir
+                // um afastamento de 50 m para reconhecer um atalho pedestre.
+                const routeTolerance=Math.max(route.modo==="WALK" ? 12 : 50,position.precisao_m*2);
+                if(!match || match.offset>routeTolerance || (!nearDestination && heading!==null && match.direction>110)) {
                     if(lastFix!==time) {offRouteFixes++;lastFix=time;}
                     return remember({state:"off-route",recalculate:offRouteFixes>=2});
                 }

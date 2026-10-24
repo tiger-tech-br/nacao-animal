@@ -7,8 +7,8 @@
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>Nação Animal | Simulador de navegação</title>
     <link rel="icon" href="/images/logo/nacao-animal-logo-transparent.png" type="image/png">
-    <link rel="stylesheet" href="/css/pages/delivery.css?v=20261024-4">
-    <link rel="stylesheet" href="/css/pages/delivery-simulation.css?v=20261024-4">
+    <link rel="stylesheet" href="/css/pages/delivery.css?v=20261024-7">
+    <link rel="stylesheet" href="/css/pages/delivery-simulation.css?v=20261024-7">
 </head>
 <body class="driver-page simulation-page">
 <main class="delivery-card simulation-shell">
@@ -16,7 +16,7 @@
         <a href="/admin/pages/dashboard/dashboard.html">← Voltar ao painel</a>
         <span class="simulation-badge">Simulação · dados artificiais</span>
         <h1>Simulador de navegação</h1>
-        <p>Veja a seta, as curvas, o recálculo e a chegada sem precisar caminhar com o celular.</p>
+        <p>Veja a seta, as curvas, o recálculo e a chegada sem precisar caminhar com o celular. Compare também percursos artificiais de condução a 30, 50 e 80 km/h.</p>
         <p class="simulation-notice">Usa os mesmos componentes de mapa e navegação da entrega. Não acessa sua localização, não cria pedidos e não envia posições para uma entrega real.</p>
     </header>
     <section class="simulation-setup" aria-label="Escolher percurso">
@@ -35,7 +35,7 @@
     <section class="simulation-result" aria-label="Andamento da simulação">
         <strong id="simulationStatus" role="status">Escolha um percurso para começar.</strong>
         <progress id="simulationProgress" max="100" value="0" aria-label="Progresso do percurso simulado"></progress>
-        <div class="simulation-metrics"><span id="simulationFrame">Ponto —</span><span id="simulationRemaining">Distância restante —</span><span id="simulationRecalculations">Recálculos: 0</span></div>
+        <div class="simulation-metrics"><span id="simulationFrame">Ponto —</span><span id="simulationRemaining">Distância restante —</span><span id="simulationRecalculations">Recálculos: 0</span><span id="simulationMotion">Movimento aguardando</span><span id="simulationLatency">Recepção —</span><span id="simulationGap">Diferença visual —</span></div>
         <p id="simulationView">O mapa aparecerá ao iniciar.</p>
     </section>
     <div class="simulation-map-wrapper">
@@ -57,12 +57,12 @@
         <div><strong id="navigationTime">—</strong><div><span id="navigationRemaining">—</span> · <span id="navigationArrival">—</span></div><small>Dados artificiais · sem trânsito em tempo real</small></div>
     </div>
     <p id="mapStatus" role="status"></p>
-    <details class="simulation-details"><summary>O que este teste verifica</summary><p id="originAddress"></p><p id="destinationAddress"></p><p>O trajeto artificial exercita as instruções, a direção, a câmera, o progresso e as reações ao sinal. A captação do GPS físico e o acompanhamento de um pedido são verificações separadas.</p></details>
+    <details class="simulation-details"><summary>O que este teste verifica</summary><p id="originAddress"></p><p id="destinationAddress"></p><p>O trajeto artificial exercita as instruções, a direção, a câmera, o progresso e as reações ao sinal. Nos percursos de condução, a velocidade diminui nas curvas e há uma parada antes da retomada; os intervalos entre as leituras também variam. A captação do GPS físico e o acompanhamento de um pedido são verificações separadas.</p></details>
 </main>
-<script src="/js/pages/delivery/map.js?v=20261024-4"></script>
-<script src="/js/pages/delivery/navigation-engine.js?v=20261024-4"></script>
-<script src="/js/pages/delivery/navigation.js?v=20261024-4"></script>
-<script src="/js/pages/delivery/simulation-scenarios.js?v=20261024-4"></script>
-<script src="/js/pages/delivery/simulation.js?v=20261024-4"></script>
+<script src="/js/pages/delivery/map.js?v=20261024-7"></script>
+<script src="/js/pages/delivery/navigation-engine.js?v=20261024-7"></script>
+<script src="/js/pages/delivery/navigation.js?v=20261024-7"></script>
+<script src="/js/pages/delivery/simulation-scenarios.js?v=20261024-7"></script>
+<script src="/js/pages/delivery/simulation.js?v=20261024-7"></script>
 </body>
 </html>
