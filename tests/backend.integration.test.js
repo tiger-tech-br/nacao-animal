@@ -370,7 +370,7 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         assert.equal((await request(`/api/vendas/${order}/status`, "PATCH", { status: "EM_SEPARACAO" }, adminToken)).status, 200);
         const transitions = await Promise.all([1,2].map(() => request(`/api/vendas/${order}/status`, "PATCH", { status: "SAIU_PARA_ENTREGA" }, adminToken)));
         assert.ok(transitions.every(r => r.status === 200));
-        assert.equal(optionalEmails.filter(e => e.html.includes("Rastrear pedido")).length, 1, "Cliques concorrentes não duplicam e-mail de entrega");
+        assert.equal(optionalEmails.filter(e => e.html.includes("Acompanhar pedido")).length, 1, "Cliques concorrentes não duplicam e-mail de entrega");
         const customerNotices = (await request("/api/public/clientes/notificacoes", "GET", null, token)).body.data;
         for (const status of ["AGUARDANDO_PAGAMENTO","PAGAMENTO_APROVADO","EM_SEPARACAO","SAIU_PARA_ENTREGA"]) {
             assert.equal(customerNotices.filter(n => n.venda_id === order && n.status_pedido === status).length, 1, `Uma notificação para ${status}`);

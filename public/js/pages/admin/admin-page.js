@@ -1522,15 +1522,15 @@
                 </div>
 
                 ${currentStatus === "SAIU_PARA_ENTREGA" ? `<div class="form-group">
-                    <label>GPS da entrega</label>
+                    <label>Rota da entrega</label>
                     <a class="btn btn-primary" href="/admin/acompanhar-entrega?pedido=${encodeURIComponent(sale.id)}">Acompanhar entrega</a>
                     <button class="btn" type="button" id="createDriverLink">Gerar link para o entregador</button>
-                    <p>O link vale por 12 horas. Gerar outro invalida o anterior. Envie apenas ao entregador deste pedido.</p>
+                    <p>O link abre o endereço do pedido no Google Maps e vale por 12 horas. Gerar outro invalida o anterior. Envie apenas ao entregador deste pedido. Após a entrega, marque o pedido como Entregue.</p>
                     <input class="form-control" id="driverLink" aria-label="Link do entregador" readonly hidden>
                     <div id="driverLinkActions" hidden>
                         <button class="btn" type="button" id="copyDriverLink">Copiar link</button>
                         <button class="btn" type="button" id="shareDriverLink">Compartilhar com entregador</button>
-                        <a class="btn" id="openDriverLink" target="_blank" rel="noopener noreferrer">Abrir viagem neste aparelho</a>
+                        <a class="btn" id="openDriverLink" target="_blank" rel="noopener noreferrer">Abrir rota neste aparelho</a>
                     </div>
                     <span id="driverLinkStatus" role="status"></span>
                 </div>` : ""}
@@ -1679,7 +1679,7 @@
                 input.value = url; input.hidden = false; actions.hidden = false; open.href = url;
                 button.textContent = 'Gerar novo link para o entregador';
                 input.focus(); input.select();
-                status.textContent = 'Link pronto. Compartilhe apenas com quem fará esta entrega. Abra no celular e toque em Iniciar viagem. O cliente pode usar Rastrear pedido.';
+                status.textContent = 'Link pronto. Compartilhe apenas com quem fará esta entrega. Abra no celular e toque em Navegar no Google Maps. O cliente acompanha o status do pedido no site.';
             } catch (error) {
                 if (!isCurrent()) return;
                 clearLink(); status.textContent = `${error.message || 'Não foi possível gerar o link.'} Tente novamente.`;
@@ -1703,7 +1703,7 @@
             const url = input.value, version = linkVersion;
             if (!hasCurrentLink(url, version)) return;
             if (!navigator.share) return copyLink();
-            try { await navigator.share({ title: 'Nação Animal — iniciar viagem', text: 'Abra no celular da entrega e toque em Iniciar viagem. Link exclusivo do entregador.', url }); }
+            try { await navigator.share({ title: 'Nação Animal — rota da entrega', text: 'Abra no celular da entrega e toque em Navegar no Google Maps. Link exclusivo do entregador.', url }); }
             catch (error) { if (error.name !== 'AbortError' && hasCurrentLink(url, version)) await copyLink(); }
         });
     }

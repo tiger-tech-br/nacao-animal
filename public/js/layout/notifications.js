@@ -88,7 +88,9 @@ document.addEventListener("DOMContentLoaded", () => {
             card.className = item.lida ? "" : "is-unread";
             const title = document.createElement("strong"), message = document.createElement("p"), date = document.createElement("small");
             title.textContent = item.titulo || "Atualização da Nação Animal";
-            message.textContent = item.mensagem || "";
+            message.textContent = !admin && item.status_pedido === "SAIU_PARA_ENTREGA"
+                ? (item.mensagem || "").replace(" Acompanhe o entregador e prepare-se para receber a entrega.", " Acompanhe o status do pedido e prepare-se para receber a entrega.")
+                : item.mensagem || "";
             const timestamp = new Date(item.enviada_em);
             date.textContent = Number.isFinite(timestamp.getTime()) ? timestamp.toLocaleString("pt-BR") : "Data não informada";
             card.append(title, message);
@@ -108,7 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else {
                     const tracking = item.status_pedido === "SAIU_PARA_ENTREGA";
                     link.href = tracking ? "/acompanhar-entrega?pedido=" + encodeURIComponent(item.venda_id) : "/meus-pedidos";
-                    link.textContent = tracking ? "Rastrear pedido" : "Ver meus pedidos";
+                    link.textContent = tracking ? "Acompanhar pedido" : "Ver meus pedidos";
                 }
                 card.appendChild(link);
             }

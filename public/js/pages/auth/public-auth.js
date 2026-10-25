@@ -441,7 +441,7 @@ function renderOrders(list, orders) {
                 ${renderOrderNotes(order)}
                 ${renderOrderTimeline(order.status)}
                 <p>Frete: ${currency(order.valor_frete || 0)}</p>
-                ${order.status === "SAIU_PARA_ENTREGA" ? `<a class="btn-secondary" href="/acompanhar-entrega?pedido=${encodeURIComponent(order.id)}">Rastrear pedido</a>` : ""}
+                ${order.status === "SAIU_PARA_ENTREGA" ? `<a class="btn-secondary" href="/acompanhar-entrega?pedido=${encodeURIComponent(order.id)}">Acompanhar pedido</a>` : ""}
                 ${renderContinuePayment(order)}
                 ${renderConsumerRequest(order)}
             </article>

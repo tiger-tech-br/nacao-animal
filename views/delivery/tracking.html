@@ -1,16 +1,21 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Nação Animal | Rastrear pedido</title><link rel="icon" href="/images/logo/nacao-animal-logo-transparent.png" type="image/png"><link rel="stylesheet" href="/css/pages/delivery.css"><link rel="stylesheet"><link rel="stylesheet" href="/css/layout/notifications.css?v=20261021-1">
-<link rel="stylesheet" href="/css/layout/copyright.css">
-</head>
-<body class="tracking-page">
-<div class="tracking-public-main"><main class="delivery-card tracking-card"><header class="tracking-header"><div class="tracking-topline"><a id="trackingBack" href="/meus-pedidos">← Meus pedidos</a><span id="trackingLive" class="tracking-live" hidden><i aria-hidden="true"></i> Acompanhamento ao vivo</span></div><h1 id="trackingTitle">Rastrear pedido</h1><p id="trackingDescription">Acompanhe a van do entregador, a linha azul da rota e o destino no mapa. Atualizamos a posição a cada 2 segundos enquanto esta página estiver visível.</p></header>
-<p id="trackingStatus" class="tracking-status" role="status">Carregando entrega...</p><a id="trackingLogin" class="tracking-login" href="/login" hidden>Entrar para rastrear pedido</a>
-<section id="trackingStage" class="tracking-stage" hidden>
-<div id="deliveryMap" aria-label="Mapa com a van do entregador, a rota azul e o destino da entrega" hidden></div>
-<div class="tracking-map-actions" aria-label="Controles do mapa"><button id="centerTrackingMap" type="button" title="Centralizar van e destino">⌾ <span>Centralizar</span></button><button id="expandTrackingMap" type="button" aria-pressed="false" title="Expandir mapa">⛶ <span id="expandTrackingLabel">Expandir</span></button></div>
-<section class="tracking-summary" aria-label="Resumo da entrega"><div class="tracking-summary-heading"><span class="tracking-package" aria-hidden="true">▣</span><div><small>Status da entrega</small><strong id="trackingHeadline">Entregador a caminho</strong></div></div><div class="tracking-metrics"><div><strong id="trackingDistance">—</strong><span>Distância estimada</span></div><div><strong id="trackingDuration">—</strong><span>Tempo estimado</span></div><div><strong id="trackingArrival">—</strong><span>Previsão de chegada</span></div></div><p id="trackingUpdated"></p></section>
-</section>
-<section class="tracking-address"><span aria-hidden="true">⌂</span><div><small>Destino da entrega</small><p id="destinationAddress"></p><p id="originAddress"></p></div></section><p id="mapStatus" role="status"></p>
-<p class="tracking-note"><small>A localização depende da precisão do GPS e da conexão do entregador.</small></p>
-<footer><a href="/politica-de-privacidade">Privacidade</a> · <a href="/termos-de-uso">Termos de uso</a><p class="site-copyright">© 2026 Nação Animal. Todos os direitos reservados.</p></footer></main></div><script src="/js/pages/delivery/map.js?v=20261024-9"></script><script src="/js/pages/delivery/navigation-engine.js?v=20261024-9"></script><script src="/js/pages/delivery/tracking.js?v=20261024-9"></script><script src="/js/layout/notifications.js?v=20261021-1"></script>
-</body></html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Nação Animal | Status da entrega</title><link rel="icon" href="/images/logo/nacao-animal-logo-transparent.png" type="image/png"><link rel="stylesheet" href="/css/pages/delivery.css?v=20261025-2"><link rel="stylesheet" href="/css/layout/copyright.css"></head>
+<body class="tracking-page tracking-admin"><main><div class="delivery-card tracking-card">
+            <header class="tracking-header">
+                <div class="tracking-topline"><a id="trackingBack" href="/meus-pedidos">← Meus pedidos</a></div>
+                <span class="tracking-eyebrow">Carinho a caminho</span>
+                <h1 id="trackingTitle">Acompanhe seu pedido</h1>
+                <p id="trackingDescription">Consulte o status informado pela loja. Esta página é atualizada automaticamente enquanto estiver aberta.</p>
+            </header>
+            <p id="trackingStatus" class="tracking-status" role="status" aria-live="polite">Consultando pedido…</p>
+            <a id="trackingLogin" class="tracking-login" href="/login" hidden>Entrar para acompanhar pedido</a>
+            <section id="trackingDetails" class="delivery-status-details" aria-label="Informações do pedido" hidden>
+                <small>Status do pedido</small>
+                <h2 id="trackingHeadline"></h2>
+                <h3>Endereço de entrega</h3>
+                <p id="destinationAddress"></p>
+                <p id="trackingUpdated"></p>
+            </section>
+            <div class="delivery-status-actions"><button id="refreshTracking" class="delivery-secondary" type="button">Atualizar status</button></div>
+            <p class="tracking-note"><small>O entregador usa o Google Maps para navegar. A localização e o percurso dele não são exibidos no site. O status muda quando a loja atualiza o pedido.</small></p>
+        </div><footer><a href="/politica-de-privacidade">Privacidade</a> · <a href="/termos-de-uso">Termos de uso</a><p class="site-copyright">© 2026 Nação Animal. Todos os direitos reservados.</p></footer></main><script src="/js/pages/delivery/tracking.js?v=20261025-2"></script></body></html>

@@ -194,13 +194,13 @@ function orderOutForDeliveryTemplate({ name, orderId }) {
 
     return {
         subject: `Pedido saiu para entrega #${orderLabel} - Nação Animal`,
-        text: `Olá, ${safeName}. Seu pedido #${orderLabel} saiu para entrega. Rastrear pedido: ${trackingUrl} . Entre na conta usada na compra para acompanhar.`,
+        text: `Olá, ${safeName}. Seu pedido #${orderLabel} saiu para entrega. Acompanhar pedido: ${trackingUrl} . Entre na conta usada na compra para consultar o status atualizado pela loja.`,
         html: baseEmail(`
             <h1>Pedido saiu para entrega</h1>
             <p>Olá, ${safeName}.</p>
             <p>Seu pedido <strong>#${orderLabel}</strong> saiu para entrega e está a caminho.</p>
-            <p><a href="${escapeHtml(trackingUrl)}" style="display:inline-block;background:#04766d;color:#fff;padding:14px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Rastrear pedido</a></p>
-            <p>Entre na conta usada na compra. O mapa será atualizado assim que o entregador iniciar a viagem e compartilhar o GPS.</p>
+            <p><a href="${escapeHtml(trackingUrl)}" style="display:inline-block;background:#04766d;color:#fff;padding:14px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Acompanhar pedido</a></p>
+            <p>Entre na conta usada na compra para consultar o status atualizado pela loja. A localização do entregador não é exibida no site.</p>
         `)
     };
 }

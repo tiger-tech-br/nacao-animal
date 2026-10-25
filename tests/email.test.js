@@ -5,13 +5,16 @@ const envPath = require.resolve("../config/env");
 require.cache[envPath] = { exports: { RESEND_API_KEY: "re_test", EMAIL_FROM: "PetFlow <sender@example.com>", APP_URL: "https://example.com" } };
 const email = require("../services/emailService");
 const originalFetch = global.fetch;
-test("e-mail de saída inclui botão e URL de rastreamento do pedido", () => {
+test("e-mail de saída acompanha o status do pedido sem prometer localização ao vivo", () => {
     const id = "9c4ecf18-c1b1-45d9-ae3b-7392a2528617";
     const template = email.orderOutForDeliveryTemplate({ name: "Cliente", orderId: id });
-    assert.match(template.html, /Rastrear pedido<\/a>/);
+    assert.match(template.html, /Acompanhar pedido<\/a>/);
     assert.ok(template.html.includes(`https://example.com/acompanhar-entrega?pedido=${id}`));
     assert.ok(template.text.includes(`https://example.com/acompanhar-entrega?pedido=${id}`));
     assert.ok(!template.html.includes("/entregador#"));
+    assert.match(template.html, /status atualizado pela loja/);
+    assert.match(template.text, /status atualizado pela loja/);
+    assert.doesNotMatch(template.html, /O mapa será atualizado|compartilhar o GPS/);
 });
 
 test("comprovante do pedido conserva itens, valores, entrega, pagamento e links", () => {

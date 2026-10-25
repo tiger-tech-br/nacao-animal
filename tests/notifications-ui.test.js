@@ -107,13 +107,16 @@ test("sino mostra boas-vindas não lida, polling fechado não marca leitura e ab
 });
 
 test("notificações exibem status e link de rastreamento, textos sem HTML, foco e Escape", async () => {
-    const notice = { ...welcome, venda_id: order, status_pedido: "SAIU_PARA_ENTREGA", titulo: "<img src=x onerror=bad()>" };
+    const notice = { ...welcome, venda_id: order, status_pedido: "SAIU_PARA_ENTREGA", titulo: "<img src=x onerror=bad()>",
+        mensagem: "Pedido saiu para entrega. Acompanhe o entregador e prepare-se para receber a entrega." };
     const ui = page({ fetcher: (url, options) => options.method === "PATCH" ? response(null) : response([notice]) });
     await settle();
     const card = ui.list().children[0];
     assert.equal(card.children[0].textContent, notice.titulo);
     assert.ok(card.children.some(child => child.textContent === "Saiu para entrega"));
     assert.equal(card.querySelector("a").href, "/acompanhar-entrega?pedido=" + order);
+    assert.equal(card.querySelector("a").textContent, "Acompanhar pedido");
+    assert.ok(card.children.some(child => child.textContent === "Pedido saiu para entrega. Acompanhe o status do pedido e prepare-se para receber a entrega."));
     ui.bell.emit("click"); await settle();
     assert.equal(ui.document.activeElement, ui.panel().querySelector("[data-close]"));
     ui.document.emit("keydown", { key: "Escape" });
