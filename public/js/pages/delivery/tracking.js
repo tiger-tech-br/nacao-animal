@@ -61,7 +61,10 @@
     document.addEventListener("keydown", event => { if (event.key === "Escape" && stage.classList.contains("is-expanded")) setExpanded(false); });
     let pendingVersion = null, pendingToken, ended = false, requestVersion = 0, requestController, latestData, dataToken, progressEngine, progressRouteKey;
     function clearTrackingData(){latestData=null;progressEngine=null;progressRouteKey=undefined;}
-    const sessionToken = () => sessionStorage.getItem(admin ? "token" : "petflow_customer_token");
+    const sessionToken = () => !admin && window.NacaoCustomerSession
+        ? window.NacaoCustomerSession.getToken() : sessionStorage.getItem(admin ? "token" : "petflow_customer_token");
+    const sameSession = token => !admin && window.NacaoCustomerSession?.isCurrent
+        ? window.NacaoCustomerSession.isCurrent(token) : sessionToken() === token;
     function cancelRequest() {
         requestVersion++; requestController?.abort(); requestController = null; pendingVersion = null; pendingToken = null;
     }
@@ -69,8 +72,8 @@
         if (ended || document.hidden) return;
         const token = sessionToken();
         if (!token) { cancelRequest(); status.textContent = admin ? "Entre no painel administrativo para acompanhar a entrega." : "Entre na conta usada na compra para rastrear seu pedido."; login.hidden = false; hideMap(); clearTrackingData(); return; }
-        if (dataToken !== token) { if (latestData) hideMap(); clearTrackingData(); dataToken = token; }
-        if (pendingVersion !== null) { if (pendingToken === token) return; cancelRequest(); clearTrackingData(); }
+        if (!sameSession(dataToken)) { if (latestData) hideMap(); clearTrackingData(); dataToken = token; }
+        if (pendingVersion !== null) { if (sameSession(pendingToken)) return; cancelRequest(); clearTrackingData(); }
         if (!id) { status.textContent = "Pedido não informado."; return; }
         const current = ++requestVersion;
         pendingVersion = current; pendingToken = token;
@@ -81,7 +84,7 @@
             const response = await fetch(`${endpoint}/${encodeURIComponent(id)}/rastreamento`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store", signal: controller ? AbortSignal.any([controller.signal, timeout]) : timeout });
             const payload = await response.json();
             if (current !== requestVersion || document.hidden) return;
-            if (sessionToken() !== token) { hideMap(); clearTrackingData(); login.hidden = Boolean(sessionToken()); status.textContent = "A sessão foi alterada. Entre na conta do pedido para acompanhar a entrega."; return; }
+            if (!sameSession(token)) { hideMap(); clearTrackingData(); login.hidden = Boolean(sessionToken()); status.textContent = "A sessão foi alterada. Entre na conta do pedido para acompanhar a entrega."; return; }
             if (!response.ok) { login.hidden = response.status !== 401; throw new Error(payload.message || "Não foi possível consultar a entrega."); }
             login.hidden = true;
             let data = payload.data;
@@ -111,6 +114,10 @@
         finally { if (pendingVersion === current) { pendingVersion = null; pendingToken = null; requestController = null; } }
     }
     refresh(); setInterval(refresh,2000);
+    if (!admin) document.addEventListener("petflow:customer-logout", () => {
+        cancelRequest(); hideMap(); clearTrackingData();
+        login.hidden = false; status.textContent = "Entre na conta usada na compra para rastrear seu pedido.";
+    });
     document.addEventListener("visibilitychange", () => { if (document.hidden) cancelRequest(); else refresh(); });
     window.addEventListener?.("pagehide", cancelRequest);
     window.addEventListener?.("pageshow", refresh);

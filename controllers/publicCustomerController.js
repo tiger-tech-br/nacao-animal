@@ -2,8 +2,8 @@
 
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
-const jwt = require("jsonwebtoken");
 const db = require("../database/connection");
+const { CUSTOMER_SESSION_SECONDS, createCustomerToken } = require("../services/customerSessionService");
 const VendaService = require("../services/vendaService");
 const { avaliarCancelamento } = require("../services/cancelamentoEntregaService");
 const PRIVACY_VERSION = "2026-10-19";
@@ -12,8 +12,6 @@ function digest(value) {
     return crypto.createHash("sha256").update(String(value || "")).digest("hex");
 }
 const {
-    JWT_SECRET,
-    JWT_EXPIRES_IN,
     APP_URL
 } = require("../config/env");
 
@@ -426,6 +424,16 @@ async function logout(request, response, next) {
     } catch (error) {
         return next(error);
     }
+}
+
+function renewSession(request, response) {
+    // A autenticação já conferiu assinatura, prazo, conta ativa e versão da sessão.
+    // A página aberta renova esta credencial curta; não existe token permanente.
+    const customer = request.customer;
+    return response.set("Cache-Control", "no-store").json({ success: true, data: {
+        token: createCustomerToken(customer),
+        expiresInSeconds: CUSTOMER_SESSION_SECONDS
+    } });
 }
 
 async function forgotPassword(request, response, next) {
@@ -1474,20 +1482,13 @@ function buildAuthPayload(cliente) {
         data_nascimento: cliente.data_nascimento
     };
 
-    const token = jwt.sign(
-        {
-            type: "customer",
-            id: cliente.id,
-            empresaId: cliente.empresa_id,
-            email: cliente.email,
-            nome: cliente.nome,
-            sv: Number(cliente.sessao_versao)
-        },
-        JWT_SECRET,
-        {
-            expiresIn: JWT_EXPIRES_IN
-        }
-    );
+    const token = createCustomerToken({
+        id: cliente.id,
+        empresaId: cliente.empresa_id,
+        email: cliente.email,
+        nome: cliente.nome,
+        sv: cliente.sessao_versao
+    });
 
     return {
         token,
@@ -1730,6 +1731,7 @@ module.exports = {
     register,
     login,
     logout,
+    renewSession,
     forgotPassword,
     verifyEmail,
     resendVerification,

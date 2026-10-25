@@ -6,6 +6,7 @@
     let storeInfoRequest;
 
     document.addEventListener("DOMContentLoaded", initPublicHeader);
+    document.addEventListener("petflow:customer-logout", updateHeaderState);
 
     window.PetFlowPublicHeader = {
         init: initPublicHeader,
@@ -396,11 +397,11 @@
         event.preventDefault();
         const token = getCustomerToken();
         const confirmed = await window.NacaoAnimalLogoutDialog?.confirm(event.currentTarget || event.target);
-        if (!confirmed || !token || token !== getCustomerToken()) return;
+        if (!confirmed || !token || !isCurrentCustomerSession(token)) return;
         if (token) {
             fetch("/api/public/clientes/logout", {
                 method: "POST",
-                headers: { Authorization: `Bearer ${token}` },
+                headers: { Authorization: `Bearer ${getCustomerToken()}` },
                 keepalive: true
             }).catch(() => {});
         }
@@ -410,6 +411,7 @@
     }
 
     function clearCustomerSession() {
+        window.NacaoCustomerSession?.clear();
         sessionStorage.removeItem("petflow_customer_token");
         sessionStorage.removeItem("petflow_customer_user");
         sessionStorage.removeItem("petflow_public_favorites");
@@ -442,7 +444,11 @@
     }
 
     function getCustomerToken() {
-        return sessionStorage.getItem("petflow_customer_token");
+        return window.NacaoCustomerSession ? window.NacaoCustomerSession.getToken() : sessionStorage.getItem("petflow_customer_token");
+    }
+
+    function isCurrentCustomerSession(token) {
+        return window.NacaoCustomerSession?.isCurrent ? window.NacaoCustomerSession.isCurrent(token) : token === getCustomerToken();
     }
 
     function readCustomerCache() {

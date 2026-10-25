@@ -43,8 +43,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const uuid = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
     let items = [], pending = false, readPending = false, session = "", sessionVersion = 0;
     let locallyRead = new Set(), displayedIds = new Set(), pendingRender = false;
-    const token = () => sessionStorage.getItem(tokenKey) || "";
-    const currentSession = (value, version) => value === token() && version === sessionVersion;
+    const token = () => (!admin && window.NacaoCustomerSession
+        ? window.NacaoCustomerSession.getToken() : sessionStorage.getItem(tokenKey)) || "";
+    const currentSession = (value, version) => (!admin && window.NacaoCustomerSession?.isCurrent
+        ? window.NacaoCustomerSession.isCurrent(value) : value === token()) && version === sessionVersion;
 
     function setStatus(message) { if (status.textContent !== message) status.textContent = message; }
     function close(returnFocus = false) {
@@ -54,8 +56,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     function syncSession() {
         const value = token();
-        if (value !== session) {
-            session = value;
+        const key = !admin && window.NacaoCustomerSession?.getSessionKey ? window.NacaoCustomerSession.getSessionKey() : value;
+        if (key !== session) {
+            session = key;
             sessionVersion++;
             items = [];
             locallyRead = new Set();

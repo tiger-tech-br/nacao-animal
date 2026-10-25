@@ -526,7 +526,7 @@ async function renderCustomer() {
 
     try {
         const profile = await fetchCustomerProfile(token, revision);
-        if (revision !== customerRevision || getToken() !== token) return;
+        if (revision !== customerRevision || !isCurrentCustomerSession(token)) return;
         if (window.NacaoAnimalCartSandbox?.isActive()) {
             renderTotals();
             return;
@@ -548,10 +548,15 @@ async function renderCustomer() {
                 <a class="btn-secondary" href="/conta" target="_top">Editar meus dados</a>
             </div>
         `;
-    } catch {
-        if (revision !== customerRevision || getToken() !== token) return;
+    } catch (error) {
+        if (revision !== customerRevision || !isCurrentCustomerSession(token)) return;
         if (window.NacaoAnimalCartSandbox?.isActive()) {
             renderTotals();
+            return;
+        }
+        if (![401, 403].includes(error.status)) {
+            submit.disabled = true;
+            container.innerHTML = '<div class="customer-card-inner is-warning"><strong>Não foi possível carregar seus dados</strong><p>Seu acesso foi mantido. Recarregue a página para tentar novamente.</p></div>';
             return;
         }
         clearCartSession();
@@ -567,6 +572,7 @@ async function renderCustomer() {
 }
 
 function clearCartSession() {
+    window.NacaoCustomerSession?.clear();
     selectedCoupon = "";
     appliedCoupon = null;
     couponSubtotal = null;
@@ -741,10 +747,10 @@ async function fetchCustomerProfile(token = getToken(), revision = customerRevis
             signal: controller.signal
         });
         const payload = await response.json();
-        if (revision !== customerRevision || getToken() !== token) return null;
+        if (revision !== customerRevision || !isCurrentCustomerSession(token)) return null;
 
         if (!response.ok) {
-            throw new Error(payload.message || "Cliente não autenticado.");
+            throw Object.assign(new Error(payload.message || "Cliente não autenticado."), { status: response.status });
         }
 
         sessionStorage.setItem("petflow_customer_user", JSON.stringify(payload.data));
@@ -795,7 +801,11 @@ function persistCart() {
 }
 
 function getToken() {
-    return sessionStorage.getItem("petflow_customer_token");
+    return window.NacaoCustomerSession ? window.NacaoCustomerSession.getToken() : sessionStorage.getItem("petflow_customer_token");
+}
+
+function isCurrentCustomerSession(token) {
+    return window.NacaoCustomerSession?.isCurrent ? window.NacaoCustomerSession.isCurrent(token) : token === getToken();
 }
 
 function hasDeliveryAddress(data) {

@@ -157,7 +157,7 @@ async function setupPublicAccount() {
         try {
             const payload = await request("/clientes/me", "GET", undefined,
                 { signal: AbortSignal.timeout(10000), cache: "no-store" });
-            if (sessionToken !== getCustomerToken()) return;
+            if (!isCurrentCustomerSession(sessionToken)) return;
             if (!payload.data || typeof payload.data !== "object" || Array.isArray(payload.data)) {
                 throw new Error("Dados da conta indisponíveis.");
             }
@@ -169,7 +169,7 @@ async function setupPublicAccount() {
             setStatus(status, "");
             void loadLgpdRequests();
         } catch (error) {
-            if (sessionToken !== getCustomerToken()) return;
+            if (!isCurrentCustomerSession(sessionToken)) return;
             if (error.status === 401 || error.status === 403) {
                 clearPublicSession();
                 window.location.href = "/login";
@@ -252,7 +252,7 @@ async function setupPublicAccount() {
             "Tem certeza que deseja excluir seu cadastro? Seu acesso e seus dados cadastrais serão removidos. Registros com obrigação de conservação poderão ser mantidos. Se houver pedidos em andamento, a solicitação será analisada antes da exclusão."
         );
 
-        if (!confirmed || sessionToken !== getCustomerToken()) {
+        if (!confirmed || !isCurrentCustomerSession(sessionToken)) {
             return;
         }
 
@@ -262,7 +262,7 @@ async function setupPublicAccount() {
 
         try {
             const payload = await request("/clientes/me", "DELETE");
-            if (sessionToken !== getCustomerToken()) return;
+            if (!isCurrentCustomerSession(sessionToken)) return;
             if (payload.pending) {
                 setStatus(status, `${payload.message} Protocolo: ${payload.protocolo}.`);
                 return;
@@ -271,11 +271,11 @@ async function setupPublicAccount() {
             document.dispatchEvent(new CustomEvent("petflow:customer-logout"));
             window.location.href = "/";
         } catch (error) {
-            if (sessionToken !== getCustomerToken()) return;
+            if (!isCurrentCustomerSession(sessionToken)) return;
             setStatus(status, error.message || "Não foi possível excluir o cadastro.");
         } finally {
             deletingAccount = false;
-            if (sessionToken === getCustomerToken()) allowAccountActions(accountLoaded);
+            if (isCurrentCustomerSession(sessionToken)) allowAccountActions(accountLoaded);
         }
     });
     await loadAccount();
@@ -313,10 +313,10 @@ async function handlePublicLogout(event) {
     event.preventDefault();
     const token = getCustomerToken();
     const confirmed = await window.NacaoAnimalLogoutDialog?.confirm(event.currentTarget || event.target);
-    if (!confirmed || !token || token !== getCustomerToken()) return;
+    if (!confirmed || !token || !isCurrentCustomerSession(token)) return;
     fetch(`${CUSTOMER_API}/clientes/logout`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${getCustomerToken()}` },
         keepalive: true
     }).catch(() => {});
     clearPublicSession();
@@ -325,6 +325,7 @@ async function handlePublicLogout(event) {
 }
 
 function clearPublicSession() {
+    window.NacaoCustomerSession?.clear();
     sessionStorage.removeItem("petflow_customer_token");
     sessionStorage.removeItem("petflow_customer_user");
     sessionStorage.removeItem("petflow_public_favorites");
@@ -973,13 +974,22 @@ async function request(endpoint, method = "GET", body, options = {}) {
 
 function saveCustomer(data) {
     clearLegacyPublicSession();
+    if (window.NacaoCustomerSession) {
+        window.NacaoCustomerSession.save(data);
+        window.PetFlowPublicHeader?.update();
+        return;
+    }
     sessionStorage.setItem("petflow_customer_token", data.token);
     sessionStorage.setItem("petflow_customer_user", JSON.stringify(data.user));
     window.PetFlowPublicHeader?.update();
 }
 
 function getCustomerToken() {
-    return sessionStorage.getItem("petflow_customer_token");
+    return window.NacaoCustomerSession ? window.NacaoCustomerSession.getToken() : sessionStorage.getItem("petflow_customer_token");
+}
+
+function isCurrentCustomerSession(token) {
+    return window.NacaoCustomerSession?.isCurrent ? window.NacaoCustomerSession.isCurrent(token) : token === getCustomerToken();
 }
 
 function fillForm(form, data) {

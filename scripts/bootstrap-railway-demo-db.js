@@ -16,10 +16,12 @@ const EXPECTED = Object.freeze({
     serviceId: "a258d23c-2278-4053-aae5-62fe5b0c4675",
     postgresId: "746e33f5-3596-4d17-b14c-12cadec7b071"
 });
-const PHOTO_FILES = Object.freeze([
+const LEGACY_PHOTO_FILES = Object.freeze([
     "test-dog-waste-bags.jpg", "test-cat-wand.jpg", "test-bird-perch.jpg",
     "test-aquarium-ornament.jpg", "test-rodent-chew.jpg", "test-pet-ball.jpg"
 ]);
+const PHOTO_FILES = Object.freeze(TEST_PRODUCTS.map((product, index) =>
+    product.foto ? path.basename(product.foto) : LEGACY_PHOTO_FILES[index]));
 const AI_DESCRIPTION = "Imagem ilustrativa gerada por inteligencia artificial; marca nao informada.";
 const LOCK = "nacao-animal/railway-demo-bootstrap/v1";
 

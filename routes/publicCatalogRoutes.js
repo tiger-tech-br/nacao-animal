@@ -39,6 +39,12 @@ const consumerRequestLimiter = require("express-rate-limit")({
     standardHeaders: true, legacyHeaders: false,
     message: { success: false, message: "Aguarde alguns minutos antes de enviar outra solicitação." }
 });
+const sessionRenewalLimiter = require("express-rate-limit")({
+    windowMs: 60 * 1000, limit: 30,
+    keyGenerator: request => `${request.customer.empresaId}:${request.customer.id}`,
+    standardHeaders: true, legacyHeaders: false,
+    message: { success: false, message: "Aguarde um momento antes de renovar a sessão novamente." }
+});
 
 router.get("/produtos", publicCatalogController.produtos);
 router.get("/categorias", publicCatalogController.categorias);
@@ -49,6 +55,7 @@ router.post("/clientes/cadastro", publicCustomerController.register);
 router.post("/clientes/reenviar-confirmacao", verificationLimiter, publicCustomerController.resendVerification);
 router.post("/clientes/login", publicCustomerController.login);
 router.post("/clientes/logout", customerAuthMiddleware, publicCustomerController.logout);
+router.post(["/clientes/sessao", "/clientes/sessao/renovar"], customerAuthMiddleware, sessionRenewalLimiter, publicCustomerController.renewSession);
 router.get("/clientes/verificar-email", publicCustomerController.verifyEmail);
 router.post("/clientes/verificar-email", publicCustomerController.verifyEmail);
 router.post("/clientes/esqueci-senha", publicCustomerController.forgotPassword);

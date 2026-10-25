@@ -75,3 +75,13 @@ Arquivo final: `public/images/products/garden-watering-can.jpg`.
 Prompt utilizado:
 
 > Use case: product-mockup. Asset type: fictional gardening accessory ecommerce product photo. Photorealistic studio photo of a compact green plastic watering can for household plants, with a curved handle and narrow long spout ending in a small round removable watering rose. Realistic matte green plastic texture. Entire watering can shown in three-quarter view, centered square composition, pure white seamless background, soft natural shadow, generous whitespace. No plants, people, text, brand, logos or watermark.
+
+## wet-cat-food — imagem exclusiva para gatos
+
+Arquivo final: `public/images/products/wet-cat-food.jpg`.
+
+Imagem criada pela ferramenta integrada **image_gen** para substituir a foto compartilhada apenas no produto de teste `NA-TESTE-GATOS-UMIDA-01`. O alimento úmido para cães continua usando `wet-food.jpg`. A nova imagem é um sachê branco e verde-azulado com porção de patê, visualmente diferente da lata dos cães. Original preservado no diretório de geração; JPEG otimizado para a web.
+
+Prompt utilizado:
+
+> Use case: product-mockup. Asset type: cat wet food ecommerce product photograph, distinct from the dog's wet food photo of an open round silver can. Create a photorealistic studio product photo of a small sealed 85 g stand-up wet cat food foil pouch, white and teal packaging, a small tasteful simple cat silhouette icon on the package, no brand and no written words. Next to the pouch is a shallow small white ceramic dish containing a compact portion of pinkish-brown soft pâté for cats. Show the complete pouch and dish, centered in a square composition with generous white margins, pure white seamless studio background and soft realistic contact shadows. Detailed realistic crinkled foil, ceramic and moist pâté textures. Avoid cans, dog imagery, people, brands, readable text, watermarks or illustration style. The package and food are fictional demo catalog imagery.

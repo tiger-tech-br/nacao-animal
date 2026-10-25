@@ -58,7 +58,12 @@ async function customerAuthMiddleware(request, response, next) {
             sv: Number(current.sessao_versao)
         };
         next();
-    } catch {
+    } catch (error) {
+        const invalidToken = ["JsonWebTokenError", "TokenExpiredError", "NotBeforeError"].includes(error.name);
+        if (!invalidToken) return response.status(503).json({
+            success: false,
+            message: "Não foi possível conferir sua sessão agora. Tente novamente."
+        });
         return response.status(401).json({
             success: false,
             message: "Sessão expirada. Faça login novamente."

@@ -15,7 +15,7 @@ const NEW_TEST_PRODUCTS = Object.freeze([
     { sku: "NA-TESTE-CAES-RACAO-01", categoria: "Cães", subcategoria: "racoes", nome: "[TESTE] Ração seca para cães 500 g", preco: 10, foto: "/images/products/petflow-prime-racao.jpg" },
     { sku: "NA-TESTE-CAES-UMIDA-01", categoria: "Cães", subcategoria: "racoes-umidas", nome: "[TESTE] Alimento úmido para cães 100 g", preco: 6, foto: "/images/products/wet-food.jpg" },
     { sku: "NA-TESTE-GATOS-RACAO-01", categoria: "Gatos", subcategoria: "racoes", nome: "[TESTE] Ração seca para gatos 500 g", preco: 10, foto: "/images/products/felis-prime-racao.jpg" },
-    { sku: "NA-TESTE-GATOS-UMIDA-01", categoria: "Gatos", subcategoria: "racoes-umidas", nome: "[TESTE] Alimento úmido para gatos 85 g", preco: 6, foto: "/images/products/wet-food.jpg" },
+    { sku: "NA-TESTE-GATOS-UMIDA-01", categoria: "Gatos", subcategoria: "racoes-umidas", nome: "[TESTE] Alimento úmido para gatos 85 g", preco: 6, foto: "/images/products/wet-cat-food.jpg" },
     { sku: "NA-TESTE-AVES-RACAO-01", categoria: "Aves", subcategoria: "racoes", nome: "[TESTE] Mistura de sementes para pássaros 300 g", preco: 6, foto: "/images/products/bird-food.jpg" },
     { sku: "NA-TESTE-ROEDORES-RACAO-01", categoria: "Roedores", subcategoria: "racoes", nome: "[TESTE] Ração para pequenos roedores 300 g", preco: 10, foto: "/images/products/rodent-food.jpg" },
     { sku: "NA-TESTE-PEIXES-RACAO-01", categoria: "Peixes", subcategoria: "racoes", nome: "[TESTE] Ração em flocos para peixes 20 g", preco: 6, foto: "/images/products/fish-food.jpg" },
