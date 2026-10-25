@@ -1524,8 +1524,9 @@
                 ${currentStatus === "SAIU_PARA_ENTREGA" ? `<div class="form-group">
                     <label>Rota da entrega</label>
                     <a class="btn btn-primary" href="/admin/acompanhar-entrega?pedido=${encodeURIComponent(sale.id)}">Acompanhar entrega</a>
+                    <p>Abra Acompanhar entrega para consultar o status e o link de localização, quando o entregador o disponibilizar. O acompanhamento da localização abre no Google Maps.</p>
                     <button class="btn" type="button" id="createDriverLink">Gerar link para o entregador</button>
-                    <p>O link abre o endereço do pedido no Google Maps e vale por 12 horas. Gerar outro invalida o anterior. Envie apenas ao entregador deste pedido. Após a entrega, marque o pedido como Entregue.</p>
+                    <p>O link abre o endereço do pedido no Google Maps e vale por 12 horas. Gerar outro invalida o anterior. Envie apenas ao entregador deste pedido. Para compartilhar a localização, o entregador ativa o recurso no Maps, copia o link e cola na página da entrega. Após a entrega, marque o pedido como Entregue e encerre o compartilhamento no Maps.</p>
                     <input class="form-control" id="driverLink" aria-label="Link do entregador" readonly hidden>
                     <div id="driverLinkActions" hidden>
                         <button class="btn" type="button" id="copyDriverLink">Copiar link</button>

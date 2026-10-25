@@ -37,6 +37,29 @@ test("comprovante do pedido conserva itens, valores, entrega, pagamento e links"
     assert.match(template.text, /Frete:/);
     assert.match(template.text, /Total:/);
 });
+
+test("aviso de localização usa página autenticada do pedido sem divulgar o link privado do Maps", () => {
+    const id = "9c4ecf18-c1b1-45d9-ae3b-7392a2528617";
+    const template = email.deliveryLocationSharedTemplate({ name: "Maria Cliente", orderId: id,
+        url: "https://maps.app.goo.gl/private-location-capability" });
+    assert.equal(template.subject, "Localização da entrega disponível #9C4ECF18 - Nação Animal");
+    assert.ok(template.html.includes(`https://example.com/acompanhar-entrega?pedido=${id}`));
+    assert.ok(template.text.includes(`https://example.com/acompanhar-entrega?pedido=${id}`));
+    assert.match(template.html, /Acompanhar localização<\/a>/);
+    assert.match(template.text, /conta usada na compra/);
+    assert.match(template.html, /Google Maps informa se o compartilhamento continua ativo/);
+    assert.doesNotMatch(JSON.stringify(template), /maps\.app\.goo\.gl|private-location-capability|\/entregador#/);
+});
+
+test("aviso de localização escapa conteúdo no HTML e mantém texto legível", () => {
+    const template = email.deliveryLocationSharedTemplate({ name: '<img src="x">', orderId: '"<script>&?x' });
+    assert.doesNotMatch(template.html, /<img|<script>/);
+    assert.match(template.html, /&lt;img/);
+    assert.match(template.text, /Olá, <img/);
+    assert.ok(template.html.includes(`pedido=${encodeURIComponent('"<script>&?x')}`));
+    const anonymous = email.deliveryLocationSharedTemplate({ name: "", orderId: "order" });
+    assert.match(anonymous.text, /Olá, cliente\./);
+});
 afterEach(() => { global.fetch = originalFetch; });
 
 test("Resend recebe remetente, conteúdo e chave de idempotência", async () => {

@@ -44,6 +44,8 @@ test("entregador abre apenas Google Maps sem dependências da navegação própr
     const driver = fs.readFileSync("views/delivery/driver.html", "utf8");
     assert.match(driver, /id="navigateGoogleMaps"[^>]*target="_blank"[^>]*rel="noopener noreferrer"/);
     assert.match(driver, /referrerpolicy="no-referrer"/);
-    assert.match(driver, /Esta página não compartilha sua localização/);
+    assert.match(driver, /id="shareLocationForm"/);
+    assert.match(driver, /Compartilhar com a loja e o cliente/);
+    assert.match(driver, /Remover o link do site não encerra o compartilhamento no Google Maps/);
     assert.doesNotMatch(driver, /(?:map|navigation|navigation-engine|route-options)\.js|id="startGps"/);
 });

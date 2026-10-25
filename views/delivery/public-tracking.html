@@ -10,11 +10,11 @@
     <link rel="icon" href="/images/logo/nacao-animal-logo-transparent.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="/css/layout/public-header.css?v=20260811-1">
-    <link rel="stylesheet" href="/css/pages/delivery.css?v=20261025-2">
+    <link rel="stylesheet" href="/css/pages/delivery.css?v=20261025-3">
     <link rel="stylesheet" href="/css/layout/cart-sidebar.css?v=20261001">
     <link rel="stylesheet" href="/css/layout/notifications.css?v=20261021-1">
     <link rel="stylesheet" href="/css/layout/storefront-theme.css?v=20261021-1">
-    <link rel="stylesheet" href="/css/pages/tracking-storefront.css?v=20261025-2">
+    <link rel="stylesheet" href="/css/pages/tracking-storefront.css?v=20261025-3">
     <link rel="stylesheet" href="/css/layout/customer-logout-dialog.css?v=20261021-1">
     <script src="/js/customer-session.js?v=20261025-1"></script>
 </head>
@@ -37,16 +37,24 @@
                 <h3>Endereço de entrega</h3>
                 <p id="destinationAddress"></p>
                 <p id="trackingUpdated"></p>
+                <section id="trackingLocationShare" class="delivery-location-view" aria-label="Localização compartilhada" hidden>
+                    <h3>Localização do entregador</h3>
+                    <p>O entregador forneceu um link para acompanhar a localização no Google Maps.</p>
+                    <a id="trackingLocationLink" class="delivery-primary-link" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Acompanhar localização no Google Maps</a>
+                    <p id="trackingLocationUpdated" class="delivery-notice"></p>
+                    <p class="delivery-notice">O acompanhamento depende do compartilhamento ativo no Google Maps e da conexão do aparelho. O site não confirma automaticamente se a localização está sendo atualizada.</p>
+                </section>
             </section>
             <div class="delivery-status-actions"><button id="refreshTracking" class="delivery-secondary" type="button">Atualizar status</button></div>
-            <p class="tracking-note"><small>O entregador usa o Google Maps para navegar. A localização e o percurso dele não são exibidos no site. O status muda quando a loja atualiza o pedido.</small></p>
+            <p class="tracking-note"><small>O entregador usa o Google Maps para navegar. Quando compartilhar um link de localização, você poderá abri-lo por esta página. O status muda quando a loja atualiza o pedido.</small></p>
         </div>
     </main>
     <footer class="storefront-footer"><div class="storefront-container"><div class="storefront-footer-top"><a class="storefront-footer-brand" href="/">Nação Animal</a><p>O melhor para o seu pet, sempre!</p><nav aria-label="Links do rodapé"><a href="/meus-pedidos">Meus pedidos</a><a href="/#localizacao">Contato</a><a href="/politica-de-privacidade">Privacidade</a><a href="/termos-de-uso">Termos de uso</a></nav></div><div class="storefront-footer-bottom"><span>© 2026 Nação Animal. Todos os direitos reservados.</span></div></div></footer>
     <script src="/js/layout/customer-logout-dialog.js?v=20261021-1"></script>
     <script src="/js/layout/public-header.js?v=20261025-1" defer></script>
 
-    <script src="/js/pages/delivery/tracking.js?v=20261025-2" defer></script>
+    <script src="/js/pages/delivery/location-share-link.js?v=20261025-3" defer></script>
+    <script src="/js/pages/delivery/tracking.js?v=20261025-3" defer></script>
     <script src="/js/layout/cart-sidebar.js?v=20261021-1" defer></script>
     <script src="/js/layout/notifications.js?v=20261025-1" defer></script>
 </body>

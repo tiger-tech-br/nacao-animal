@@ -4,15 +4,16 @@ const settle = async () => { for (let i = 0; i < 8; i++) await new Promise(resol
 const response = (data, status = 200, message) => ({ ok: status < 400, status, json: async () => ({ data, message }) });
 const address = { endereco: "Rua de teste & referência", numero: "123", complemento: "Casa 2", bairro: "Bairro de teste", cidade: "Santo André", estado: "SP", cep: "09000000" };
 function element() {
-    return { hidden: true, disabled: false, textContent: "", events: {},
+    return { hidden: true, disabled: false, textContent: "", value: "", events: {},
         addEventListener(name, callback) { this.events[name] = callback; },
         removeAttribute(name) { delete this[name]; },
+        setAttribute(name, value) { this[name] = value; },
         set innerHTML(_) { assert.fail("Dados do pedido devem ser escritos como texto"); }
     };
 }
 function harness(kind, { admin = false, hash = "#" + "a".repeat(64), responder, token = "session", data } = {}) {
-    const ids = kind === "driver" ? ["driverStatus", "driverDetails", "destinationAddress", "navigateGoogleMaps", "reloadDelivery"]
-        : ["trackingStatus", "trackingLogin", "trackingDetails", "trackingHeadline", "destinationAddress", "trackingUpdated", "refreshTracking", "trackingBack", "trackingTitle", "trackingDescription"];
+    const ids = kind === "driver" ? ["driverStatus", "driverDetails", "destinationAddress", "navigateGoogleMaps", "reloadDelivery", "shareLocationSection", "shareLocationForm", "sharedLocationUrl", "shareLocationSubmit", "removeLocationShare", "shareLocationStatus", "driverSharedLocation", "driverSharedLocationOpen"]
+        : ["trackingStatus", "trackingLogin", "trackingDetails", "trackingHeadline", "destinationAddress", "trackingUpdated", "refreshTracking", "trackingBack", "trackingTitle", "trackingDescription", "trackingLocationShare", "trackingLocationLink", "trackingLocationUpdated"];
     const elements = Object.fromEntries(ids.map(id => [id, element()])), calls = [], documentEvents = {}, events = {};
     let tick, delay, currentToken = token;
     let currentData = data || { status: "SAIU_PARA_ENTREGA", endereco_entrega: address };
@@ -20,7 +21,7 @@ function harness(kind, { admin = false, hash = "#" + "a".repeat(64), responder, 
         location: { hash, pathname: kind === "driver" ? "/entregador" : admin ? "/admin/acompanhar-entrega" : "/acompanhar-entrega", search: "?pedido=pedido-teste" },
         document: { hidden: false, getElementById: id => elements[id], addEventListener(name, callback) { documentEvents[name] = callback; } },
         addEventListener(name, callback) { events[name] = callback; },
-        setInterval(callback, interval) { tick = callback; delay = interval; },
+        setInterval(callback, interval) { if (kind === "driver" || interval === 15000) { tick = callback; delay = interval; } },
         sessionStorage: { getItem(key) { return key === (admin ? "token" : "petflow_customer_token") ? currentToken : null; } },
         navigator: { geolocation: { watchPosition() { assert.fail("Não deve capturar GPS"); }, getCurrentPosition() { assert.fail("Não deve capturar GPS"); } } },
         PetFlowDeliveryMap() { assert.fail("Não deve carregar mapa próprio"); },
@@ -28,6 +29,7 @@ function harness(kind, { admin = false, hash = "#" + "a".repeat(64), responder, 
         fetch: async (url, options) => { calls.push({ url, options }); return responder ? responder(url, options) : response(currentData); }
     };
     context.window = context;
+    vm.runInNewContext(fs.readFileSync("public/js/pages/delivery/location-share-link.js", "utf8"), context);
     vm.runInNewContext(fs.readFileSync(`public/js/pages/delivery/${kind === "driver" ? "driver" : "tracking"}.js`, "utf8"), context);
     return { context, elements, calls, documentEvents, events, tick: () => tick(), delay: () => delay,
         token(value) { currentToken = value; }, data(value) { currentData = value; } };

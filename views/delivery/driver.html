@@ -7,7 +7,7 @@
     <meta name="referrer" content="no-referrer">
     <title>Nação Animal | Rota da entrega</title>
     <link rel="icon" href="/images/logo/nacao-animal-logo-transparent.png" type="image/png">
-    <link rel="stylesheet" href="/css/pages/delivery.css?v=20261025-2">
+    <link rel="stylesheet" href="/css/pages/delivery.css?v=20261025-3">
     <link rel="stylesheet" href="/css/layout/copyright.css">
 </head>
 <body class="driver-page">
@@ -23,9 +23,26 @@
         <a id="navigateGoogleMaps" class="delivery-primary-link" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" hidden>Navegar no Google Maps</a>
         <button id="reloadDelivery" class="delivery-secondary" type="button">Atualizar dados da entrega</button>
         <p class="delivery-notice">O Google Maps abre no aplicativo ou no navegador, conforme o aparelho. Confira o destino antes de iniciar a navegação.</p>
-        <p class="delivery-notice">Esta página não compartilha sua localização. O cliente acompanha o status do pedido no site. Após a entrega, a loja deve marcar o pedido como <strong>Entregue</strong> no painel.</p>
+        <section id="shareLocationSection" class="delivery-location-sharing" aria-labelledby="shareLocationTitle" hidden>
+            <h2 id="shareLocationTitle">Compartilhar localização</h2>
+            <p>No Google Maps, ative o <strong>Compartilhamento de localização</strong> e copie o link. Depois, cole aqui para a loja e o cliente acompanharem esta entrega.</p>
+            <form id="shareLocationForm">
+                <label for="sharedLocationUrl">Link de localização do Google Maps</label>
+                <input id="sharedLocationUrl" type="url" inputmode="url" autocomplete="off" maxlength="2048" placeholder="https://maps.app.goo.gl/…" aria-describedby="shareLocationHelp" required>
+                <p id="shareLocationHelp" class="delivery-notice">Cole o link de compartilhamento da sua localização, e não o link de uma rota ou de um lugar. O link dará acesso à sua localização aos destinatários enquanto estiver ativo no Google Maps.</p>
+                <button id="shareLocationSubmit" type="submit">Compartilhar com a loja e o cliente</button>
+            </form>
+            <p id="shareLocationStatus" class="delivery-sharing-status" role="status" aria-live="polite"></p>
+            <div id="driverSharedLocation" hidden>
+                <a id="driverSharedLocationOpen" class="delivery-primary-link" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Conferir link no Google Maps</a>
+                <button id="removeLocationShare" class="delivery-secondary" type="button">Remover link do site</button>
+                <p class="delivery-notice">Remover o link do site não encerra o compartilhamento no Google Maps. Ao concluir a entrega, pare o compartilhamento também no aplicativo.</p>
+            </div>
+        </section>
+        <p class="delivery-notice">O acompanhamento da localização abre no Google Maps e depende do compartilhamento ativo e da conexão do aparelho. O site não confirma automaticamente se o link está ativo. Após a entrega, a loja deve marcar o pedido como <strong>Entregue</strong> no painel.</p>
         <footer><a href="/politica-de-privacidade">Privacidade</a> · <a href="/termos-de-uso">Termos de uso</a><p class="site-copyright">© 2026 Nação Animal. Todos os direitos reservados.</p></footer>
     </main>
-    <script src="/js/pages/delivery/driver.js?v=20261025-2"></script>
+    <script src="/js/pages/delivery/location-share-link.js?v=20261025-3"></script>
+    <script src="/js/pages/delivery/driver.js?v=20261025-3"></script>
 </body>
 </html>

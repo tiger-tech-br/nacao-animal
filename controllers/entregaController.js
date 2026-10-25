@@ -4,6 +4,7 @@ const db = require("../database/connection");
 const { APP_URL } = require("../config/env");
 const frete = require("../services/freteService");
 const { capturedAt } = require("../services/gpsTimestamp");
+const locationSharing = require("../services/deliveryLocationShareService");
 const fail = (message, status) => Object.assign(new Error(message), { status });
 const uuid = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value || "");
 
@@ -80,21 +81,25 @@ async function localizacao(req, res, next) {
 async function acompanhar(req, res, next) {
     try {
         if (!uuid(req.params.id)) throw fail("Pedido inválido.", 400);
-        const { rows } = await db.query(`SELECT v.status,v.endereco_entrega,r.latitude,r.longitude,r.precisao_m,r.atualizado_em,r.rota FROM vendas v
+        const { rows } = await db.query(`SELECT v.status,v.endereco_entrega,r.latitude,r.longitude,r.precisao_m,r.atualizado_em,r.rota,
+            CASE WHEN s.venda_id IS NOT NULL THEN json_build_object('url',s.url,'atualizado_em',s.atualizado_em,'expira_em',s.expira_em) END AS compartilhamento FROM vendas v
             LEFT JOIN entrega_rastreamento r ON r.venda_id=v.id AND r.expira_em>NOW() AND v.status='SAIU_PARA_ENTREGA'
+            LEFT JOIN entrega_localizacao_compartilhada s ON s.venda_id=v.id AND s.expira_em>NOW() AND v.status='SAIU_PARA_ENTREGA'
             WHERE v.id=$1 AND v.cliente_id=$2 AND v.empresa_id=$3`, [req.params.id,req.customer.id,req.customer.empresaId]);
         if (!rows[0]) throw fail("Pedido não encontrado.", 404);
-        res.set("Cache-Control", "no-store").json({ success: true, data: rows[0] });
+        res.set("Cache-Control", "no-store").json({ success: true, data: { ...rows[0], compartilhamento: locationSharing.publicShare(rows[0].compartilhamento) } });
     } catch (e) { next(e); }
 }
 async function acompanharAdmin(req, res, next) {
     try {
         if (!uuid(req.params.id)) throw fail("Pedido inválido.", 400);
-        const { rows } = await db.query(`SELECT v.status,v.endereco_entrega,r.entregador_id,r.meio_transporte,r.latitude,r.longitude,r.precisao_m,r.atualizado_em,r.rota FROM vendas v
+        const { rows } = await db.query(`SELECT v.status,v.endereco_entrega,r.entregador_id,r.meio_transporte,r.latitude,r.longitude,r.precisao_m,r.atualizado_em,r.rota,
+            CASE WHEN s.venda_id IS NOT NULL THEN json_build_object('url',s.url,'atualizado_em',s.atualizado_em,'expira_em',s.expira_em) END AS compartilhamento FROM vendas v
             LEFT JOIN entrega_rastreamento r ON r.venda_id=v.id AND r.expira_em>NOW() AND v.status='SAIU_PARA_ENTREGA'
+            LEFT JOIN entrega_localizacao_compartilhada s ON s.venda_id=v.id AND s.expira_em>NOW() AND v.status='SAIU_PARA_ENTREGA'
             WHERE v.id=$1 AND v.empresa_id=$2`, [req.params.id,req.user.empresaId]);
         if (!rows[0]) throw fail("Pedido não encontrado.", 404);
-        res.set("Cache-Control", "no-store").json({ success: true, data: rows[0] });
+        res.set("Cache-Control", "no-store").json({ success: true, data: { ...rows[0], compartilhamento: locationSharing.publicShare(rows[0].compartilhamento) } });
     } catch (e) { next(e); }
 }
 function driverHash(req) {
@@ -104,11 +109,30 @@ function driverHash(req) {
 }
 async function viagem(req, res, next) {
     try {
-        const { rows } = await db.query(`SELECT v.id,v.status,v.endereco_entrega,r.meio_transporte,r.latitude,r.longitude,r.precisao_m,r.atualizado_em,r.rota
+        const { rows } = await db.query(`SELECT v.id,v.status,v.endereco_entrega,r.meio_transporte,r.latitude,r.longitude,r.precisao_m,r.atualizado_em,r.rota,
+            CASE WHEN s.venda_id IS NOT NULL THEN json_build_object('url',s.url,'atualizado_em',s.atualizado_em,'expira_em',s.expira_em) END AS compartilhamento
             FROM entrega_rastreamento r JOIN vendas v ON v.id=r.venda_id
+            LEFT JOIN entrega_localizacao_compartilhada s ON s.venda_id=v.id AND s.expira_em>NOW()
             WHERE r.token_hash=$1 AND r.expira_em>NOW() AND v.status='SAIU_PARA_ENTREGA'`, [driverHash(req)]);
         if (!rows[0]) throw fail("Link expirado ou entrega encerrada.", 410);
-        res.set("Cache-Control", "no-store").json({ success: true, data: rows[0] });
+        res.set("Cache-Control", "no-store").json({ success: true, data: { ...rows[0], compartilhamento: locationSharing.publicShare(rows[0].compartilhamento) } });
+    } catch (e) { next(e); }
+}
+async function compartilharLocalizacao(req, res, next) {
+    try {
+        const tokenHash = driverHash(req), body = req.body;
+        if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length !== 1 || typeof body.url !== "string")
+            throw fail("Informe somente o link de Compartilhamento de local do Google Maps.", 400);
+        const data = await locationSharing.compartilhar(tokenHash, body.url);
+        res.set("Cache-Control", "no-store").json({ success: true, data });
+    } catch (e) { next(e); }
+}
+async function removerCompartilhamento(req, res, next) {
+    try {
+        const tokenHash = driverHash(req);
+        if (req.body !== undefined && (!req.body || typeof req.body !== "object" || Array.isArray(req.body) || Object.keys(req.body).length))
+            throw fail("Não informe dados extras para remover o compartilhamento.", 400);
+        res.set("Cache-Control", "no-store").json({ success: true, data: await locationSharing.remover(tokenHash) });
     } catch (e) { next(e); }
 }
 async function rota(req, res, next) {
@@ -177,4 +201,4 @@ function mapaConfig(req, res) {
     // Chave pública restrita por domínio. Nunca publicar a chave de Routes usada pelo servidor.
     res.set("Cache-Control", "no-store").json({ success: true, data: { browserKey: process.env.GOOGLE_MAPS_BROWSER_API_KEY?.trim() || "" } });
 }
-module.exports = { cotar, consultarCep, criarLink, localizacao, acompanhar, acompanharAdmin, viagem, rota, selecionarRota, mapaConfig };
+module.exports = { cotar, consultarCep, criarLink, localizacao, acompanhar, acompanharAdmin, viagem, rota, selecionarRota, mapaConfig, compartilharLocalizacao, removerCompartilhamento };

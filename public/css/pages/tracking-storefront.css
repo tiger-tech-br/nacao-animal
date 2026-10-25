@@ -1,4 +1,5 @@
 /* Acompanhamento do status público. O painel mantém delivery.css e tracking.html. */
+.tracking-storefront .delivery-location-view{border-color:#f0e0be;background:#fffaf0}.tracking-storefront .delivery-location-view h3{color:#473426}.tracking-storefront .delivery-location-view p{font-size:13px;line-height:1.8}.tracking-storefront .delivery-location-view .delivery-primary-link{background:#ff5a00;color:#fff;font-size:13px;line-height:1.5}.tracking-storefront .delivery-location-view .delivery-primary-link:hover{background:#dc4a00}.tracking-storefront .delivery-location-view .delivery-notice{color:#836841;font-size:12px}
 .tracking-storefront .delivery-status-details{background:#fffcf5;border-color:#eee3d0;color:#6c604c}.tracking-storefront .delivery-status-details h2{color:#ce4d00}.tracking-storefront .delivery-status-details small,.tracking-storefront .delivery-status-details #trackingUpdated{color:#8a7758}.tracking-storefront .delivery-secondary{background:#fff0cf;color:#a54609}.tracking-storefront .delivery-secondary:hover{background:#ffe3a1}
 .tracking-storefront { padding: 0; background: #fffcf6; }
 .tracking-storefront .storefront-header button { margin: 0; }

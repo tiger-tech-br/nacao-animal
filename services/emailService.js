@@ -200,7 +200,27 @@ function orderOutForDeliveryTemplate({ name, orderId }) {
             <p>Olá, ${safeName}.</p>
             <p>Seu pedido <strong>#${orderLabel}</strong> saiu para entrega e está a caminho.</p>
             <p><a href="${escapeHtml(trackingUrl)}" style="display:inline-block;background:#04766d;color:#fff;padding:14px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Acompanhar pedido</a></p>
-            <p>Entre na conta usada na compra para consultar o status atualizado pela loja. A localização do entregador não é exibida no site.</p>
+            <p>Entre na conta usada na compra para consultar o status atualizado pela loja. Se o entregador disponibilizar um link de localização, você poderá abrir o acompanhamento no Google Maps pela página do pedido.</p>
+        `)
+    };
+}
+
+function deliveryLocationSharedTemplate({ name, orderId }) {
+    const customerName = firstName(name) || "cliente";
+    const orderLabel = shortId(orderId);
+    const trackingUrl = `${APP_URL}/acompanhar-entrega?pedido=${encodeURIComponent(orderId)}`;
+    const message = `O entregador disponibilizou um link do Google Maps para acompanhar a localização da entrega do pedido #${orderLabel}.`;
+
+    return {
+        subject: `Localização da entrega disponível #${orderLabel} - Nação Animal`,
+        text: `Olá, ${customerName}. ${message} Entre na conta usada na compra e abra Acompanhar localização na página do pedido: ${trackingUrl} . O link só aparece no site enquanto estiver disponível e o pedido estiver em entrega. O Google Maps informa se o compartilhamento continua ativo.`,
+        html: baseEmail(`
+            <h1>Localização da entrega disponível</h1>
+            <p>Olá, ${escapeHtml(customerName)}.</p>
+            <p>${escapeHtml(message)}</p>
+            <p><a href="${escapeHtml(trackingUrl)}" style="display:inline-block;background:#04766d;color:#fff;padding:14px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Acompanhar localização</a></p>
+            <p>Entre na conta usada na compra. Na página do pedido, toque em <strong>Acompanhar localização no Google Maps</strong>.</p>
+            <p>O link só aparece no site enquanto estiver disponível e o pedido estiver em entrega. O Google Maps informa se o compartilhamento continua ativo.</p>
         `)
     };
 }
@@ -308,6 +328,7 @@ module.exports = {
     orderReceivedTemplate,
     paymentApprovedTemplate,
     orderOutForDeliveryTemplate,
+    deliveryLocationSharedTemplate,
     orderDeliveredTemplate,
     orderCanceledTemplate,
     newsletterConfirmationTemplate

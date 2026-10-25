@@ -55,6 +55,8 @@ test("página de rota abre Maps por ação explícita com referrer protegido e e
     assert.match(html, /id="navigateGoogleMaps"[^>]*target="_blank"[^>]*rel="noopener noreferrer"[^>]*referrerpolicy="no-referrer"/);
     assert.match(html, /name="referrer" content="no-referrer"/);
     assert.match(html, /Navegar no Google Maps/);
-    assert.match(html, /status do pedido no site/);
+    assert.match(html, /Compartilhamento de localização/);
+    assert.match(html, /O site não confirma automaticamente se o link está ativo/);
+    assert.match(html, /pare o compartilhamento também no aplicativo/);
     assert.doesNotMatch(html, /<script[^>]+(?:map|navigation|route-options)\.js/);
 });

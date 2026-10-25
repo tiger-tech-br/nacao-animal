@@ -6,6 +6,8 @@
     const details = document.getElementById("trackingDetails"), headline = document.getElementById("trackingHeadline");
     const destination = document.getElementById("destinationAddress"), updated = document.getElementById("trackingUpdated");
     const retry = document.getElementById("refreshTracking");
+    const shareSection = document.getElementById("trackingLocationShare"), shareLink = document.getElementById("trackingLocationLink");
+    const shareUpdated = document.getElementById("trackingLocationUpdated");
     const endpoint = admin ? "/api/vendas" : "/api/public/pedidos";
     const states = {
         AGUARDANDO_PAGAMENTO: ["Aguardando pagamento", "Seu pedido aguarda a confirmação do pagamento."],
@@ -20,7 +22,7 @@
         ? window.NacaoCustomerSession.getToken() : sessionStorage.getItem(admin ? "token" : "petflow_customer_token");
     const sameSession = token => !admin && window.NacaoCustomerSession?.isCurrent
         ? window.NacaoCustomerSession.isCurrent(token) : sessionToken() === token;
-    let version = 0, controller, pendingToken, dataToken, ended = false;
+    let version = 0, controller, pendingToken, dataToken, ended = false, shareExpires = 0;
     login.href = admin ? "/admin/index.html" : `/login?next=${encodeURIComponent(location.pathname + location.search)}`;
     if (admin) {
         document.title = "Nação Animal | Status da entrega";
@@ -28,12 +30,33 @@
         const back = document.getElementById("trackingBack");
         back.href = `/admin/pages/vendas/vendas.html${id ? `?pedido=${encodeURIComponent(id)}` : ""}`;
         back.textContent = "← Voltar ao pedido";
-        document.getElementById("trackingDescription").textContent = "Consulte o status registrado pela loja. O entregador usa o Google Maps para navegar, sem compartilhar localização com esta tela.";
+        document.getElementById("trackingDescription").textContent = "Consulte o status registrado pela loja e abra a localização no Google Maps quando o entregador compartilhar o link.";
         login.textContent = "Entrar no painel administrativo";
+    }
+    function clearShare() {
+        shareSection.hidden = true;
+        shareLink.removeAttribute("href");
+        shareUpdated.textContent = "";
+        shareExpires = 0;
+    }
+    function renderShare(data) {
+        clearShare();
+        const value = data.compartilhamento;
+        if (data.status !== "SAIU_PARA_ENTREGA" || !value || !Number.isFinite(Date.parse(value.expira_em)) || Date.parse(value.expira_em) <= Date.now()) return;
+        try {
+            shareLink.href = window.NacaoMapsLocationLink.parse(value.url);
+            shareExpires = Date.parse(value.expira_em);
+            const sharedAt = new Date(value.atualizado_em);
+            shareUpdated.textContent = Number.isFinite(sharedAt.getTime())
+                ? `Link fornecido pelo entregador em ${sharedAt.toLocaleString("pt-BR")}.`
+                : "Link fornecido pelo entregador.";
+            shareSection.hidden = false;
+        } catch { clearShare(); }
     }
     function clear() {
         details.hidden = true;
         headline.textContent = destination.textContent = updated.textContent = "";
+        clearShare();
     }
     function cancel() {
         version++; controller?.abort(); controller = null; pendingToken = null;
@@ -41,6 +64,7 @@
     }
     async function refresh() {
         if (document.hidden) return;
+        if (shareExpires && shareExpires <= Date.now()) clearShare();
         const token = sessionToken();
         if (token !== dataToken) { ended = false; clear(); dataToken = token; }
         if (!token) {
@@ -80,6 +104,7 @@
                 .map(key => typeof address[key] === "string" || typeof address[key] === "number" ? String(address[key]).trim() : "")
                 .filter(Boolean).join(", ") || "Consulte o endereço nos detalhes do pedido.";
             updated.textContent = `Status consultado em ${new Date().toLocaleString("pt-BR")}.`;
+            renderShare(data);
             details.hidden = false;
             ended = ["ENTREGUE", "FINALIZADA", "CANCELADA"].includes(data.status);
         } catch (error) {
@@ -90,13 +115,19 @@
             if (current === version) { controller = null; pendingToken = null; retry.disabled = ended; }
         }
     }
+    shareLink.addEventListener("click", event => {
+        if (!shareExpires || shareExpires <= Date.now() || !sameSession(dataToken)) {
+            event.preventDefault(); clearShare();
+            status.textContent = "Atualize o status do pedido para conferir se há um link de localização disponível.";
+        }
+    });
     retry.addEventListener("click", refresh);
     if (!admin) document.addEventListener("petflow:customer-logout", () => {
         cancel(); clear(); ended = false; dataToken = null;
         login.hidden = false; status.textContent = "Entre na conta usada na compra para acompanhar seu pedido.";
     });
-    document.addEventListener("visibilitychange", () => { if (document.hidden) cancel(); else refresh(); });
-    window.addEventListener("pagehide", cancel);
+    document.addEventListener("visibilitychange", () => { if (document.hidden) { cancel(); clear(); ended = false; } else refresh(); });
+    window.addEventListener("pagehide", () => { cancel(); clear(); ended = false; });
     window.addEventListener("pageshow", refresh);
     refresh(); setInterval(refresh, 15000);
 })();

@@ -80,6 +80,7 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
             return { id: "test-email" };
         };
         const optionalEmails = [];
+        let failOptionalEmails = false;
         const welcomeAttempts = [];
         const deletionAttempts = [];
         email.sendOptionalEmail = async payload => {
@@ -97,7 +98,7 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
                 return null; // Falha de entrega não pode restaurar cadastro excluído.
             }
             optionalEmails.push(payload);
-            return { id: "test-optional" };
+            return failOptionalEmails ? null : { id: "test-optional" };
         };
         let checkouts = 0;
         require("axios").create = () => ({
@@ -377,7 +378,7 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         }
         assert.equal((await request("/api/public/clientes/notificacoes/lidas", "PATCH", { ids: [customerNotices[0].id] }, token)).status, 200);
         assert.ok((await request("/api/public/clientes/notificacoes", "GET", null, token)).body.data.find(n => n.id === customerNotices[0].id).lida);
-        const noticeCount = (await pool.query("SELECT COUNT(*)::int n FROM notificacoes")).rows[0].n;
+        let noticeCount = (await pool.query("SELECT COUNT(*)::int n FROM notificacoes")).rows[0].n;
         const waiting = await request(linkEndpoint,"GET",null,adminToken);
         assert.equal(waiting.status,200);
         assert.equal(waiting.body.data.latitude,null,"Acompanhamento aguarda GPS sem gerar link");
@@ -395,6 +396,93 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         assert.equal(trip.body.data.meio_transporte,"CARRO");
         assert.equal(trip.body.data.entregador_id,undefined);
         assert.equal(trip.body.data.token_hash, undefined);
+        const sharedLocationPath = "/api/public/entregas/compartilhamento";
+        const sharedLocationUrl = "https://maps.app.goo.gl/AbCdEf12345";
+        assert.equal(trip.body.data.compartilhamento, null);
+        assert.equal((await request(sharedLocationPath,"POST",{url:sharedLocationUrl})).status,401);
+        assert.equal((await request(sharedLocationPath,"POST",{url:sharedLocationUrl},token)).status,401,
+            "Sessão do comprador não autoriza compartilhar a localização do entregador");
+        for (const invalid of [{url:"https://maps.app.goo.gl.evil.invalid/AbCdEf12345"},{url:"javascript:alert(1)"},
+            {url:sharedLocationUrl,cliente_id:registered.id},{url:[]},{},[]]) {
+            assert.equal((await request(sharedLocationPath,"POST",invalid,driverToken)).status,400,
+                "Corpo inesperado ou URL externa não chega ao compartilhamento");
+        }
+        const beforeShareCustomer = (await pool.query("SELECT COUNT(*)::int n FROM notificacoes WHERE venda_id=$1",[order])).rows[0].n;
+        const beforeShareAdmin = (await pool.query("SELECT COUNT(*)::int n FROM notificacoes_admin WHERE venda_id=$1",[order])).rows[0].n;
+        const emailsBeforeSharing = optionalEmails.length;
+        const sharedConcurrently = await Promise.all([1,2].map(()=>request(sharedLocationPath,"POST",{url:sharedLocationUrl},driverToken)));
+        assert.ok(sharedConcurrently.every(result=>result.status===200),JSON.stringify(sharedConcurrently.map(result=>result.body)));
+        assert.equal(sharedConcurrently.filter(result=>result.body.data.changed).length,1,
+            "Cliques concorrentes não registram duas mudanças");
+        assert.ok(sharedConcurrently.every(result=>result.body.data.compartilhamento.url===sharedLocationUrl));
+        const shared = sharedConcurrently[0].body.data.compartilhamento;
+        assert.ok(new Date(shared.expira_em).getTime() > Date.now());
+        assert.ok(new Date(shared.expira_em).getTime() <= Date.now()+24*60*60*1000+1000,
+            "O acesso disponibilizado pelo site tem prazo máximo de24horas");
+        assert.equal((await pool.query("SELECT COUNT(*)::int n FROM notificacoes WHERE venda_id=$1",[order])).rows[0].n,beforeShareCustomer+1);
+        assert.equal((await pool.query("SELECT COUNT(*)::int n FROM notificacoes_admin WHERE venda_id=$1",[order])).rows[0].n,beforeShareAdmin+1);
+        const sharingEmails = optionalEmails.slice(emailsBeforeSharing);
+        assert.ok(sharingEmails.length>=1,"Cliente recebe tentativa de aviso depois de salvar o link");
+        assert.equal(new Set(sharingEmails.map(email=>email.idempotencyKey)).size,1,
+            "Repetição do envio usa a mesma identidade no provedor de e-mail");
+        for (const email of sharingEmails) {
+            assert.ok(email.idempotencyKey);
+            assert.ok(email.text.includes(`/acompanhar-entrega?pedido=${order}`));
+            assert.ok(!JSON.stringify(email).includes(sharedLocationUrl),"E-mail direciona à página autenticada, sem divulgar o link de localização");
+            assert.ok(!JSON.stringify(email).includes(driverToken),"Aviso não inclui a credencial do entregador");
+        }
+        const afterFirstShareEmails = optionalEmails.length;
+        const repeatedShare = await request(sharedLocationPath,"POST",{url:sharedLocationUrl},driverToken);
+        assert.equal(repeatedShare.status,200);
+        assert.equal(repeatedShare.body.data.changed,false);
+        assert.equal(repeatedShare.body.data.emailStatus,"unchanged");
+        assert.equal(optionalEmails.length,afterFirstShareEmails,"Repetir um link avisado não reenvia e-mail");
+        for (const access of [[`/api/public/pedidos/${order}/rastreamento`,token],[linkEndpoint,adminToken],
+            ["/api/public/entregas/viagem",driverToken]]) {
+            const exposed = await request(access[0],"GET",null,access[1]);
+            assert.equal(exposed.status,200);
+            assert.equal(exposed.body.data.compartilhamento.url,sharedLocationUrl);
+            assert.equal(exposed.headers.get("cache-control"),"no-store");
+            assert.equal(exposed.body.data.compartilhamento.email_enviado_em,undefined);
+        }
+        assert.equal((await request(linkEndpoint,"GET",null,foreignAdminToken)).status,404);
+        const sharingNotices = (await request("/api/public/clientes/notificacoes","GET",null,token)).body.data;
+        assert.ok(sharingNotices.every(notice=>!JSON.stringify(notice).includes(sharedLocationUrl)),
+            "Sino leva ao pedido autorizado, sem persistir o link privado em mensagens");
+        const changedLocationUrl = "https://maps.app.goo.gl/NewLink12345";
+        failOptionalEmails = true;
+        const failedLocationEmail = await request(sharedLocationPath,"POST",{url:changedLocationUrl},driverToken);
+        assert.equal(failedLocationEmail.status,200,"Falha de e-mail não desfaz link salvo nem aviso no sino");
+        assert.equal(failedLocationEmail.body.data.emailStatus,"failed");
+        assert.equal(failedLocationEmail.body.data.compartilhamento.url,changedLocationUrl);
+        const noticesAfterEmailFailure = (await pool.query("SELECT COUNT(*)::int n FROM notificacoes WHERE venda_id=$1",[order])).rows[0].n;
+        const failedLocationPayload = optionalEmails.at(-1);
+        failOptionalEmails = false;
+        const emailRetry = await request(sharedLocationPath,"POST",{url:changedLocationUrl},driverToken);
+        assert.equal(emailRetry.status,200);
+        assert.equal(emailRetry.body.data.changed,false);
+        assert.equal(emailRetry.body.data.emailStatus,"sent");
+        assert.equal(optionalEmails.at(-1).idempotencyKey,failedLocationPayload.idempotencyKey,
+            "Retry após falha preserva chave para evitar duas entregas da mesma mensagem");
+        assert.equal((await pool.query("SELECT COUNT(*)::int n FROM notificacoes WHERE venda_id=$1",[order])).rows[0].n,noticesAfterEmailFailure,
+            "Tentar somente o e-mail não recria avisos no sino");
+        await pool.query("UPDATE entrega_localizacao_compartilhada SET atualizado_em=NOW()-INTERVAL '25 hours',expira_em=NOW()-INTERVAL '1 hour' WHERE venda_id=$1",[order]);
+        for (const access of [[`/api/public/pedidos/${order}/rastreamento`,token],[linkEndpoint,adminToken],
+            ["/api/public/entregas/viagem",driverToken]]) {
+            assert.equal((await request(access[0],"GET",null,access[1])).body.data.compartilhamento,null,
+                "Acompanhamento expirado não é exposto mesmo com viagem ainda válida");
+        }
+        await pool.query("UPDATE entrega_localizacao_compartilhada SET atualizado_em=$2,expira_em=$3 WHERE venda_id=$1",
+            [order,emailRetry.body.data.compartilhamento.atualizado_em,emailRetry.body.data.compartilhamento.expira_em]);
+        const removedShare = await request(sharedLocationPath,"DELETE",null,driverToken);
+        assert.equal(removedShare.status,200);
+        assert.equal(removedShare.body.data.changed,true);
+        assert.equal((await request(linkEndpoint,"GET",null,adminToken)).body.data.compartilhamento,null);
+        const afterRemoval = (await pool.query("SELECT COUNT(*)::int n FROM notificacoes WHERE venda_id=$1",[order])).rows[0].n;
+        assert.equal((await request(sharedLocationPath,"DELETE",null,driverToken)).status,200);
+        assert.equal((await pool.query("SELECT COUNT(*)::int n FROM notificacoes WHERE venda_id=$1",[order])).rows[0].n,afterRemoval,
+            "Ocultar novamente não duplica o aviso");
+        noticeCount = (await pool.query("SELECT COUNT(*)::int n FROM notificacoes")).rows[0].n;
         const config = await request("/api/public/entregas/mapa-config");
         assert.deepEqual(config.body.data, { browserKey: "test-public-browser-key" }, "Não expõe chave privada de Routes");
         assert.equal((await request("/api/public/entregas/rota", "POST", {}, driverToken)).status, 409, "Navegação exige posição real do entregador");
@@ -482,10 +570,15 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         assert.equal(lastLink.status,200,JSON.stringify(lastLink.body));
         const lastDriverToken = new URL(lastLink.body.data.url).hash.slice(1);
         await request(gps, "POST", position, lastDriverToken);
+        assert.equal((await request(sharedLocationPath,"POST",{url:sharedLocationUrl},lastDriverToken)).status,200);
+        noticeCount = (await pool.query("SELECT COUNT(*)::int n FROM notificacoes")).rows[0].n;
         assert.equal((await request(`/api/vendas/${order}/status`, "PATCH", { status: "ENTREGUE" }, adminToken)).status, 200);
         assert.equal((await request(`/api/vendas/${order}/status`, "PATCH", { status: "SAIU_PARA_ENTREGA" }, adminToken)).status, 409);
         assert.equal((await request(gps, "POST", position, lastDriverToken)).status, 410);
         assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM entrega_rastreamento WHERE venda_id=$1", [order])).rows[0].n, 0, "Entrega encerra rastreamento e apaga GPS");
+        assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM entrega_localizacao_compartilhada WHERE venda_id=$1",[order])).rows[0].n,0,
+            "Pedido entregue remove também o link de localização fornecido ao site");
+        assert.equal((await request(sharedLocationPath,"POST",{url:sharedLocationUrl},lastDriverToken)).status,410);
         const deliveredTracking = await request(linkEndpoint,"GET",null,adminToken);
         assert.equal(deliveredTracking.status,200);
         assert.equal(deliveredTracking.body.data.status,"ENTREGUE");
