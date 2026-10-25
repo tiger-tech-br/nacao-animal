@@ -5,6 +5,7 @@ require.cache[require.resolve("../database/connection")]={exports:{query:(...arg
 require.cache[require.resolve("../config/env")]={exports:{APP_URL:"https://assignment.example.invalid"}};
 require.cache[require.resolve("../services/freteService")]={exports:{}};
 require.cache[require.resolve("../services/entregaRotaService")]={exports:{calcularRotaEntrega:(...args)=>provider(...args)}};
+require.cache[require.resolve("../services/deliveryCompletionService")]={exports:{receipt:async()=>null}};
 const controller=require("../controllers/entregaController");
 const company="11111111-1111-4111-8111-111111111111",otherCompany="22222222-2222-4222-8222-222222222222";
 const orderId="33333333-3333-4333-8333-333333333333",driverId="44444444-4444-4444-8444-444444444444";

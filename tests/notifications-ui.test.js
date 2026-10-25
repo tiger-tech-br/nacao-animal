@@ -10,7 +10,7 @@ const welcome = { id, titulo: "Bem-vindo à Nação Animal!", mensagem: "Sua con
 const response = data => ({ ok: true, json: async () => ({ success: true, data }) });
 const settle = async () => { for (let n = 0; n < 20; n++) await Promise.resolve(); };
 
-function page({ token = "session-a", admin = false, iframe = false, fetcher = () => response([welcome]) } = {}) {
+function page({ token = "session-a", admin = false, iframe = false, sessionApi = false, fetcher = () => response([welcome]) } = {}) {
     let document;
     function element(tagName = "DIV") {
         const events = new Map(), names = new Set();
@@ -71,6 +71,15 @@ function page({ token = "session-a", admin = false, iframe = false, fetcher = ()
     };
     context.window = context;
     context.parent = iframe ? {} : context;
+    if (sessionApi && !admin) {
+        const currentToken = () => storage.get("petflow_customer_token") || "";
+        const identity = value => value ? value.split("~")[0] : "";
+        context.NacaoCustomerSession = {
+            getToken: currentToken,
+            getSessionKey: () => JSON.stringify([identity(currentToken()), "customer"]),
+            isCurrent: value => Boolean(currentToken() && identity(value) === identity(currentToken()))
+        };
+    }
     vm.runInNewContext(fs.readFileSync("public/js/layout/notifications.js", "utf8"), context);
     document.emit("DOMContentLoaded");
     return {
@@ -179,11 +188,66 @@ test("visitante não consulta API, iframe não duplica sino e inicialização re
     assert.equal(ui.intervals.length, 1);
 });
 
-test("painel administrativo mantém endpoint e não marca automaticamente avisos com painel fechado", async () => {
-    const ui = page({ admin: true }); await settle();
+test("painel administrativo mantém endpoint e marca somente os avisos exibidos ao abrir", async () => {
+    const ui = page({ admin: true, fetcher: (url, options) => options.method === "PATCH" ? response(null) : response([welcome]) }); await settle();
     assert.equal(ui.requests[0].url, "/api/dashboard/notificacoes");
     assert.equal(ui.requests[0].options.headers.Authorization, "Bearer session-a");
     assert.equal(ui.requests.length, 1);
     ui.bell.emit("click"); await settle();
-    assert.equal(ui.requests.filter(request => request.options.method === "PATCH").length, 0, "Admin mantém leitura manual");
+    const reads = ui.requests.filter(request => request.options.method === "PATCH");
+    assert.equal(reads.length, 1);
+    assert.equal(reads[0].url, "/api/dashboard/notificacoes/lidas");
+    assert.deepEqual(JSON.parse(reads[0].options.body), { ids: [id] });
+    assert.equal(ui.badge().hidden, true);
+});
+
+test("sessão pública real usa identidade do cliente, marca leitura e mantém contador oculto após renovar token", async () => {
+    const ui = page({ sessionApi: true, token: "session-a~jwt1",
+        fetcher: (url, options) => options.method === "PATCH" ? response(null) : response([welcome]) });
+    await settle();
+    assert.equal(ui.badge().hidden, false);
+    ui.bell.emit("click"); await settle();
+    assert.equal(ui.badge().hidden, true, "Identidade da sessão é diferente do JWT e ainda autoriza a leitura");
+    assert.equal(ui.requests.filter(request => request.options.method === "PATCH").length, 1);
+    ui.storage.set("petflow_customer_token", "session-a~jwt2");
+    await ui.context.PetFlowNotifications.refresh(); await settle();
+    assert.equal(ui.badge().hidden, true);
+    assert.equal(ui.panel().hidden, false, "Renovação da mesma pessoa não fecha o painel");
+    assert.equal(ui.requests.filter(request => request.options.method === "PATCH").length, 1);
+    assert.equal(ui.panel().querySelector("[data-read]").hidden, true);
+});
+
+test("ao receber avisos novos com lista focada, marca somente IDs realmente exibidos", async () => {
+    const newerId = "33333333-3333-4333-8333-333333333333";
+    let items = [welcome];
+    const ui = page({ sessionApi: true, fetcher: (url, options) => options.method === "PATCH" ? response(null) : response(items) });
+    await settle(); ui.bell.emit("click"); await settle();
+    ui.document.activeElement = ui.list().children[0];
+    items = [welcome, { ...welcome, id: newerId }];
+    await ui.context.PetFlowNotifications.refresh(); await settle();
+    assert.equal(ui.list().children.length, 1, "Conteúdo focado não é substituído durante a leitura");
+    assert.equal(ui.badge().textContent, "1");
+    assert.equal(ui.badge().hidden, false, "Aviso ainda não exibido continua não lido");
+    assert.equal(ui.requests.filter(request => request.options.method === "PATCH").length, 1);
+    ui.document.activeElement = ui.panel().querySelector("[data-close]");
+    ui.list().emit("focusout", { relatedTarget: ui.document.activeElement }); await settle();
+    assert.equal(ui.list().children.length, 2);
+    const reads = ui.requests.filter(request => request.options.method === "PATCH");
+    assert.equal(reads.length, 2);
+    assert.deepEqual(JSON.parse(reads[1].options.body), { ids: [newerId] });
+    assert.equal(ui.badge().hidden, true);
+});
+
+test("sessão real trocada durante confirmação não limpa avisos da conta seguinte", async () => {
+    let finishRead;
+    const ui = page({ sessionApi: true, fetcher: (url, options) => options.method === "PATCH"
+        ? new Promise(resolve => { finishRead = resolve; }) : response([welcome]) });
+    await settle(); ui.bell.emit("click"); await settle();
+    ui.storage.set("petflow_customer_token", "session-b~jwt1");
+    ui.handler(() => response([{ ...welcome, id: "44444444-4444-4444-8444-444444444444" }]));
+    await ui.context.PetFlowNotifications.refresh();
+    finishRead(response(null)); await settle();
+    assert.equal(ui.panel().hidden, true);
+    assert.equal(ui.badge().hidden, false);
+    assert.equal(ui.badge().textContent, "1");
 });

@@ -14,7 +14,7 @@ assert.match(source, closingIife);
 const instrumentedSource = source.replace(closingIife, `
     window.__ordersTest = {
         readSalesFilters, getFilteredRecords, setupSalesFilters, renderTable,
-        exportCsv, showSaleDetails, renderSaleEmptyState, bindEvents,
+        exportCsv, showSaleDetails, renderSaleEmptyState, bindEvents, refreshSelectedDeliveryStatus,
         setRecords(value) { records = value; },
         setPage(value) { currentPage = value; },
         getPage() { return currentPage; },
@@ -119,6 +119,83 @@ function deferred() {
     const promise = new Promise((done, fail) => { resolve = done; reject = fail; });
     return { promise, resolve, reject };
 }
+
+function deliveryStatusControls(ui) {
+    const select = element({ value: "SAIU_PARA_ENTREGA" });
+    const save = element(), driverLink = element();
+    const form = element({ dataset: { currentStatus: "SAIU_PARA_ENTREGA" },
+        querySelector(selector) { return selector === "[name='status']" ? select
+            : selector === "[data-action='update-sale-status']" ? save : null; } });
+    ui.elements.recordForm.querySelector = selector => selector === "[data-sale-status-form]"
+        ? form : selector === "#createDriverLink" ? driverLink : null;
+    return { select, save, driverLink };
+}
+
+test("confirmação externa atualiza detalhes e lista de pedidos sem perder filtros nem rolar a página", async () => {
+    const queries = [];
+    const ui = adminPage({ apiGet(url) { queries.push(url); return Promise.resolve(order("A", {
+        status: queries.length === 1 ? "SAIU_PARA_ENTREGA" : "ENTREGUE", entregue_em: "2026-10-25T12:00:00Z"
+    })); } });
+    ui.hooks.setRecords([order("A", { status: "SAIU_PARA_ENTREGA" })]);
+    ui.elements.orderStatusFilter.value = "SAIU_PARA_ENTREGA";
+    await ui.hooks.showSaleDetails("A");
+    deliveryStatusControls(ui);
+    await ui.hooks.refreshSelectedDeliveryStatus();
+    assert.deepEqual(queries, ["/vendas/A", "/vendas/A"]);
+    assert.match(ui.elements.recordForm.innerHTML, /data-current-status="ENTREGUE"/);
+    assert.match(ui.elements.statusLine.textContent, /Entregue/);
+    assert.equal(ui.elements.orderStatusFilter.value, "SAIU_PARA_ENTREGA");
+    assert.deepEqual(shownOrderIds(ui), [], "Pedido concluído sai do filtro de pedidos em rota");
+    assert.equal(ui.scrolls(), 1, "Consulta automática não força nova rolagem");
+});
+
+for (const blocked of ["hidden", "editing", "focus", "saving", "creating-link"]) {
+    test(`atualização da entrega preserva o trabalho do administrador durante ${blocked}`, async () => {
+        let queries = 0;
+        const ui = adminPage({ apiGet() { queries++; return Promise.resolve(order("A", { status: "SAIU_PARA_ENTREGA" })); } });
+        await ui.hooks.showSaleDetails("A");
+        const controls = deliveryStatusControls(ui);
+        if (blocked === "hidden") ui.document.hidden = true;
+        if (blocked === "editing") controls.select.value = "CANCELADA";
+        if (blocked === "focus") ui.document.activeElement = controls.select;
+        if (blocked === "saving") controls.save.disabled = true;
+        if (blocked === "creating-link") controls.driverLink.disabled = true;
+        await ui.hooks.refreshSelectedDeliveryStatus();
+        assert.equal(queries, 1, "Não consulta nem sobrescreve detalhes enquanto há trabalho em andamento");
+    });
+}
+
+test("resposta de atualização é descartada se o administrador começa a editar durante a consulta", async () => {
+    const pending = deferred();
+    let queries = 0;
+    const ui = adminPage({ apiGet() { return ++queries === 1 ? Promise.resolve(order("A", { status: "SAIU_PARA_ENTREGA" })) : pending.promise; } });
+    await ui.hooks.showSaleDetails("A");
+    const controls = deliveryStatusControls(ui);
+    const refreshing = ui.hooks.refreshSelectedDeliveryStatus();
+    const markup = ui.elements.recordForm.innerHTML;
+    controls.select.value = "CANCELADA";
+    pending.resolve(order("A", { status: "ENTREGUE" }));
+    await refreshing;
+    assert.equal(ui.elements.recordForm.innerHTML, markup);
+    assert.equal(controls.select.value, "CANCELADA");
+});
+
+test("consultas automáticas concorrentes são deduplicadas e não reabrem pedido já fechado", async () => {
+    const pending = deferred();
+    let queries = 0;
+    const ui = adminPage({ apiGet() { return ++queries === 1 ? Promise.resolve(order("A", { status: "SAIU_PARA_ENTREGA" })) : pending.promise; } });
+    await ui.hooks.showSaleDetails("A");
+    deliveryStatusControls(ui);
+    const refreshing = ui.hooks.refreshSelectedDeliveryStatus();
+    await ui.hooks.refreshSelectedDeliveryStatus();
+    assert.equal(queries, 2);
+    ui.hooks.renderSaleEmptyState(ui.elements.recordForm);
+    const markup = ui.elements.recordForm.innerHTML;
+    pending.resolve(order("A", { status: "ENTREGUE" }));
+    await refreshing;
+    assert.equal(ui.elements.recordForm.innerHTML, markup);
+    assert.equal(ui.hooks.getSelectedSaleId(), null);
+});
 
 test("filtros combinados exibem e exportam os mesmos pedidos de todas as páginas", async () => {
     const ui = adminPage();

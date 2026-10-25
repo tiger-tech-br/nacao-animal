@@ -41,7 +41,7 @@
 .home-page .home-header .menu-login-link { display: flex; align-items: center; gap: 7px; width: auto; min-height: 30px; padding: 0 0 10px; color: var(--home-ink); background: transparent; box-shadow: none; font-size: 13px; }
 .home-page .home-header .menu-login-link .customer-avatar { width: 24px; height: 24px; margin-top: -3px; }
 .home-page .home-header [data-customer-label] { max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
-.home-page .home-header .menu-login-item .public-logout-link { min-height: 30px; margin-inline-start: 16px; padding: 0 0 10px; color: var(--home-orange); background: transparent; box-shadow: none; font-size: 12px; text-decoration: none; }
+.home-page .home-header .menu-login-item .public-logout-link { min-height: 30px; margin-inline-start: 28px; padding: 0 0 10px; color: var(--home-orange); background: transparent; box-shadow: none; font-size: 14px; text-decoration: none; }
 .home-page .home-header .menu-login-item .public-logout-link:is(:hover, :focus-visible) { color: var(--home-orange); text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 8px; }
 .home-page .home-header .menu-login-link:is(:hover, :focus-visible) { color: var(--home-orange); }
 .home-page .home-header .header-actions { grid-column: 3; grid-row: 1; display: flex; align-items: center; gap: 19px; padding-top: 48px; }
@@ -198,6 +198,7 @@
     .home-page .home-header .menu { padding-top: 47px; }
     .home-page .menu-list { gap: 19px; }
     .home-page .menu-link { font-size: 12px; }
+    .home-page .home-header .menu-login-item .public-logout-link { font-size: 12px; }
     .home-page .home-header .header-actions { padding-top: 37px; gap: 12px; }
     .home-page .home-header .search-form { top: 92px; }
     .home-page .hero-container { min-height: 540px; }
@@ -237,7 +238,7 @@
     .home-page .home-header .menu-login-link { justify-content: center; width: 100%; min-height: 44px; padding: 10px 14px; font-size: 14px; text-align: center; }
     .home-page .home-header .menu-login-link .customer-avatar { margin-top: 0; }
     .home-page .home-header [data-customer-label] { max-width: none; white-space: normal; }
-    .home-page .home-header .menu-login-item .public-logout-link { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; margin: 8px 0 0; padding: 10px 14px; font-size: 13px; text-align: center; }
+    .home-page .home-header .menu-login-item .public-logout-link { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; margin: 16px 0 0; padding: 10px 14px; font-size: 14px; text-align: center; }
     .home-page .menu-login-link, .home-page .menu-action-link { color: #b94e00; background: none; box-shadow: none; }
     .home-page .home-header .menu-actions-item a { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; padding: 10px 18px; border: 0; border-radius: 0; background: transparent; box-shadow: none; font-size: 14px; text-align: center; }
     .home-page .home-header .search-form { top: 100px; width: 100%; }

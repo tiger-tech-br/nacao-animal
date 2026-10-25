@@ -26,6 +26,7 @@ router.get("/pedidos/:id/rastreamento", customerAuthMiddleware, entregaControlle
 router.post("/entregas/localizacao", entregaController.localizacao);
 router.delete("/entregas/localizacao", entregaController.localizacao);
 router.get("/entregas/viagem", entregaController.viagem);
+router.post("/entregas/concluir", entregaController.concluir);
 router.post("/entregas/compartilhamento", entregaController.compartilharLocalizacao);
 router.delete("/entregas/compartilhamento", entregaController.removerCompartilhamento);
 router.post("/entregas/rota", entregaController.rota);

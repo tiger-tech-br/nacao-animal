@@ -81,6 +81,7 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         };
         const optionalEmails = [];
         let failOptionalEmails = false;
+        let optionalEmailGate = null;
         const welcomeAttempts = [];
         const deletionAttempts = [];
         email.sendOptionalEmail = async payload => {
@@ -98,6 +99,7 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
                 return null; // Falha de entrega não pode restaurar cadastro excluído.
             }
             optionalEmails.push(payload);
+            if (optionalEmailGate) await optionalEmailGate;
             return failOptionalEmails ? null : { id: "test-optional" };
         };
         let checkouts = 0;
@@ -357,6 +359,17 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         assert.equal((await request(noticesPath, "GET", null, otherStore)).status, 401);
         assert.equal((await request(`/api/vendas/${guestOrder.body.data.id}/status`, "PATCH", { status: "SAIU_PARA_ENTREGA" }, adminToken)).status, 409, "Não envia pedido sem pagamento");
         const linkEndpoint = `/api/vendas/${order}/rastreamento`;
+        const completeEndpoint = "/api/public/entregas/concluir";
+        async function completionEffects(id = order) {
+            const { rows } = await pool.query(`SELECT v.status,v.entregue_em,
+                (SELECT COUNT(*)::int FROM entrega_conclusoes e WHERE e.venda_id=v.id) AS recibos,
+                (SELECT COUNT(*)::int FROM notificacoes n WHERE n.venda_id=v.id) AS avisos_cliente,
+                (SELECT COUNT(*)::int FROM notificacoes_admin n WHERE n.venda_id=v.id) AS avisos_admin,
+                (SELECT COUNT(*)::int FROM financeiro f WHERE f.referencia_id=v.id) AS lancamentos,
+                (SELECT quantidade FROM estoque WHERE produto_id=$2) AS estoque
+                FROM vendas v WHERE v.id=$1`, [id, product]);
+            return rows[0];
+        }
         assert.equal((await request(linkEndpoint)).status,401);
         assert.equal((await request(linkEndpoint,"GET",null,token)).status,403,"Cliente não tem acesso ao acompanhamento administrativo");
         assert.equal((await request(linkEndpoint,"GET",null,otherStore)).status,401,"Sessão com empresa adulterada é recusada");
@@ -368,6 +381,18 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         assert.equal((await request(`/api/vendas/${crypto.randomUUID()}/rastreamento`,"GET",null,adminToken)).status,404);
         assert.equal((await request(linkEndpoint,"POST",{entregadorId:crypto.randomUUID()},adminToken)).status,400,"Link não aceita cadastro nem transporte do cliente");
         assert.equal((await request(linkEndpoint,"POST",{},adminToken)).status,409,"GPS só disponível em entrega");
+        const waitingToken = crypto.randomBytes(32).toString("hex");
+        await pool.query(`INSERT INTO entrega_rastreamento (venda_id,token_hash,expira_em,meio_transporte)
+            VALUES ($1,$2,NOW()+INTERVAL '1 hour','CARRO')`,
+            [guestOrder.body.data.id,crypto.createHash("sha256").update(waitingToken).digest("hex")]);
+        const beforeWaitingCompletion = await completionEffects(guestOrder.body.data.id);
+        const emailsBeforeWaitingCompletion = optionalEmails.length;
+        assert.equal((await request(completeEndpoint,"POST",{confirmar:true},waitingToken)).status,410,
+            "Token válido não conclui pedido que ainda não saiu para entrega");
+        assert.deepEqual(await completionEffects(guestOrder.body.data.id),beforeWaitingCompletion,
+            "Rejeição de status preserva pedido, estoque, financeiro e avisos");
+        assert.equal(optionalEmails.length,emailsBeforeWaitingCompletion);
+        await pool.query("DELETE FROM entrega_rastreamento WHERE venda_id=$1",[guestOrder.body.data.id]);
         assert.equal((await request(`/api/vendas/${order}/status`, "PATCH", { status: "EM_SEPARACAO" }, adminToken)).status, 200);
         const transitions = await Promise.all([1,2].map(() => request(`/api/vendas/${order}/status`, "PATCH", { status: "SAIU_PARA_ENTREGA" }, adminToken)));
         assert.ok(transitions.every(r => r.status === 200));
@@ -387,6 +412,22 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         const link = await request(linkEndpoint, "POST", {}, adminToken);
         assert.equal(link.status, 200, JSON.stringify(link.body));
         const driverToken = new URL(link.body.data.url).hash.slice(1);
+        const beforeInvalidCompletion = await completionEffects();
+        const emailsBeforeInvalidCompletion = optionalEmails.length;
+        for (const authorization of [undefined,token,adminToken,"invalid"]) {
+            assert.equal((await request(completeEndpoint,"POST",{confirmar:true},authorization)).status,401,
+                "Somente o link privado do entregador autoriza concluir; sessão de cliente ou admin não basta");
+        }
+        assert.equal((await request(completeEndpoint,"POST",{confirmar:true},"f".repeat(64))).status,410,
+            "Token com formato correto e valor desconhecido não conclui pedido");
+        for (const invalid of [undefined,{},[],{confirmar:false},{confirmar:"true"},
+            {confirmar:true,status:"ENTREGUE"},{confirmar:true,venda_id:order},{confirmar:true,latitude:-23.66}]) {
+            assert.equal((await request(completeEndpoint,"POST",invalid,driverToken)).status,400,
+                "Conclusão exige confirmação explícita e não aceita dados extras do navegador");
+        }
+        assert.deepEqual(await completionEffects(),beforeInvalidCompletion,
+            "Autenticação e corpo recusados não deixam efeitos na entrega");
+        assert.equal(optionalEmails.length,emailsBeforeInvalidCompletion);
         assert.equal((await request(linkEndpoint,"GET",null,driverToken)).status,401,"Link do entregador não é sessão administrativa");
         const position = { latitude: -23.66, longitude: -46.55, precisao: 10 };
         const gps = "/api/public/entregas/localizacao";
@@ -545,6 +586,10 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         assert.equal((await request(linkEndpoint,"GET",null,managerToken)).status,200);
         assert.equal((await request(gps,"POST",position,driverToken)).status,200,"Consultar no painel não revoga o link do entregador");
         await pool.query("UPDATE entrega_rastreamento SET expira_em=NOW()-INTERVAL '1 minute' WHERE venda_id=$1",[order]);
+        const beforeExpiredCompletion = await completionEffects();
+        assert.equal((await request(completeEndpoint,"POST",{confirmar:true},driverToken)).status,410,
+            "Link expirado é recusado antes de registrar entrega");
+        assert.deepEqual(await completionEffects(),beforeExpiredCompletion);
         const expiredTracking = await request(linkEndpoint,"GET",null,adminToken);
         assert.equal(expiredTracking.body.data.latitude,null,"GPS expirado não aparece no painel");
         assert.equal(expiredTracking.body.data.rota,null);
@@ -555,6 +600,8 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         assert.equal((await request("/api/public/entregas/viagem","GET",null,replacementToken)).body.data.meio_transporte,"CARRO",
             "Novo link mantém o carro da loja, sem cadastro de entregador");
         assert.equal((await request("/api/public/entregas/viagem", "GET", null, driverToken)).status, 410);
+        assert.equal((await request(completeEndpoint,"POST",{confirmar:true},driverToken)).status,410,
+            "Rotação do link também revoga a autorização de conclusão anterior");
         assert.equal((await request("/api/public/entregas/rota", "POST", {}, driverToken)).status, 410);
         assert.equal((await request(tracking, "GET", null, token)).body.data.rota, null, "Novo link remove rota da viagem anterior");
         assert.equal((await request(gps, "POST", position, driverToken)).status, 410, "Rotação revoga token anterior");
@@ -572,7 +619,87 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         await request(gps, "POST", position, lastDriverToken);
         assert.equal((await request(sharedLocationPath,"POST",{url:sharedLocationUrl},lastDriverToken)).status,200);
         noticeCount = (await pool.query("SELECT COUNT(*)::int n FROM notificacoes")).rows[0].n;
-        assert.equal((await request(`/api/vendas/${order}/status`, "PATCH", { status: "ENTREGUE" }, adminToken)).status, 200);
+        const beforeCompletion = await completionEffects();
+        const emailsBeforeCompletion = optionalEmails.length;
+        failOptionalEmails = true;
+        let releaseCompletionEmail, resolveOtherCompletions, returnedCompletions = 0;
+        optionalEmailGate = new Promise(resolve=>{releaseCompletionEmail=resolve;});
+        const otherCompletionsReturned = new Promise(resolve=>{resolveOtherCompletions=resolve;});
+        const completionRequests = [1,2,3,4].map(() =>
+            request(completeEndpoint,"POST",{confirmar:true},lastDriverToken).then(result=>{
+                if (++returnedCompletions===3) resolveOtherCompletions();
+                return result;
+            }));
+        let completionTimeout = false;
+        const completionTimer = setTimeout(()=>{completionTimeout=true;releaseCompletionEmail();},5000);
+        try {
+            await otherCompletionsReturned;
+            assert.equal(completionTimeout,false,"Outros cliques recebem o recibo sem aguardar nem duplicar o envio de e-mail em andamento");
+            const pendingReceipt = await request("/api/public/entregas/viagem","GET",null,lastDriverToken);
+            assert.equal(pendingReceipt.body.data.emailStatus,"pending","Reabrir não duplica aviso ainda em processamento");
+        } finally {
+            clearTimeout(completionTimer);
+            releaseCompletionEmail();
+            optionalEmailGate = null;
+        }
+        const completedConcurrently = await Promise.all(completionRequests);
+        assert.ok(completedConcurrently.every(result=>result.status===200),
+            JSON.stringify(completedConcurrently.map(result=>result.body)));
+        assert.equal(completedConcurrently.filter(result=>result.body.data.changed).length,1,
+            "Quatro confirmações concorrentes geram uma única alteração de status");
+        const completed = completedConcurrently.find(result=>result.body.data.changed).body.data;
+        assert.equal(completed.id,order);
+        assert.equal(completed.status,"ENTREGUE");
+        assert.equal(completed.emailStatus,"failed","Falha opcional do e-mail não desfaz a entrega");
+        assert.equal(new Date(completed.entregueEm).toISOString(),completed.entregueEm);
+        for (const result of completedConcurrently) {
+            assert.equal(result.headers.get("cache-control"),"no-store");
+            assert.equal(result.body.data.entregueEm,completed.entregueEm);
+            assert.equal(result.body.data.endereco_entrega,undefined);
+            assert.equal(result.body.data.token_hash,undefined);
+        }
+        const afterCompletion = await completionEffects();
+        assert.equal(afterCompletion.status,"ENTREGUE");
+        assert.equal(afterCompletion.entregue_em.toISOString(),completed.entregueEm);
+        assert.equal(afterCompletion.recibos,beforeCompletion.recibos+1);
+        assert.equal(afterCompletion.avisos_cliente,beforeCompletion.avisos_cliente+1,
+            "O trigger de status avisa o cliente uma única vez");
+        assert.equal(afterCompletion.avisos_admin,beforeCompletion.avisos_admin+1,
+            "O administrador recebe um único aviso de conclusão pelo entregador");
+        assert.equal(afterCompletion.estoque,beforeCompletion.estoque,"Concluir não movimenta estoque novamente");
+        assert.equal(afterCompletion.lancamentos,beforeCompletion.lancamentos,"Concluir não cobra nem lança receita novamente");
+        assert.equal(optionalEmails.length,emailsBeforeCompletion+1,"A reserva impede envios concorrentes duplicados");
+        const failedCompletionEmail = optionalEmails.at(-1);
+        assert.ok(failedCompletionEmail.idempotencyKey);
+        assert.match(failedCompletionEmail.subject,/entregue/i);
+        assert.ok(!JSON.stringify(failedCompletionEmail).includes(lastDriverToken),"E-mail não revela o token privado do entregador");
+        const failedReceipt = await request("/api/public/entregas/viagem","GET",null,lastDriverToken);
+        assert.equal(failedReceipt.body.data.emailStatus,"failed","Reabrir permite oferecer nova tentativa após falha do e-mail");
+        assert.equal(failedReceipt.body.data.email,undefined,"Recibo não revela o destinatário do aviso");
+        failOptionalEmails = false;
+        const completionRetry = await request(completeEndpoint,"POST",{confirmar:true},lastDriverToken);
+        assert.equal(completionRetry.status,200,JSON.stringify(completionRetry.body));
+        assert.equal(completionRetry.body.data.changed,false);
+        assert.equal(completionRetry.body.data.emailStatus,"sent");
+        assert.equal(completionRetry.body.data.entregueEm,completed.entregueEm);
+        assert.equal(optionalEmails.length,emailsBeforeCompletion+2);
+        assert.equal(optionalEmails.at(-1).idempotencyKey,failedCompletionEmail.idempotencyKey,
+            "Nova tentativa após falha mantém a mesma identidade de envio no provedor");
+        assert.deepEqual(await completionEffects(),afterCompletion,"Retry do e-mail não repete efeitos da entrega");
+        const completionRepeated = await request(completeEndpoint,"POST",{confirmar:true},lastDriverToken);
+        assert.equal(completionRepeated.status,200);
+        assert.equal(completionRepeated.body.data.changed,false);
+        assert.equal(completionRepeated.body.data.emailStatus,"unchanged");
+        assert.equal(optionalEmails.length,emailsBeforeCompletion+2,"Repetição após aviso enviado não reenvia e-mail");
+        const completionReceipt = await request("/api/public/entregas/viagem","GET",null,lastDriverToken);
+        assert.equal(completionReceipt.status,200,JSON.stringify(completionReceipt.body));
+        assert.equal(completionReceipt.headers.get("cache-control"),"no-store");
+        assert.equal(completionReceipt.body.data.id,order);
+        assert.equal(completionReceipt.body.data.status,"ENTREGUE");
+        assert.equal(completionReceipt.body.data.concluida_pelo_entregador,true);
+        assert.equal(completionReceipt.body.data.emailStatus,"unchanged","Reabrir comprovante informa envio sem revelar e-mail");
+        for (const field of ["endereco_entrega","latitude","longitude","rota","compartilhamento","token_hash"])
+            assert.equal(completionReceipt.body.data[field],undefined,"Recibo não reabre dados pessoais nem localização");
         assert.equal((await request(`/api/vendas/${order}/status`, "PATCH", { status: "SAIU_PARA_ENTREGA" }, adminToken)).status, 409);
         assert.equal((await request(gps, "POST", position, lastDriverToken)).status, 410);
         assert.equal((await pool.query("SELECT COUNT(*)::int AS n FROM entrega_rastreamento WHERE venda_id=$1", [order])).rows[0].n, 0, "Entrega encerra rastreamento e apaga GPS");
@@ -584,6 +711,13 @@ test("cadastro, login imediato, recuperação, compra e estoque em PostgreSQL is
         assert.equal(deliveredTracking.body.data.status,"ENTREGUE");
         assert.equal(deliveredTracking.body.data.latitude,null);
         assert.equal(deliveredTracking.body.data.rota,null);
+        await pool.query("UPDATE entrega_conclusoes SET confirmado_em=NOW()-INTERVAL '2 hours',expira_em=NOW()-INTERVAL '1 minute' WHERE venda_id=$1",[order]);
+        const beforeExpiredReceipt = await completionEffects();
+        assert.equal((await request(completeEndpoint,"POST",{confirmar:true},lastDriverToken)).status,410);
+        assert.equal((await request("/api/public/entregas/viagem","GET",null,lastDriverToken)).status,410,
+            "Recibo expirado não prolonga a credencial encerrada");
+        assert.deepEqual(await completionEffects(),beforeExpiredReceipt);
+        assert.equal(optionalEmails.length,emailsBeforeCompletion+2);
         assert.equal((await request("/api/public/pagamentos/webhook", "POST", event, null, { "x-authenticity-token": signature })).status,200);
         assert.equal((await pool.query("SELECT status FROM vendas WHERE id=$1",[order])).rows[0].status,"ENTREGUE");
         assert.equal(Number((await pool.query("SELECT quantidade FROM estoque WHERE produto_id=$1",[product])).rows[0].quantidade),8);

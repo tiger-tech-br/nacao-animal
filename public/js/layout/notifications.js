@@ -29,12 +29,13 @@ document.addEventListener("DOMContentLoaded", () => {
     panel.className = "pf-notifications-panel";
     panel.hidden = true;
     panel.setAttribute("aria-label", "Notificações");
-    panel.innerHTML = '<header><strong>Notificações</strong><button type="button" data-close aria-label="Fechar notificações">×</button></header><p role="status" aria-live="polite" aria-atomic="true"></p><div class="pf-notifications-actions"><button type="button" data-refresh>Atualizar</button><button type="button" data-read>Marcar exibidas como lidas</button></div><div class="pf-notifications-list"></div>';
+    panel.innerHTML = '<header class="pf-notifications-heading"><div><span class="pf-notifications-eyebrow">Nação Animal</span><strong>Notificações</strong></div><button type="button" data-close aria-label="Fechar notificações">×</button></header><p class="pf-notifications-summary" role="status" aria-live="polite" aria-atomic="true"></p><div class="pf-notifications-actions"><button type="button" data-refresh>Atualizar</button><button type="button" data-read>Marcar exibidas como lidas</button></div><div class="pf-notifications-list"></div>';
     host.appendChild(panel);
     const list = panel.querySelector(".pf-notifications-list");
     const status = panel.querySelector('[role="status"]');
     const readButton = panel.querySelector("[data-read]");
     const closeButton = panel.querySelector("[data-close]");
+    readButton.hidden = true;
     const labels = {
         AGUARDANDO_PAGAMENTO: "Aguardando pagamento", PAGAMENTO_APROVADO: "Pagamento aprovado",
         EM_SEPARACAO: "Preparando pedido", SAIU_PARA_ENTREGA: "Saiu para entrega",
@@ -66,6 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
             list.replaceChildren();
             pendingRender = false;
             pending = readPending = false;
+            readButton.hidden = true;
             close();
             render(false);
         }
@@ -78,7 +80,9 @@ document.addEventListener("DOMContentLoaded", () => {
         badge.hidden = !unread;
         button.setAttribute("aria-label", "Notificações: " + unread + " não lidas");
         readButton.disabled = !unread || readPending;
-        setStatus(items.length ? unread + " não lida(s) · " + items.length + " mais recentes" : "Nenhuma notificação por enquanto.");
+        const countLabel = items.length === 1 ? "1 aviso" : items.length + " avisos recentes";
+        const unreadLabel = unread === 1 ? "1 nova" : unread + " novas";
+        setStatus(items.length ? (unread ? unreadLabel : "Tudo em dia") + " · " + countLabel : "Nenhuma notificação por enquanto.");
         if (list.contains(document.activeElement)) { pendingRender = true; return; }
         pendingRender = false;
         list.replaceChildren();
@@ -116,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             list.appendChild(card);
         });
-        if (markVisible && !admin) void markDisplayedRead();
+        if (markVisible) void markDisplayedRead();
     }
     async function refresh() {
         const value = syncSession();
@@ -136,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     async function markDisplayedRead() {
         const value = token(), version = sessionVersion;
-        if (!value || value !== session || panel.hidden || document.hidden || readPending) return;
+        if (!value || !currentSession(value, version) || panel.hidden || document.hidden || readPending) return;
         const ids = items.filter(item => !item.lida && displayedIds.has(item.id) && uuid.test(item.id || "")).map(item => item.id);
         if (!ids.length) return;
         readPending = true;
@@ -152,14 +156,19 @@ document.addEventListener("DOMContentLoaded", () => {
             ids.forEach(id => locallyRead.add(id));
             items = items.map(item => locallyRead.has(item.id) ? { ...item, lida: true } : item);
             saved = true;
+            readButton.hidden = true;
             render(false);
         } catch {
-            if (currentSession(value, version)) setStatus("Não foi possível salvar a leitura. Tente novamente.");
+            if (currentSession(value, version)) {
+                setStatus("Não foi possível salvar a leitura. Tente novamente.");
+                readButton.hidden = false;
+                readButton.textContent = "Tentar marcar como lidas";
+            }
         } finally {
             if (currentSession(value, version)) {
                 readPending = false;
                 readButton.disabled = !items.some(item => !item.lida);
-                if (saved && !admin) void markDisplayedRead();
+                if (saved) void markDisplayedRead();
             }
         }
     }

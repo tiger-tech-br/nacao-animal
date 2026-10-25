@@ -17,6 +17,7 @@
     const disabledRecordControls = new Map();
     let selectedSaleId = null;
     let saleDetailsRevision = 0;
+    let deliveryStatusRefreshPending = false;
     let currentPage = 1;
     const pageSize = 25;
     let productCategoryOptions = [];
@@ -47,6 +48,12 @@
         }
 
         bindEvents();
+        if (isSalesPage) {
+            window.setInterval(refreshSelectedDeliveryStatus, 15000);
+            document.addEventListener("visibilitychange", () => {
+                if (!document.hidden) void refreshSelectedDeliveryStatus();
+            });
+        }
         loadData().then(() => {
             const order = new URLSearchParams(location.search).get("pedido");
             if (isSalesPage && /^[0-9a-f-]{36}$/i.test(order || "")) showSaleDetails(order);
@@ -712,7 +719,17 @@
         }
 
         if (refresh) {
-            refresh.addEventListener("click", loadData);
+            refresh.addEventListener("click", async () => {
+                const saleId = selectedSaleId;
+                const revision = saleDetailsRevision;
+                const loaded = await loadData();
+
+                if (loaded && isSalesPage && saleId &&
+                    selectedSaleId === saleId && saleDetailsRevision === revision &&
+                    saleDetailsCanRefresh()) {
+                    await showSaleDetails(saleId);
+                }
+            });
         }
 
         if (form && !isSalesPage) {
@@ -1475,6 +1492,49 @@
         }
     }
 
+    function saleDetailsCanRefresh() {
+        const form = document.getElementById("recordForm");
+        const statusForm = form?.querySelector("[data-sale-status-form]");
+        const select = statusForm?.querySelector("[name='status']");
+        const button = statusForm?.querySelector("[data-action='update-sale-status']");
+        return Boolean(statusForm && select && !button?.disabled &&
+            select.value === statusForm.dataset.currentStatus &&
+            document.activeElement !== select && !form.querySelector("#createDriverLink")?.disabled);
+    }
+
+    async function refreshSelectedDeliveryStatus() {
+        const form = document.getElementById("recordForm");
+        const statusForm = form?.querySelector("[data-sale-status-form]");
+        if (!isSalesPage || document.hidden || deliveryStatusRefreshPending ||
+            statusForm?.dataset.currentStatus !== "SAIU_PARA_ENTREGA" ||
+            !selectedSaleId || !saleDetailsCanRefresh()) return;
+
+        const id = selectedSaleId;
+        const revision = saleDetailsRevision;
+        const isCurrent = () => !document.hidden && selectedSaleId === id &&
+            saleDetailsRevision === revision && saleDetailsCanRefresh();
+        deliveryStatusRefreshPending = true;
+        try {
+            const sale = await apiGet(`${config.endpoint}/${id}`);
+            if (!isCurrent() || sale?.id !== id || sale.status === "SAIU_PARA_ENTREGA") return;
+            const state = getSaleStatusOptions().find(option => option.value === sale.status);
+            if (!state) return;
+
+            records = records.map(record => record.id === id
+                ? { ...record, status: sale.status, entregue_em: sale.entregue_em }
+                : record);
+            renderTable();
+            updateSalesSummary();
+            ++saleDetailsRevision;
+            renderSaleDetails(form, sale);
+            setStatus(`Pedido #${shortRecordId(id)} atualizado para ${state.label}.`);
+        } catch {
+            if (isCurrent()) setStatus("Não foi possível consultar o andamento da entrega. Use Atualizar para tentar novamente.");
+        } finally {
+            deliveryStatusRefreshPending = false;
+        }
+    }
+
     function renderSaleDetails(container, sale) {
         const customer = sale?.cliente || {};
         const items = Array.isArray(sale?.itens) ? sale.itens : [];
@@ -1494,6 +1554,7 @@
                 <div
                     class="form-group"
                     data-sale-status-form
+                    data-current-status="${escapeHtml(currentStatus)}"
                     data-id="${escapeHtml(sale?.id || selectedSaleId || "")}">
                     <label for="saleStatus">Status do pedido</label>
 
@@ -1526,7 +1587,8 @@
                     <a class="btn btn-primary" href="/admin/acompanhar-entrega?pedido=${encodeURIComponent(sale.id)}">Acompanhar entrega</a>
                     <p>Abra Acompanhar entrega para consultar o status e o link de localização, quando o entregador o disponibilizar. O acompanhamento da localização abre no Google Maps.</p>
                     <button class="btn" type="button" id="createDriverLink">Gerar link para o entregador</button>
-                    <p>O link abre o endereço do pedido no Google Maps e vale por 12 horas. Gerar outro invalida o anterior. Envie apenas ao entregador deste pedido. Para compartilhar a localização, o entregador ativa o recurso no Maps, copia o link e cola na página da entrega. Após a entrega, marque o pedido como Entregue e encerre o compartilhamento no Maps.</p>
+                    <p>O link abre o endereço do pedido no Google Maps e vale por 12 horas. Gerar outro invalida o anterior. Envie apenas ao entregador deste pedido. Para compartilhar a localização, o entregador ativa o recurso no Maps, copia o link e cola na página da entrega.</p>
+                    <p>Após entregar, ele toca em Concluir entrega e confirma. O pedido muda automaticamente para Entregue e a loja recebe um aviso no sino. Os detalhes abertos são atualizados a cada 15 segundos enquanto esta página estiver visível e sem alteração de status em andamento. Você também pode usar Atualizar. O entregador deve encerrar o compartilhamento no Google Maps.</p>
                     <input class="form-control" id="driverLink" aria-label="Link do entregador" readonly hidden>
                     <div id="driverLinkActions" hidden>
                         <button class="btn" type="button" id="copyDriverLink">Copiar link</button>

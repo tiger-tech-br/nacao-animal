@@ -5,6 +5,7 @@ const { APP_URL } = require("../config/env");
 const frete = require("../services/freteService");
 const { capturedAt } = require("../services/gpsTimestamp");
 const locationSharing = require("../services/deliveryLocationShareService");
+const completion = require("../services/deliveryCompletionService");
 const fail = (message, status) => Object.assign(new Error(message), { status });
 const uuid = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value || "");
 
@@ -109,13 +110,27 @@ function driverHash(req) {
 }
 async function viagem(req, res, next) {
     try {
+        const tokenHash = driverHash(req);
         const { rows } = await db.query(`SELECT v.id,v.status,v.endereco_entrega,r.meio_transporte,r.latitude,r.longitude,r.precisao_m,r.atualizado_em,r.rota,
             CASE WHEN s.venda_id IS NOT NULL THEN json_build_object('url',s.url,'atualizado_em',s.atualizado_em,'expira_em',s.expira_em) END AS compartilhamento
             FROM entrega_rastreamento r JOIN vendas v ON v.id=r.venda_id
             LEFT JOIN entrega_localizacao_compartilhada s ON s.venda_id=v.id AND s.expira_em>NOW()
-            WHERE r.token_hash=$1 AND r.expira_em>NOW() AND v.status='SAIU_PARA_ENTREGA'`, [driverHash(req)]);
-        if (!rows[0]) throw fail("Link expirado ou entrega encerrada.", 410);
+            WHERE r.token_hash=$1 AND r.expira_em>NOW() AND v.status='SAIU_PARA_ENTREGA'`, [tokenHash]);
+        if (!rows[0]) {
+            const data = await completion.receipt(tokenHash);
+            if (!data) throw fail("Link expirado ou entrega encerrada.", 410);
+            return res.set("Cache-Control", "no-store").json({ success: true, data });
+        }
         res.set("Cache-Control", "no-store").json({ success: true, data: { ...rows[0], compartilhamento: locationSharing.publicShare(rows[0].compartilhamento) } });
+    } catch (e) { next(e); }
+}
+async function concluir(req, res, next) {
+    try {
+        const tokenHash = driverHash(req), body = req.body;
+        if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length !== 1 || body.confirmar !== true)
+            throw fail("Confirme a entrega antes de concluir o pedido.", 400);
+        const data = await completion.concluir(tokenHash);
+        res.set("Cache-Control", "no-store").json({ success: true, data });
     } catch (e) { next(e); }
 }
 async function compartilharLocalizacao(req, res, next) {
@@ -201,4 +216,4 @@ function mapaConfig(req, res) {
     // Chave pública restrita por domínio. Nunca publicar a chave de Routes usada pelo servidor.
     res.set("Cache-Control", "no-store").json({ success: true, data: { browserKey: process.env.GOOGLE_MAPS_BROWSER_API_KEY?.trim() || "" } });
 }
-module.exports = { cotar, consultarCep, criarLink, localizacao, acompanhar, acompanharAdmin, viagem, rota, selecionarRota, mapaConfig, compartilharLocalizacao, removerCompartilhamento };
+module.exports = { cotar, consultarCep, criarLink, localizacao, acompanhar, acompanharAdmin, viagem, concluir, rota, selecionarRota, mapaConfig, compartilharLocalizacao, removerCompartilhamento };

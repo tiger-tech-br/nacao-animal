@@ -64,12 +64,12 @@
 .storefront-page .storefront-header .menu-login-link { display: flex; align-items: center; gap: 7px; width: auto; min-height: 30px; font-size: 12px; }
 .storefront-page .storefront-header .menu-login-link .storefront-icon { width: 24px; height: 24px; margin-top: -3px; }
 .storefront-page .storefront-header [data-customer-label] { max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
-.storefront-page .storefront-header .menu-login-item .public-logout-link { min-height: 30px; margin-inline-start: 16px; padding: 0 0 10px; border: 0; color: #d64a00; background: transparent; box-shadow: none; font-size: 12px; text-decoration: none; }
+.storefront-page .storefront-header .menu-login-item .public-logout-link { min-height: 30px; margin-inline-start: 28px; padding: 0 0 10px; border: 0; color: #d64a00; background: transparent; box-shadow: none; font-size: 14px; text-decoration: none; }
 .storefront-page .storefront-header .menu-login-item .public-logout-link:is(:hover, :focus-visible) { color: #d64a00; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 8px; }
 .storefront-page .storefront-header .header-actions { grid-column: 3; grid-row: 1; display: flex; align-items: center; gap: 18px; width: auto; padding-top: 40px; }
 .storefront-page .storefront-header .header-actions :is(.icon-badge, .storefront-search-toggle, .menu-toggle) { position: relative; display: inline-flex; justify-content: center; align-items: center; flex: 0 0 36px; width: 36px; min-width: 36px; height: 40px; padding: 4px; border: 0; border-radius: 0; color: var(--store-ink); background: transparent; box-shadow: none; }
 .storefront-page .storefront-header .header-actions .icon-badge:hover, .storefront-page .storefront-header .storefront-search-toggle:hover { color: #d34a00; }
-.storefront-page .storefront-header .header-actions .public-logout-link { width: auto; min-width: 0; min-height: 36px; margin-inline-start: 16px; padding: 0; border: 0; border-radius: 0; color: #d64a00; background: transparent; box-shadow: none; font-size: 11px; text-decoration: none; }
+.storefront-page .storefront-header .header-actions .public-logout-link { width: auto; min-width: 0; min-height: 36px; margin-inline-start: 28px; padding: 0; border: 0; border-radius: 0; color: #d64a00; background: transparent; box-shadow: none; font-size: 14px; text-decoration: none; }
 .storefront-page .storefront-header .storefront-cart::after { content: attr(data-count); position: absolute; top: -2px; right: -5px; display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 5px; border-radius: 50%; color: #fff; background: var(--store-orange); font-size: 10px; font-weight: 600; }
 .storefront-page .storefront-header .header-actions .menu-toggle { display: none; }
 .storefront-page .storefront-header .menu-toggle::before, .storefront-page .storefront-header .search-button::before { display: none; }
@@ -97,6 +97,7 @@
     .storefront-page .storefront-header .menu { padding-top: 43px; }
     .storefront-page .storefront-header .menu-list { gap: 19px; }
     .storefront-page .storefront-header .menu-link { font-size: 12px; }
+    .storefront-page .storefront-header :is(.menu-login-item, .header-actions) .public-logout-link { font-size: 12px; }
     .storefront-page .storefront-header .header-actions { gap: 12px; padding-top: 34px; }
 }
 @media (max-width: 992px) {
@@ -116,7 +117,7 @@
     .storefront-page .storefront-header .menu-login-link, .storefront-page .storefront-header .menu-login-link.is-authenticated { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 14px; justify-content: center; color: #b94e00; background: transparent; box-shadow: none; font-size: 14px; text-align: center; }
     .storefront-page .storefront-header .menu-login-link .storefront-icon { margin-top: 0; }
     .storefront-page .storefront-header [data-customer-label] { max-width: none; white-space: normal; }
-    .storefront-page .storefront-header .menu-login-item .public-logout-link { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; margin: 8px 0 0; padding: 10px 14px; border: 0; color: #d64a00; background: transparent; box-shadow: none; font-size: 13px; text-align: center; }
+    .storefront-page .storefront-header .menu-login-item .public-logout-link { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 44px; margin: 16px 0 0; padding: 10px 14px; border: 0; color: #d64a00; background: transparent; box-shadow: none; font-size: 14px; text-align: center; }
     .storefront-page .storefront-header .menu-action-link { display: flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 14px; border: 0; color: #b94e00; background: transparent; font-size: 14px; font-weight: 600; text-align: center; }
     .storefront-page .storefront-header .search-form { top: 104px; width: 100%; }
 }

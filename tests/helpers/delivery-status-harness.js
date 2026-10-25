@@ -12,8 +12,9 @@ function element() {
     };
 }
 function harness(kind, { admin = false, hash = "#" + "a".repeat(64), responder, token = "session", data } = {}) {
-    const ids = kind === "driver" ? ["driverStatus", "driverDetails", "destinationAddress", "navigateGoogleMaps", "reloadDelivery", "shareLocationSection", "shareLocationForm", "sharedLocationUrl", "shareLocationSubmit", "removeLocationShare", "shareLocationStatus", "driverSharedLocation", "driverSharedLocationOpen"]
+    const ids = kind === "driver" ? ["driverStatus", "driverDetails", "destinationAddress", "navigateGoogleMaps", "reloadDelivery", "shareLocationSection", "shareLocationForm", "sharedLocationUrl", "shareLocationSubmit", "removeLocationShare", "shareLocationStatus", "driverSharedLocation", "driverSharedLocationOpen", "driverContent", "completeDeliverySection", "completeDelivery", "completionSummary", "completionHeading", "completionTime", "completionNotice", "deliveryNavigationNotice", "deliveryActiveNotice", "completeDeliveryDialog", "completionCancel", "completionConfirm", "completionDialogError"]
         : ["trackingStatus", "trackingLogin", "trackingDetails", "trackingHeadline", "destinationAddress", "trackingUpdated", "refreshTracking", "trackingBack", "trackingTitle", "trackingDescription", "trackingLocationShare", "trackingLocationLink", "trackingLocationUpdated"];
+    if (kind === "driver") ids.push("retryDeliveryEmail");
     const elements = Object.fromEntries(ids.map(id => [id, element()])), calls = [], documentEvents = {}, events = {};
     let tick, delay, currentToken = token;
     let currentData = data || { status: "SAIU_PARA_ENTREGA", endereco_entrega: address };

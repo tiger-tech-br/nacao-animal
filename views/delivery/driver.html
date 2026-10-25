@@ -7,22 +7,30 @@
     <meta name="referrer" content="no-referrer">
     <title>Nação Animal | Rota da entrega</title>
     <link rel="icon" href="/images/logo/nacao-animal-logo-transparent.png" type="image/png">
-    <link rel="stylesheet" href="/css/pages/delivery.css?v=20261025-3">
+    <link rel="stylesheet" href="/css/pages/delivery.css?v=20261025-4">
     <link rel="stylesheet" href="/css/layout/copyright.css">
 </head>
 <body class="driver-page">
-    <main class="delivery-card">
+    <main id="driverContent" class="delivery-card">
         <header><span class="eyebrow">Nação Animal · Entrega</span><h1>Rota da entrega</h1>
             <p>Abra o endereço do pedido no Google Maps e use as orientações do próprio aplicativo para chegar ao cliente.</p>
         </header>
-        <p id="driverStatus" role="status" aria-live="polite">Consultando os dados da entrega…</p>
+        <p id="driverStatus" role="status" aria-live="polite" tabindex="-1">Consultando os dados da entrega…</p>
+        <section id="completionSummary" class="delivery-completion-summary" aria-labelledby="completionHeading" hidden>
+            <span class="delivery-completion-emblem" aria-hidden="true">✓</span>
+            <h2 id="completionHeading" tabindex="-1">Entrega concluída!</h2>
+            <p>O pedido foi marcado como <strong>Entregue</strong>. A loja já pode conferir a conclusão no painel.</p>
+            <p id="completionTime" class="delivery-completion-time"></p>
+            <p id="completionNotice" class="delivery-notice"></p>
+            <button id="retryDeliveryEmail" class="delivery-secondary" type="button" hidden>Tentar enviar aviso por e-mail</button>
+        </section>
         <section id="driverDetails" aria-label="Endereço do pedido" hidden>
             <h2>Destino da entrega</h2>
             <p id="destinationAddress"></p>
         </section>
         <a id="navigateGoogleMaps" class="delivery-primary-link" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" hidden>Navegar no Google Maps</a>
         <button id="reloadDelivery" class="delivery-secondary" type="button">Atualizar dados da entrega</button>
-        <p class="delivery-notice">O Google Maps abre no aplicativo ou no navegador, conforme o aparelho. Confira o destino antes de iniciar a navegação.</p>
+        <p id="deliveryNavigationNotice" class="delivery-notice" hidden>O Google Maps abre no aplicativo ou no navegador, conforme o aparelho. Confira o destino antes de iniciar a navegação.</p>
         <section id="shareLocationSection" class="delivery-location-sharing" aria-labelledby="shareLocationTitle" hidden>
             <h2 id="shareLocationTitle">Compartilhar localização</h2>
             <p>No Google Maps, ative o <strong>Compartilhamento de localização</strong> e copie o link. Depois, cole aqui para a loja e o cliente acompanharem esta entrega.</p>
@@ -39,10 +47,28 @@
                 <p class="delivery-notice">Remover o link do site não encerra o compartilhamento no Google Maps. Ao concluir a entrega, pare o compartilhamento também no aplicativo.</p>
             </div>
         </section>
-        <p class="delivery-notice">O acompanhamento da localização abre no Google Maps e depende do compartilhamento ativo e da conexão do aparelho. O site não confirma automaticamente se o link está ativo. Após a entrega, a loja deve marcar o pedido como <strong>Entregue</strong> no painel.</p>
+        <section id="completeDeliverySection" class="delivery-completion-actions" aria-labelledby="completeDeliveryTitle" hidden>
+            <h2 id="completeDeliveryTitle">Já entregou o pedido?</h2>
+            <p>Após entregar os produtos ao cliente, confirme abaixo para atualizar o pedido e avisar a loja.</p>
+            <button id="completeDelivery" type="button">Concluir entrega</button>
+        </section>
+        <p id="deliveryActiveNotice" class="delivery-notice" hidden>O acompanhamento da localização abre no Google Maps e depende do compartilhamento ativo e da conexão do aparelho. O site não confirma automaticamente se o link está ativo ou se o entregador chegou ao destino. Confirme a conclusão somente depois de entregar o pedido ao cliente.</p>
         <footer><a href="/politica-de-privacidade">Privacidade</a> · <a href="/termos-de-uso">Termos de uso</a><p class="site-copyright">© 2026 Nação Animal. Todos os direitos reservados.</p></footer>
     </main>
+    <div id="completeDeliveryDialog" class="delivery-completion-dialog" role="dialog" aria-modal="true" aria-labelledby="completeDeliveryDialogTitle" aria-describedby="completeDeliveryDialogDescription" tabindex="-1" hidden>
+        <div class="delivery-completion-dialog__card">
+            <span class="delivery-completion-emblem" aria-hidden="true">✓</span>
+            <h2 id="completeDeliveryDialogTitle">Confirmar a entrega?</h2>
+            <p id="completeDeliveryDialogDescription">Confirme somente se os produtos já foram entregues ao cliente. O pedido será marcado como <strong>Entregue</strong> e a loja será avisada.</p>
+            <p class="delivery-notice">Depois, pare o compartilhamento da sua localização também no Google Maps.</p>
+            <p id="completionDialogError" class="delivery-completion-error" role="alert"></p>
+            <div class="delivery-completion-dialog__actions">
+                <button id="completionCancel" class="delivery-secondary" type="button">Ainda não</button>
+                <button id="completionConfirm" type="button">Sim, concluir entrega</button>
+            </div>
+        </div>
+    </div>
     <script src="/js/pages/delivery/location-share-link.js?v=20261025-3"></script>
-    <script src="/js/pages/delivery/driver.js?v=20261025-3"></script>
+    <script src="/js/pages/delivery/driver.js?v=20261025-5"></script>
 </body>
 </html>
