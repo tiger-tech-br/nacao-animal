@@ -9,7 +9,7 @@
     <link rel="icon" href="/images/logo/nacao-animal-logo-transparent.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="/css/layout/public-header.css?v=20260811-1">
-    <link rel="stylesheet" href="/css/pages/public-category.css?v=20261020-1">
+    <link rel="stylesheet" href="/css/pages/public-category.css?v=20261025-1">
     <link rel="stylesheet" href="/css/layout/cart-sidebar.css?v=20261001">
     <link rel="stylesheet" href="/css/layout/notifications.css?v=20261021-1">
     <link rel="stylesheet" href="/css/layout/storefront-theme.css?v=20261021-1">
@@ -23,12 +23,13 @@
             <div class="category-copy"><span class="eyebrow">Um carinho para cada pet</span><h1 id="categoryTitle">Todos os produtos</h1><p id="categoryDescription">Explore os produtos da nossa loja e encontre o que seu melhor amigo precisa.</p><a class="category-hero-link" href="#category-products">Explorar catálogo <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></div>
             <div class="category-hero-media"><span class="category-paw" aria-hidden="true"><i class="fa-solid fa-paw"></i></span><img id="categoryImage" src="/images/categories/accessories-v2.jpg" alt="Acessórios para pets" width="540" height="360" loading="eager" decoding="async"></div>
         </section>
-        <nav class="category-quick-links" aria-label="Escolha a categoria"><a href="/produtos" data-category-link="todas" aria-current="page">Todos</a><a href="/categorias/caes" data-category-link="caes">Cães</a><a href="/categorias/gatos" data-category-link="gatos">Gatos</a><a href="/categorias/aves" data-category-link="aves">Aves</a><a href="/categorias/peixes" data-category-link="peixes">Peixes</a><a href="/categorias/roedores" data-category-link="roedores">Roedores</a><a href="/categorias/acessorios" data-category-link="acessorios">Acessórios</a></nav>
+        <nav class="category-quick-links" aria-label="Escolha a categoria"><a href="/produtos" data-category-link="todas" aria-current="page">Todos</a><a href="/categorias/caes" data-category-link="caes">Cães</a><a href="/categorias/gatos" data-category-link="gatos">Gatos</a><a href="/categorias/aves" data-category-link="aves">Pássaros</a><a href="/categorias/peixes" data-category-link="peixes">Peixes</a><a href="/categorias/roedores" data-category-link="roedores">Roedores</a><a href="/categorias/jardinagem" data-category-link="jardinagem">Jardinagem</a><a href="/categorias/acessorios" data-category-link="acessorios">Acessórios</a></nav>
         <section class="category-products" id="category-products" aria-labelledby="productsTitle">
+            <nav class="category-types" id="categoryTypes" aria-label="Tipos de produtos" hidden></nav>
             <div class="section-heading"><div><span class="eyebrow">Escolha com carinho</span><h2 id="productsTitle">Nosso catálogo</h2></div><p id="categoryResults" role="status" aria-live="polite">Carregando produtos…</p></div>
             <form class="category-toolbar" id="categoryToolbar" role="search" aria-label="Filtrar produtos">
                 <div class="search-field"><label for="categorySearch">O que seu pet precisa?</label><div class="search-input"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input class="form-control" id="categorySearch" name="busca" type="search" placeholder="Buscar no catálogo" maxlength="100" autocomplete="off"></div></div>
-                <div class="filter-field"><label for="categoryFilter">Seu pet</label><select class="form-control" id="categoryFilter" aria-label="Filtrar por categoria"><option value="todas">Todas as categorias</option><option value="caes">Cães</option><option value="gatos">Gatos</option><option value="aves">Aves</option><option value="peixes">Peixes</option><option value="roedores">Roedores</option><option value="acessorios">Acessórios</option></select></div>
+                <div class="filter-field"><label for="categoryFilter">Categoria</label><select class="form-control" id="categoryFilter" aria-label="Filtrar por categoria"><option value="todas">Todas as categorias</option><option value="caes">Cães</option><option value="gatos">Gatos</option><option value="aves">Pássaros</option><option value="peixes">Peixes</option><option value="roedores">Roedores</option><option value="jardinagem">Jardinagem</option><option value="acessorios">Acessórios</option></select></div>
                 <div class="filter-field"><label for="categorySort">Ordenar por</label><select class="form-control" id="categorySort"><option value="default">Seleção da loja</option><option value="price-asc">Menor preço</option><option value="price-desc">Maior preço</option><option value="name">Nome de A a Z</option></select></div>
             </form>
             <div class="products-grid" id="categoryProducts" aria-busy="true"><div class="empty-card"><span class="empty-icon" aria-hidden="true"><i class="fa-solid fa-paw"></i></span><h3>Preparando a seleção</h3><p>Estamos buscando os produtos da nossa loja.</p></div></div>
@@ -39,7 +40,8 @@
     <footer class="storefront-footer"><div class="storefront-container"><div class="storefront-footer-top"><div><a class="storefront-footer-brand" href="/">Nação Animal</a><p>O melhor para o seu pet, sempre.</p></div><nav aria-label="Links do rodapé"><a href="/produtos">Produtos</a><a href="/categorias">Categorias</a><a href="/sacola">Meu carrinho</a><a href="/contato">Contato</a><a href="/ajuda">Ajuda</a></nav></div><div class="storefront-footer-bottom"><p>© 2026 Nação Animal. Todos os direitos reservados.</p><div><a href="/politica-de-privacidade">Privacidade</a><a href="/termos-de-uso">Termos de uso</a></div></div></div></footer>
     <script src="/js/layout/customer-logout-dialog.js?v=20261021-1"></script>
     <script src="/js/layout/public-header.js?v=20261021-4" defer></script>
-    <script src="/js/pages/categories/category-detail.js?v=20261021-2" defer></script>
+    <script src="/js/catalog-taxonomy.js?v=20261025-1" defer></script>
+    <script src="/js/pages/categories/category-detail.js?v=20261025-1" defer></script>
     <script src="/js/layout/cart-sidebar.js?v=20261021-1" defer></script>
     <script src="/js/layout/notifications.js?v=20261021-1" defer></script>
 </body>

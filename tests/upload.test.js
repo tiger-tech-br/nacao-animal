@@ -38,6 +38,7 @@ async function fixture(options, run) {
     const events = [];
     const previous = {
         id: options.company ? companyId : productId, nome: "Produto anterior",
+        categoria_id: productFields.categoriaId, subcategoria: options.previousSubcategory || null,
         foto: imageUrl(oldPublicId), foto_public_id: oldPublicId,
         logo: imageUrl(oldPublicId), logo_public_id: oldPublicId
     };
@@ -86,6 +87,11 @@ async function fixture(options, run) {
     };
     const controller = isolatedModule(options.company ? "controllers/empresaController.js" : "controllers/produtoController.js", {
         "../models/produtoModel": model, "../models/empresaModel": model,
+        "../models/categoriaModel": { async findById(id, empresaId) {
+            assert.equal(id, productFields.categoriaId);
+            assert.equal(empresaId, companyId);
+            return options.categoryMissing ? null : { id, nome: options.categoryName || "Cães" };
+        } },
         "../services/imageService": images, "../services/auditService": audit
     });
     // O Express recebe Promises do contexto nativo, não thenables de outro VM.
@@ -189,6 +195,32 @@ test("cadastro salva URL e public_id antes de confirmar sucesso", async () => {
         assert.equal(state.payload.foto, imageUrl(newPublicId));
         assert.equal(state.payload.fotoPublicId, newPublicId);
         assert.deepEqual(state.events, ["upload", "save", "audit"]);
+    });
+});
+
+test("produto recusa subcategoria incompatível ou categoria de outra loja antes de enviar a imagem", async () => {
+    await fixture({ store: true, categoryName: "Peixes" }, async ({ request, events }) => {
+        const response = await request({ fields: { subcategoria: "racoes-umidas" } });
+        assert.equal(response.status, 400);
+        assert.match(response.body.message, /subcategoria válida/);
+        assert.deepEqual(events, []);
+    });
+    await fixture({ store: true, categoryMissing: true }, async ({ request, events }) => {
+        assert.equal((await request({ fields: { subcategoria: "acessorios" } })).status, 400);
+        assert.deepEqual(events, []);
+    });
+});
+
+test("produto normaliza a subcategoria e preserva classificação ao editar sem esse campo", async () => {
+    await fixture({ store: true }, async state => {
+        assert.equal((await state.request({ fields: { subcategoria: "Rações úmidas" } })).status, 201);
+        assert.equal(state.payload.subcategoria, "racoes-umidas");
+    });
+    await fixture({ previousSubcategory: "racoes-umidas" }, async state => {
+        assert.equal((await state.request({ noFile: true })).status, 200);
+        assert.equal(state.payload.subcategoria, "racoes-umidas");
+        assert.equal((await state.request({ noFile: true, fields: { subcategoria: "" } })).status, 200);
+        assert.equal(state.payload.subcategoria, null);
     });
 });
 

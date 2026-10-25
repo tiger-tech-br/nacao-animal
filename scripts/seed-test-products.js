@@ -1,6 +1,6 @@
 "use strict";
 
-const TEST_PRODUCTS = Object.freeze([
+const LEGACY_TEST_PRODUCTS = Object.freeze([
     { sku: "NA-TESTE-CAES-01", categoria: "Cães", nome: "[TESTE] Saquinhos higiênicos para cães", preco: 6, quantidade: 5 },
     { sku: "NA-TESTE-GATOS-01", categoria: "Gatos", nome: "[TESTE] Varinha para gatos", preco: 6, quantidade: 5 },
     { sku: "NA-TESTE-AVES-01", categoria: "Aves", nome: "[TESTE] Poleiro para aves", preco: 6, quantidade: 5 },
@@ -10,6 +10,21 @@ const TEST_PRODUCTS = Object.freeze([
 ].map(Object.freeze));
 
 const TEST_DESCRIPTION = "Produto demonstrativo cadastrado para testes autorizados da loja Nação Animal. Nome, preço e estoque são dados de teste; não representam oferta de um item físico confirmado. Foto e marca não informadas.";
+const NEW_TEST_DESCRIPTION = "Produto fictício para testar o catálogo da Nação Animal. Nome, preço, embalagem e estoque são demonstrativos e não representam uma oferta de mercadoria física. Imagem ilustrativa; marca não informada.";
+const NEW_TEST_PRODUCTS = Object.freeze([
+    { sku: "NA-TESTE-CAES-RACAO-01", categoria: "Cães", subcategoria: "racoes", nome: "[TESTE] Ração seca para cães 500 g", preco: 10, foto: "/images/products/petflow-prime-racao.jpg" },
+    { sku: "NA-TESTE-CAES-UMIDA-01", categoria: "Cães", subcategoria: "racoes-umidas", nome: "[TESTE] Alimento úmido para cães 100 g", preco: 6, foto: "/images/products/wet-food.jpg" },
+    { sku: "NA-TESTE-GATOS-RACAO-01", categoria: "Gatos", subcategoria: "racoes", nome: "[TESTE] Ração seca para gatos 500 g", preco: 10, foto: "/images/products/felis-prime-racao.jpg" },
+    { sku: "NA-TESTE-GATOS-UMIDA-01", categoria: "Gatos", subcategoria: "racoes-umidas", nome: "[TESTE] Alimento úmido para gatos 85 g", preco: 6, foto: "/images/products/wet-food.jpg" },
+    { sku: "NA-TESTE-AVES-RACAO-01", categoria: "Aves", subcategoria: "racoes", nome: "[TESTE] Mistura de sementes para pássaros 300 g", preco: 6, foto: "/images/products/bird-food.jpg" },
+    { sku: "NA-TESTE-ROEDORES-RACAO-01", categoria: "Roedores", subcategoria: "racoes", nome: "[TESTE] Ração para pequenos roedores 300 g", preco: 10, foto: "/images/products/rodent-food.jpg" },
+    { sku: "NA-TESTE-PEIXES-RACAO-01", categoria: "Peixes", subcategoria: "racoes", nome: "[TESTE] Ração em flocos para peixes 20 g", preco: 6, foto: "/images/products/fish-food.jpg" },
+    { sku: "NA-TESTE-JARDIM-TERRA-01", categoria: "Jardinagem", subcategoria: "terras-fertilizantes", nome: "[TESTE] Terra vegetal para plantas 1 kg", preco: 6, foto: "/images/products/garden-soil.jpg" },
+    { sku: "NA-TESTE-JARDIM-FERT-01", categoria: "Jardinagem", subcategoria: "terras-fertilizantes", nome: "[TESTE] Fertilizante para plantas 100 g", preco: 10, foto: "/images/products/garden-fertilizer.jpg" },
+    { sku: "NA-TESTE-JARDIM-VASO-01", categoria: "Jardinagem", subcategoria: "acessorios", nome: "[TESTE] Vaso pequeno para plantas", preco: 6, foto: "/images/products/garden-pot.jpg" },
+    { sku: "NA-TESTE-JARDIM-REGADOR-01", categoria: "Jardinagem", subcategoria: "acessorios", nome: "[TESTE] Regador pequeno para jardim", preco: 10, foto: "/images/products/garden-watering-can.jpg" }
+].map(item => Object.freeze({ ...item, quantidade: 5, descricao: NEW_TEST_DESCRIPTION })));
+const TEST_PRODUCTS = Object.freeze([...LEGACY_TEST_PRODUCTS, ...NEW_TEST_PRODUCTS]);
 
 function parseArgs(args) {
     if (args.some(arg => !["--apply", "--dry-run"].includes(arg)) || new Set(args).size !== args.length || args.length > 1) {
@@ -19,7 +34,7 @@ function parseArgs(args) {
 }
 
 function previewProducts() {
-    return TEST_PRODUCTS.map(item => ({ sku: item.sku, categoria: item.categoria, nome: item.nome, preco: item.preco, estoque: item.quantidade }));
+    return TEST_PRODUCTS.map(item => ({ sku: item.sku, categoria: item.categoria, subcategoria: item.subcategoria || null, nome: item.nome, preco: item.preco, estoque: item.quantidade }));
 }
 
 async function existingProduct(client, sku, empresaId) {
@@ -42,7 +57,7 @@ function summary(row, resultado) {
     return { sku: row.sku, categoria: row.categoria, nome: row.nome, preco: Number(row.preco), estoque: Number(row.quantidade), resultado };
 }
 
-async function seedTestProducts(client, { expectedDatabase = "nacao-animal" } = {}) {
+async function seedTestProducts(client, { expectedDatabase = "nacao-animal", products = TEST_PRODUCTS } = {}) {
     try {
         await client.query("BEGIN");
         await client.query("SELECT pg_advisory_xact_lock(hashtext('nacao-animal/seed-test-products/v1'))");
@@ -61,7 +76,7 @@ async function seedTestProducts(client, { expectedDatabase = "nacao-animal" } = 
         if (empresaId !== context.rows[0].empresa_id) throw new Error("A empresa pública mudou durante o cadastro; tente novamente.");
 
         const results = [];
-        for (const item of TEST_PRODUCTS) {
+        for (const item of products) {
             const existing = await existingProduct(client, item.sku, empresaId);
             if (existing) {
                 results.push(summary(existing, "preservado"));
@@ -78,10 +93,10 @@ async function seedTestProducts(client, { expectedDatabase = "nacao-animal" } = 
             }
             const inserted = await client.query(
                 `INSERT INTO produtos
-                    (empresa_id,categoria_id,nome,descricao,sku,preco,custo,preco_venda,preco_custo,foto,marca,status,ativo)
-                 VALUES ($1,$2,$3,$4,$5,$6,0,$6,0,NULL,NULL,TRUE,TRUE)
+                    (empresa_id,categoria_id,nome,descricao,sku,preco,custo,preco_venda,preco_custo,foto,marca,status,ativo,subcategoria)
+                 VALUES ($1,$2,$3,$4,$5,$6,0,$6,0,$7,NULL,TRUE,TRUE,$8)
                  ON CONFLICT (sku) DO NOTHING RETURNING id`,
-                [empresaId, category.rows[0].id, item.nome, TEST_DESCRIPTION, item.sku, item.preco]
+                [empresaId, category.rows[0].id, item.nome, item.descricao || TEST_DESCRIPTION, item.sku, item.preco, item.foto || null, item.subcategoria || null]
             );
             if (!inserted.rows[0]) {
                 const concurrent = await existingProduct(client, item.sku, empresaId);
@@ -104,7 +119,7 @@ async function seedTestProducts(client, { expectedDatabase = "nacao-animal" } = 
             await client.query(
                 `INSERT INTO auditoria_admin (empresa_id,acao,entidade,entidade_id,descricao,dados_novos)
                  VALUES ($1,'CRIAR','PRODUTO',$2,'Produto e estoque iniciais de teste cadastrados por script.',$3::jsonb)`,
-                [empresaId, produtoId, JSON.stringify({ sku: item.sku, nome: item.nome, preco: item.preco, quantidade: item.quantidade, origem: "seed-test-products" })]
+                [empresaId, produtoId, JSON.stringify({ sku: item.sku, nome: item.nome, preco: item.preco, quantidade: item.quantidade, subcategoria: item.subcategoria || null, origem: "seed-test-products" })]
             );
             results.push(summary(item, "cadastrado"));
         }
@@ -147,4 +162,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { TEST_PRODUCTS, TEST_DESCRIPTION, parseArgs, previewProducts, seedTestProducts };
+module.exports = { LEGACY_TEST_PRODUCTS, NEW_TEST_PRODUCTS, TEST_PRODUCTS, TEST_DESCRIPTION, NEW_TEST_DESCRIPTION, parseArgs, previewProducts, seedTestProducts };

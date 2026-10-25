@@ -176,6 +176,30 @@ test("admin autentica, cadastra produto e controla estoque refletido no painel e
         assert.equal(updated.foto, product.foto, "Editar os dados mantém a foto existente");
         assert.equal(uploads, 1);
 
+        const gardenCategory = expectStatus(await request("/api/categorias", { token }), 200)
+            .find(item => item.nome === "Jardinagem");
+        assert.ok(gardenCategory, "A migração disponibiliza Jardinagem para cadastrar produtos");
+        const gardenBody = { ...productBody, nome: updated.nome, preco: "42.50", categoriaId: gardenCategory.id };
+        expectStatus(await request(`/api/produtos/${product.id}`, {
+            method: "PUT", token, body: { ...gardenBody, subcategoria: "racoes-umidas" }
+        }), 400);
+        const gardenProduct = expectStatus(await request(`/api/produtos/${product.id}`, {
+            method: "PUT", token, body: { ...gardenBody, subcategoria: "Terras e fertilizantes" }
+        }), 200);
+        assert.equal(gardenProduct.subcategoria, "terras-fertilizantes");
+        const publicGarden = expectStatus(await request("/api/public/produtos"), 200).find(item => item.id === product.id);
+        assert.equal(publicGarden.subcategoria, "terras-fertilizantes");
+        assert.equal(publicGarden.categoria, "Jardinagem");
+        const sameCategory = expectStatus(await request(`/api/produtos/${product.id}`, {
+            method: "PUT", token, body: gardenBody
+        }), 200);
+        assert.equal(sameCategory.subcategoria, "terras-fertilizantes", "Cliente legado não remove classificação omitida");
+        const restoredCategory = expectStatus(await request(`/api/produtos/${product.id}`, {
+            method: "PUT", token, body: { ...productBody, nome: updated.nome, preco: "42.50" }
+        }), 200);
+        assert.equal(restoredCategory.subcategoria, null, "Trocar de categoria sem tipo limpa classificação anterior");
+        assert.equal(uploads, 1, "Classificar não substitui fotos");
+
         const stockBody = { produtoId: product.id, quantidade: 10, estoqueMinimo: 5,
             estoqueMaximo: 50, localizacao: "Prateleira de teste", motivo: "Contagem inicial de teste" };
         expectStatus(await request("/api/estoque", { method: "POST", token, body: stockBody }), 201);

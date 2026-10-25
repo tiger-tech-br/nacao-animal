@@ -12,6 +12,7 @@ async function produtos(request, response, next) {
                 p.preco,
                 p.foto,
                 p.sku,
+                p.subcategoria,
                 COALESCE(e.quantidade,0)::int AS estoque_disponivel,
                 c.nome AS categoria
             FROM produtos p

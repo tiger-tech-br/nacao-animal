@@ -21,6 +21,8 @@ async function findAll(empresaId) {
 
                 p.categoria_id,
 
+                p.subcategoria,
+
                 p.nome,
 
                 p.descricao,
@@ -135,13 +137,15 @@ async function create(produto) {
 
                 foto_public_id,
 
+                subcategoria,
+
                 status
 
             )
 
             VALUES (
 
-                $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,TRUE
+                $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,TRUE
 
             )
 
@@ -170,7 +174,9 @@ async function create(produto) {
 
             produto.foto,
 
-            produto.fotoPublicId || null
+            produto.fotoPublicId || null,
+
+            produto.subcategoria || null
 
         ]
 
@@ -195,14 +201,14 @@ async function update(id, produto, empresaId) {
             sku = $5, codigo_barras = $6, preco = $7, custo = $8,
             foto = CASE WHEN $13::boolean THEN $9::text ELSE p.foto END,
             foto_public_id = CASE WHEN $13::boolean THEN $10::text ELSE p.foto_public_id END,
-            updated_at = NOW()
+            subcategoria = $14, updated_at = NOW()
         FROM previous WHERE p.id = previous.id AND p.empresa_id = $12
         RETURNING p.*, previous.foto AS previous_foto,
                   previous.foto_public_id AS previous_foto_public_id`,
         [produto.categoriaId, produto.fornecedorId || produto.fornecedor_id || null,
             produto.nome, produto.descricao, produto.sku, produto.codigoBarras,
             produto.preco, produto.custo, produto.foto, produto.fotoPublicId || null,
-            id, empresaId, Boolean(produto.replaceImage)]
+            id, empresaId, Boolean(produto.replaceImage), produto.subcategoria || null]
     );
     const row = result.rows[0];
     if (row) {

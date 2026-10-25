@@ -5,6 +5,8 @@
 ================================================== */
 
 const produtoModel = require("../models/produtoModel");
+const categoriaModel = require("../models/categoriaModel");
+const { resolveProductSubcategory } = require("../services/productTaxonomyService");
 const audit = require("../services/auditService");
 const images = require("../services/imageService");
 
@@ -94,6 +96,10 @@ async function store(request, response, next) {
     let saved = false;
     try {
 
+        const categoria = await categoriaModel.findById(request.body.categoriaId, request.user.empresaId);
+        if (!categoria) return response.status(400).json({ success: false, message: "Categoria não encontrada para esta loja." });
+        const subcategoria = resolveProductSubcategory(request.body, categoria);
+
         if (!request.file?.buffer?.length) {
 
             return response.status(400).json({
@@ -110,6 +116,8 @@ async function store(request, response, next) {
         const produto = await produtoModel.create({
 
             ...request.body,
+
+            subcategoria,
 
             empresaId: request.user.empresaId,
 
@@ -173,6 +181,10 @@ async function update(request, response, next) {
 
         }
 
+        const categoria = await categoriaModel.findById(request.body.categoriaId, request.user.empresaId);
+        if (!categoria) return response.status(400).json({ success: false, message: "Categoria não encontrada para esta loja." });
+        const subcategoria = resolveProductSubcategory(request.body, categoria, existente);
+
         image = await images.uploadImage(request.file);
         const produto = await produtoModel.update(
 
@@ -181,6 +193,8 @@ async function update(request, response, next) {
             {
 
                 ...request.body,
+
+                subcategoria,
 
                 foto: image?.url || existente.foto,
                 fotoPublicId: image?.publicId || existente.foto_public_id || null,

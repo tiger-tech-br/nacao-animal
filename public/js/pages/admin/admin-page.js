@@ -19,6 +19,9 @@
     let saleDetailsRevision = 0;
     let currentPage = 1;
     const pageSize = 25;
+    let productCategoryOptions = [];
+    let productCategoryValue = "";
+    let productSubcategoryValue = "";
 
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -439,6 +442,11 @@
             </div>
             <p id="recordFormStatus" class="record-form-status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
         `;
+        if (config.key === "produtos") {
+            productCategoryValue = "";
+            productSubcategoryValue = "";
+            syncProductSubcategory();
+        }
         syncRecordFormActions();
         if (savingRecord) setRecordFormBusy(true);
     }
@@ -599,6 +607,8 @@
                 const valueKey = field.valueKey || "id";
                 const placeholder = field.placeholder || "Selecione";
 
+                const selectedValue = select.value || (config.key === "produtos" && field.name === "categoriaId" ? productCategoryValue : "");
+
                 select.innerHTML =
                     `<option value="">${escapeHtml(placeholder)}</option>` +
                     rows.map(row => {
@@ -615,6 +625,12 @@
                             </option>
                         `;
                     }).join("");
+                select.value = selectedValue;
+                if (config.key === "produtos" && field.name === "categoriaId") {
+                    productCategoryOptions = rows;
+                    productCategoryValue = selectedValue;
+                    syncProductSubcategory();
+                }
             } catch {
                 select.innerHTML =
                     `<option value="">Não foi possível carregar</option>`;
@@ -622,6 +638,24 @@
         }));
 
         await populateItemsBuilders();
+    }
+
+    function syncProductSubcategory(value = productSubcategoryValue) {
+        if (config.key !== "produtos") return;
+        const select = document.getElementById("subcategoria");
+        const categorySelect = document.getElementById("categoriaId");
+        const taxonomy = window.NacaoCatalogTaxonomy;
+        if (!select || !categorySelect || !taxonomy) return;
+        productSubcategoryValue = value || "";
+        const categoryId = categorySelect.value || productCategoryValue;
+        const category = productCategoryOptions.find(item => String(item.id) === String(categoryId));
+        const group = taxonomy.getCategory(category?.nome);
+        const options = group?.subcategories || [];
+        select.innerHTML = `<option value="">${options.length ? "Selecione a subcategoria (opcional)" : "Escolha uma categoria com subcategorias"}</option>` + options
+            .map(item => `<option value="${escapeHtml(item.slug)}">${escapeHtml(item.label)}</option>`).join("");
+        const normalized = taxonomy.normalizeSubcategory(productSubcategoryValue);
+        select.value = options.some(item => item.slug === normalized) ? normalized : "";
+        select.disabled = options.length === 0;
     }
 
     async function populateItemsBuilders() {
@@ -684,6 +718,10 @@
         if (form && !isSalesPage) {
             form.addEventListener("submit", saveRecord);
             form.addEventListener("change", event => {
+                if (config.key === "produtos" && event.target?.name === "categoriaId") {
+                    productCategoryValue = event.target.value;
+                    syncProductSubcategory("");
+                }
                 if (event.target?.type === "file") {
                     renderFilePreview(
                         event.target,
@@ -926,6 +964,12 @@
             }
 
             const value = getRecordValue(record, field.name, "");
+
+            if (config.key === "produtos" && field.name === "categoriaId") productCategoryValue = value;
+            if (config.key === "produtos" && field.name === "subcategoria") {
+                syncProductSubcategory(value);
+                return;
+            }
 
             if (field.type === "file") {
                 input.required = Boolean(field.required && !value);

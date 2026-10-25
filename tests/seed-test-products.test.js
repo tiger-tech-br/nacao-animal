@@ -3,7 +3,8 @@
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
 const { execFileSync } = require("node:child_process");
-const { TEST_PRODUCTS, TEST_DESCRIPTION, parseArgs, seedTestProducts } = require("../scripts/seed-test-products");
+const { TEST_PRODUCTS, LEGACY_TEST_PRODUCTS, NEW_TEST_PRODUCTS, TEST_DESCRIPTION, NEW_TEST_DESCRIPTION, parseArgs, seedTestProducts } = require("../scripts/seed-test-products");
+const taxonomy = require("../public/js/catalog-taxonomy");
 
 function database({ name = "nacao-animal", empresaId = "empresa-a", failStock = false } = {}) {
     let serial = 0;
@@ -37,7 +38,7 @@ function database({ name = "nacao-animal", empresaId = "empresa-a", failStock = 
             }
             if (query.startsWith("INSERT INTO produtos")) {
                 if (this.state.products.some(row => row.sku === values[4])) return { rows: [] };
-                const row = { id: `product-${++serial}`, empresa_id: values[0], categoria_id: values[1], nome: values[2], descricao: values[3], sku: values[4], preco: values[5], foto: null, marca: null, ativo: true };
+                const row = { id: `product-${++serial}`, empresa_id: values[0], categoria_id: values[1], nome: values[2], descricao: values[3], sku: values[4], preco: values[5], foto: values[6], subcategoria: values[7], marca: null, ativo: true };
                 this.state.products.push(row);
                 return { rows: [{ id: row.id }] };
             }
@@ -72,20 +73,68 @@ test("prévia é padrão, rejeita flags ambíguas e não depende de configuraç�
     assert.match(output, /NA-TESTE-CAES-01/);
 });
 
-test("cadastro cria seis itens baratos identificados e estoque inicial com movimentação e auditoria", async () => {
+test("cadastro cria itens baratos identificados e estoque inicial com movimentação e auditoria", async () => {
     const client = database();
     const rows = await seedTestProducts(client);
-    assert.equal(rows.length, 6);
+    assert.equal(rows.length, 17);
     assert.deepEqual(new Set(rows.map(row => row.preco)), new Set([6, 10]));
     assert.ok(rows.every(row => row.nome.startsWith("[TESTE]") && row.estoque === 5 && row.resultado === "cadastrado"));
-    assert.deepEqual(new Set(client.state.categories.map(row => row.nome)), new Set(["Cães", "Gatos", "Aves", "Peixes", "Roedores", "Acessórios"]));
-    assert.equal(client.state.products.length, 6);
-    assert.ok(client.state.products.every(row => row.foto === null && row.marca === null && row.descricao === TEST_DESCRIPTION));
-    assert.equal(client.state.stocks.length, 6);
-    assert.equal(client.state.movements.length, 6);
-    assert.equal(client.state.audits.length, 6);
+    assert.deepEqual(new Set(client.state.categories.map(row => row.nome)), new Set(["Cães", "Gatos", "Aves", "Peixes", "Roedores", "Acessórios", "Jardinagem"]));
+    assert.equal(client.state.products.length, 17);
+    assert.ok(client.state.products.every(row => row.marca === null));
+    assert.ok(client.state.products.slice(0, 6).every(row => row.foto === null && row.subcategoria === null && row.descricao === TEST_DESCRIPTION));
+    assert.ok(client.state.products.slice(6).every(row => row.foto.startsWith("/images/products/") && row.subcategoria && row.descricao === NEW_TEST_DESCRIPTION));
+    assert.equal(client.state.stocks.length, 17);
+    assert.equal(client.state.movements.length, 17);
+    assert.equal(client.state.audits.length, 17);
     assert.equal(client.commands.at(-1), "COMMIT");
     assert.equal(client.commands.filter(sql => sql.includes("pg_advisory_xact_lock")).length, 1);
+});
+
+test("novos itens preenchem todas as divisões vazias com espécie e tipo explícitos", () => {
+    assert.equal(NEW_TEST_PRODUCTS.length, 11);
+    assert.equal(new Set(TEST_PRODUCTS.map(item => item.sku)).size, TEST_PRODUCTS.length);
+    const expected = new Set([
+        "caes/racoes", "caes/racoes-umidas", "gatos/racoes", "gatos/racoes-umidas",
+        "aves/racoes", "roedores/racoes", "peixes/racoes",
+        "jardinagem/terras-fertilizantes", "jardinagem/acessorios"
+    ]);
+    const actual = new Set();
+    for (const item of NEW_TEST_PRODUCTS) {
+        const category = taxonomy.getCategory(item.categoria);
+        assert.ok(category.subcategories.some(type => type.slug === item.subcategoria));
+        actual.add(`${category.slug}/${item.subcategoria}`);
+        assert.ok(item.nome.startsWith("[TESTE]") && [6, 10].includes(item.preco) && item.quantidade === 5);
+        assert.equal(taxonomy.getProductSubcategory(item), item.subcategoria);
+        for (const other of ["caes", "gatos", "aves", "roedores", "peixes", "jardinagem"]) {
+            assert.equal(taxonomy.matchesCategory(item, other), category.slug === other, `${item.sku} em ${other}`);
+        }
+    }
+    assert.deepEqual(actual, expected);
+});
+
+test("adicionar catálogo novo preserva integralmente os seis acessórios já cadastrados", async () => {
+    const client = database();
+    await seedTestProducts(client, { products: LEGACY_TEST_PRODUCTS });
+    for (const [index, product] of client.state.products.entries()) {
+        product.preco = 20 + index;
+        product.foto = `/images/products/custom-${index}.jpg`;
+        product.subcategoria = "acessorios";
+        product.ativo = index !== 0;
+        client.state.stocks[index].quantidade = index;
+    }
+    const productsBefore = structuredClone(client.state.products);
+    const stocksBefore = structuredClone(client.state.stocks);
+    const rows = await seedTestProducts(client);
+    assert.deepEqual(client.state.products.slice(0, 6), productsBefore);
+    assert.deepEqual(client.state.stocks.slice(0, 6), stocksBefore);
+    assert.equal(rows.filter(row => row.resultado === "preservado").length, 6);
+    assert.equal(rows.filter(row => row.resultado === "cadastrado").length, 11);
+    assert.equal(client.state.movements.length, 17);
+    assert.equal(client.state.audits.length, 17);
+    const after = structuredClone(client.state);
+    await seedTestProducts(client);
+    assert.deepEqual(client.state, after);
 });
 
 test("reexecutar preserva preços, estoque consumido, status e categorias preexistentes", async () => {

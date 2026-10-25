@@ -16,6 +16,13 @@
 .category-storefront .category-quick-links a:hover { color: #c14a00; border-color: #ffbf7c; background: #fff7e6; }
 .category-storefront .category-quick-links a[aria-current="page"] { color: #fff; border-color: var(--category-orange); background: var(--category-orange); }
 .category-storefront .category-products { scroll-margin-top: 25px; }
+.category-storefront .category-types { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 28px; padding-bottom: 20px; border-bottom: 1px solid #efe3c9; }
+.category-storefront .category-types[hidden] { display: none; }
+.category-storefront .category-types a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 20px; border: 1px solid #e8dfcf; border-radius: 12px; color: #665b48; background: #fff; font-size: 13px; font-weight: 600; text-align: center; transition: color .2s, background-color .2s, border-color .2s; }
+.category-storefront .category-types a:hover { border-color: #ffb270; color: #b84700; background: #fff7e6; }
+.category-storefront .category-types a[aria-current="page"] { border-color: #ffc58e; color: #a43d00; background: #fff0d6; }
+.category-storefront .category-types a:focus-visible, .category-storefront .category-quick-links a:focus-visible { outline: 3px solid #007d91; outline-offset: 3px; }
+.category-storefront .category-paw.is-gardening { color: #248451; background: #eff9de; border-color: #d9eeae; }
 .category-storefront .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 23px; }
 .category-storefront .section-heading .eyebrow { margin-bottom: 8px; }
 .category-storefront .section-heading h2 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -.8px; }

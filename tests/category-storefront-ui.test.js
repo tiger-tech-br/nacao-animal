@@ -5,7 +5,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
 
-function categoryPage(products, { slug = "caes", pathname = `/categorias/${slug}`, failure = false, cart, favorites } = {}) {
+function categoryPage(products, { slug = "caes", pathname = `/categorias/${slug}`, search = "", failure = false, cart, favorites } = {}) {
     const elements = new Map();
     const events = {};
     const documentEvents = {};
@@ -20,6 +20,8 @@ function categoryPage(products, { slug = "caes", pathname = `/categorias/${slug}
         if (!elements.has(id)) elements.set(id, {
             value: "", textContent: "", innerHTML: "", hidden: false,
             attributes: {}, listeners: {},
+            classList: { toggle() {} },
+            querySelectorAll() { return []; },
             setAttribute(name, value) { this.attributes[name] = value; },
             addEventListener(type, callback) { this.listeners[type] = callback; }
         });
@@ -27,6 +29,7 @@ function categoryPage(products, { slug = "caes", pathname = `/categorias/${slug}
     }
     const context = {
         console,
+        URLSearchParams,
         sessionStorage: { getItem: key => saved[key] || null, setItem: (key, value) => { saved[key] = value; } },
         document: {
             addEventListener(name, callback) { documentEvents[name] = callback; }, getElementById: get,
@@ -50,12 +53,13 @@ function categoryPage(products, { slug = "caes", pathname = `/categorias/${slug}
             if (failure) throw new Error("Conexão indisponível");
             return { ok: true, json: async () => ({ success: true, data: products }) };
         },
-        location: { pathname },
-        history: { pushState(state, title, path) { context.location.pathname = path; } },
+        location: { pathname, search },
+        history: { pushState(state, title, path) { const url = new URL(path, "http://localhost"); context.location.pathname = url.pathname; context.location.search = url.search; } },
         PetFlowPublicHeader: { update() { headerUpdates++; } },
         addEventListener(name, callback) { events[name] = callback; }
     };
     context.window = context;
+    vm.runInNewContext(fs.readFileSync("public/js/catalog-taxonomy.js", "utf8"), context);
     vm.runInNewContext(fs.readFileSync("public/js/pages/categories/category-detail.js", "utf8"), context);
     return { context, get, events, documentEvents, saved, cartButtons, favoriteButtons, headerUpdates: () => headerUpdates, requests: () => requests, load: () => context.setupCategoryPage() };
 }
@@ -364,4 +368,62 @@ test("página de favoritos compartilha o catálogo, filtros acessíveis e navega
     assert.match(html, /href="\/produtos"/);
     assert.match(html, /href="\/favoritos"[^>]*aria-current="page"/);
     assert.doesNotMatch(html, /favorit(?:e|es)\.js/);
+});
+
+test("subcategoria úmida usa classificação explícita, preserva a espécie e funciona por link direto e histórico", async () => {
+    const products = [
+        { id: "seco", categoria: "Cães", subcategoria: "racoes", nome: "Ração seca", preco: 10 },
+        { id: "umido", categoria: "Cães", subcategoria: "racoes-umidas", nome: "Alimento sabor frango", preco: 6 },
+        { id: "gato", categoria: "Gatos", subcategoria: "racoes-umidas", nome: "Sachê para gatos (não oferecer a cães)", preco: 6 },
+        { id: "legado", categoria: "Cães", nome: "Patê de carne", preco: 6 },
+        { id: "guia", categoria: "Cães", nome: "Guia de passeio", preco: 10 }
+    ];
+    const page = categoryPage(products, { search: "?tipo=racoes-umidas" });
+    await page.load();
+    assert.equal(page.get("productsTitle").textContent, "Rações úmidas");
+    assert.equal(page.get("categoryResults").textContent, "2 produtos encontrados na categoria.");
+    assert.match(page.get("categoryProducts").innerHTML, /data-product-id="umido"/);
+    assert.match(page.get("categoryProducts").innerHTML, /data-product-id="legado"/);
+    assert.doesNotMatch(page.get("categoryProducts").innerHTML, /data-product-id="(?:gato|seco|guia)"/);
+    page.context.location.search = "?tipo=acessorios";
+    page.events.popstate();
+    assert.equal(page.get("productsTitle").textContent, "Acessórios");
+    assert.match(page.get("categoryProducts").innerHTML, /data-product-id="guia"/);
+    assert.doesNotMatch(page.get("categoryProducts").innerHTML, /data-product-id="(?:umido|seco|legado|gato)"/);
+    page.get("categoryFilter").value = "gatos";
+    page.get("categoryFilter").listeners.change();
+    assert.equal(page.context.location.pathname, "/categorias/gatos");
+    assert.equal(page.context.location.search, "");
+    assert.equal(page.get("categoryResults").textContent, "1 produto encontrado na categoria.");
+});
+
+test("Jardinagem divide terras e acessórios e não mistura o catálogo dos pets", async () => {
+    const products = [
+        { id: "terra", categoria: "Jardinagem", subcategoria: "terras-fertilizantes", nome: "Terra vegetal", preco: 10 },
+        { id: "vaso", categoria: "Jardinagem", subcategoria: "acessorios", nome: "Vaso pequeno", preco: 6 },
+        { id: "pet", categoria: "Cães", subcategoria: "acessorios", nome: "Brinquedo para jardim", preco: 6 }
+    ];
+    const page = categoryPage(products, { slug: "jardinagem", search: "?tipo=terras-fertilizantes" });
+    await page.load();
+    assert.equal(page.get("categoryTitle").textContent, "Tudo para a sua jardinagem");
+    assert.equal(page.get("categorySearchLabel").textContent, "O que suas plantas precisam?");
+    assert.match(page.get("categoryTypes").innerHTML, /Terras e fertilizantes/);
+    assert.doesNotMatch(page.get("categoryTypes").innerHTML, /Rações/);
+    assert.match(page.get("categoryProducts").innerHTML, /data-product-id="terra"/);
+    assert.doesNotMatch(page.get("categoryProducts").innerHTML, /data-product-id="(?:vaso|pet)"/);
+    page.context.location.search = "?tipo=acessorios";
+    page.events.popstate();
+    assert.match(page.get("categoryProducts").innerHTML, /data-product-id="vaso"/);
+    assert.doesNotMatch(page.get("categoryProducts").innerHTML, /data-product-id="(?:terra|pet)"/);
+});
+
+test("pássaros, roedores e peixes oferecem somente rações e acessórios; tipo inválido não esvazia a categoria", async () => {
+    for (const [slug, categoria] of [["aves", "Aves"], ["passaros", "Pássaros"], ["roedores", "Roedores"], ["peixes", "Peixes"]]) {
+        const page = categoryPage([{ id: "food", nome: "Ração", categoria, preco: 6 }], { slug, search: "?tipo=racoes-umidas" });
+        await page.load();
+        assert.match(page.get("categoryTypes").innerHTML, /Rações/);
+        assert.match(page.get("categoryTypes").innerHTML, /Acessórios/);
+        assert.doesNotMatch(page.get("categoryTypes").innerHTML, /racoes-umidas|terras-fertilizantes/);
+        assert.equal(page.get("categoryResults").textContent, "1 produto encontrado na categoria.");
+    }
 });

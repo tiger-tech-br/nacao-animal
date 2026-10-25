@@ -2,6 +2,7 @@
 
 const CATEGORY_API = "/api/public";
 
+const TAXONOMY = window.NacaoCatalogTaxonomy;
 const CATEGORY_CONFIG = {
     favoritos: {
         title: "Meus favoritos",
@@ -15,48 +16,13 @@ const CATEGORY_CONFIG = {
         image: "/images/categories/accessories-v2.jpg",
         all: true
     },
-    caes: {
-        title: "Produtos para cães",
-        description: "Rações, petiscos, acessórios e cuidados selecionados para cachorros.",
-        image: "/images/categories/dogs-v2.jpg",
-        keywords: ["cao", "caes", "cachorro", "canis", "bifinho", "coleira"]
-    },
-    gatos: {
-        title: "Produtos para gatos",
-        description: "Itens escolhidos para gatos, com foco em alimentação, conforto e rotina.",
-        image: "/images/categories/cats-v2.jpg",
-        keywords: ["gato", "gatos", "felis", "castrados"]
-    },
-    aves: {
-        title: "Produtos para aves",
-        description: "Alimentos, acessórios e cuidados para aves de estimação.",
-        image: "/images/categories/birds-v2.jpg",
-        keywords: ["ave", "aves", "passaro", "passaros", "calopsita", "periquito"]
-    },
-    peixes: {
-        title: "Produtos para peixes",
-        description: "Itens para aquários, alimentação, limpeza e bem-estar dos peixes.",
-        image: "/images/categories/fish-v2.jpg",
-        keywords: ["peixe", "peixes", "aquario", "aquarios"]
-    },
-    roedores: {
-        title: "Produtos para roedores",
-        description: "Produtos para hamster, porquinho-da-índia, coelhos e pequenos pets.",
-        image: "/images/categories/rodents-v2.jpg",
-        keywords: ["roedor", "roedores", "hamster", "coelho", "porquinho"]
-    },
-    acessorios: {
-        title: "Acessórios para pets",
-        description: "Coleiras, brinquedos, camas, transporte e acessórios para a rotina do pet.",
-        image: "/images/categories/accessories-v2.jpg",
-        keywords: ["acessorio", "acessorios", "coleira", "brinquedo", "cama", "mordedor"],
-        fallbackCategories: ["Acessórios"]
-    }
+    ...TAXONOMY.categories
 };
 
 let allProducts = [];
 let publicFavorites = readFavorites();
 let currentSlug = "caes";
+let currentType = "";
 let catalogFailed = false;
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -77,6 +43,7 @@ window.addEventListener("pageshow", event => {
 
 window.addEventListener("popstate", () => {
     currentSlug = getCurrentSlug();
+    currentType = getCurrentType();
     const config = CATEGORY_CONFIG[currentSlug];
     if (!config) {
         renderUnknownCategory();
@@ -93,6 +60,7 @@ window.addEventListener("popstate", () => {
 async function setupCategoryPage() {
     catalogFailed = false;
     currentSlug = getCurrentSlug();
+    currentType = getCurrentType();
     const config = CATEGORY_CONFIG[currentSlug];
     if (!config) {
         renderUnknownCategory();
@@ -131,6 +99,7 @@ function setupToolbar() {
         filter.addEventListener("change", () => {
             if (!CATEGORY_CONFIG[filter.value]) return;
             currentSlug = filter.value;
+            currentType = "";
             renderCategoryHeader(CATEGORY_CONFIG[currentSlug]);
             updateUrl(currentSlug);
             applyFilters();
@@ -154,7 +123,8 @@ function applyFilters() {
         return;
     }
     const query = normalize(document.getElementById("categorySearch")?.value || "");
-    const categoryProducts = filterByPetCategory(allProducts, config);
+    const selection = filterByPetCategory(allProducts, config);
+    const categoryProducts = currentType ? selection.filter(product => TAXONOMY.getProductSubcategory(product) === currentType) : selection;
     const matches = query ? filterBySearch(categoryProducts, query) : categoryProducts;
     const products = sortProducts(matches, document.getElementById("categorySort")?.value || "default");
 
@@ -169,12 +139,21 @@ function sortProducts(products, sort) {
     return sorted;
 }
 
-function renderCategoryHeader(config) {
-    document.title = `Nação Animal | ${config.title}`;
+function renderCategoryHeader(config, preserveTypeLinks = false) {
+    const type = config.subcategories?.find(item => item.slug === currentType);
+    document.title = `Nação Animal | ${type ? `${config.label} - ${type.label}` : config.title}`;
     setText("categoryTitle", config.title);
     setText("categoryDescription", config.description);
-    setText("categoryBreadcrumb", config.title);
-    setText("productsTitle", config.favoritesOnly ? "Produtos salvos" : config.all ? "Catálogo completo" : "Produtos da categoria");
+    setText("categoryBreadcrumb", type ? `${config.label} › ${type.label}` : config.title);
+    setText("productsTitle", type?.label || (config.favoritesOnly ? "Produtos salvos" : config.all ? "Catálogo completo" : "Produtos da categoria"));
+    renderSubcategories(config, preserveTypeLinks);
+    setText("categoryEyebrow", currentSlug === "jardinagem" ? "Um carinho para suas plantas" : "Um carinho para cada pet");
+    setText("categorySearchLabel", currentSlug === "jardinagem" ? "O que suas plantas precisam?" : "O que você procura?");
+    const paw = document.getElementById("categoryPaw");
+    if (paw) {
+        paw.classList.toggle("is-gardening", currentSlug === "jardinagem");
+        paw.innerHTML = `<i class="fa-solid fa-${currentSlug === "jardinagem" ? "seedling" : "paw"}"></i>`;
+    }
     const search = document.getElementById("categorySearch");
     if (search) search.placeholder = config.favoritesOnly ? "Buscar nos favoritos" : config.all ? "Buscar no catálogo" : "Buscar nesta categoria";
     document.querySelectorAll("[data-category-link]").forEach(link => {
@@ -191,6 +170,32 @@ function renderCategoryHeader(config) {
     }
 }
 
+function renderSubcategories(config, preserveLinks = false) {
+    const nav = document.getElementById("categoryTypes");
+    if (!nav) return;
+    const types = config.subcategories || [];
+    nav.hidden = !types.length;
+    if (!types.length) { nav.innerHTML = ""; return; }
+    nav.setAttribute("aria-label", `Tipos de produtos de ${config.label}`);
+    if (preserveLinks) {
+        nav.querySelectorAll("[data-product-type]").forEach(link => {
+            if (link.dataset.productType === currentType) link.setAttribute("aria-current", "page");
+            else link.removeAttribute("aria-current");
+        });
+        return;
+    }
+    const choices = [{ slug: "", label: "Todos" }, ...types];
+    nav.innerHTML = choices.map(type => `<a href="/categorias/${config.slug}${type.slug ? `?tipo=${type.slug}` : ""}" data-product-type="${type.slug}"${type.slug === currentType ? ' aria-current="page"' : ""}>${escapeHtml(type.label)}</a>`).join("");
+    nav.querySelectorAll("[data-product-type]").forEach(link => link.addEventListener("click", event => {
+        if (event.button > 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        currentType = link.dataset.productType;
+        updateUrl(currentSlug);
+        renderCategoryHeader(config, true);
+        applyFilters();
+    }));
+}
+
 function renderUnknownCategory() {
     document.title = "Nação Animal | Categoria não encontrada";
     setText("categoryTitle", "Categoria não encontrada");
@@ -201,6 +206,8 @@ function renderUnknownCategory() {
     const image = document.getElementById("categoryImage");
     if (toolbar) toolbar.hidden = true;
     if (image) image.hidden = true;
+    const types = document.getElementById("categoryTypes");
+    if (types) types.hidden = true;
     renderEmpty("Essa categoria não está disponível. Você pode explorar as categorias da nossa loja.", "Vamos encontrar o que seu pet precisa?");
     document.getElementById("categoryProducts")?.setAttribute("aria-busy", "false");
 }
@@ -208,17 +215,7 @@ function renderUnknownCategory() {
 function filterByPetCategory(products, config) {
     if (config.favoritesOnly) return products.filter(product => publicFavorites.has(String(product.id || product.sku || product.nome)));
     if (config.all) return [...products];
-    const matches = products.filter(product => {
-        const words = productHaystack(product).split(/[^a-z0-9]+/);
-        return config.keywords.some(keyword => words.includes(keyword) || words.includes(`${keyword}s`));
-    });
-
-    if (matches.length || !config.fallbackCategories?.length) {
-        return matches;
-    }
-
-    const allowed = config.fallbackCategories.map(normalize);
-    return products.filter(product => allowed.includes(normalize(product.categoria)));
+    return products.filter(product => TAXONOMY.matchesCategory(product, config));
 }
 
 function filterBySearch(products, query) {
@@ -230,6 +227,7 @@ function productHaystack(product) {
         product.nome,
         product.descricao,
         product.categoria,
+        TAXONOMY.types[TAXONOMY.getProductSubcategory(product)]?.label,
         product.marca,
         product.fornecedor,
         product.sku
@@ -374,9 +372,10 @@ function productSlug(product) {
 }
 
 function updateUrl(slug) {
-    const nextPath = slug === "favoritos" ? "/favoritos" : slug === "todas" ? "/produtos" : `/categorias/${slug}`;
+    const type = CATEGORY_CONFIG[slug]?.subcategories?.some(item => item.slug === currentType) ? currentType : "";
+    const nextPath = slug === "favoritos" ? "/favoritos" : slug === "todas" ? "/produtos" : `/categorias/${slug}${type ? `?tipo=${type}` : ""}`;
 
-    if (window.location.pathname !== nextPath) {
+    if (`${window.location.pathname}${window.location.search || ""}` !== nextPath) {
         window.history.pushState({}, "", nextPath);
     }
 }
@@ -404,7 +403,13 @@ function getCurrentSlug() {
     const pathname = window.location.pathname.replace(/\/+$/, "");
     if (pathname === "/produtos") return "todas";
     if (pathname === "/favoritos") return "favoritos";
-    return window.location.pathname.split("/").filter(Boolean).pop() || "caes";
+    const slug = window.location.pathname.split("/").filter(Boolean).pop() || "caes";
+    return TAXONOMY.getCategory(slug)?.slug || slug;
+}
+
+function getCurrentType() {
+    const type = TAXONOMY.normalizeSubcategory(new URLSearchParams(window.location.search || "").get("tipo"));
+    return CATEGORY_CONFIG[currentSlug]?.subcategories?.some(item => item.slug === type) ? type : "";
 }
 
 function slugify(value) {
