@@ -60,7 +60,7 @@ function page({ reducedMotion = false, noCarousel = false, incomplete = false, i
     const context = {
         document,
         matchMedia: () => motion,
-        setInterval(callback, delay) { assert.equal(delay, 7000); const id = ++serial; timers.set(id, callback); return id; },
+        setInterval(callback, delay) { assert.equal(delay, 4000); const id = ++serial; timers.set(id, callback); return id; },
         clearInterval: id => timers.delete(id)
     };
     context.window = context;
@@ -73,7 +73,7 @@ function page({ reducedMotion = false, noCarousel = false, incomplete = false, i
     };
 }
 
-test("sem botão de pausa, avisos avançam a cada sete segundos e voltam ao primeiro sem anúncios automáticos", () => {
+test("sem botão de pausa, avisos avançam a cada quatro segundos e voltam ao primeiro sem anúncios automáticos", () => {
     const ui = page();
     assert.equal(ui.active(), 0);
     assert.equal(ui.controls.hidden, false);

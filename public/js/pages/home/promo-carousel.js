@@ -30,7 +30,7 @@
                 window.clearInterval(timer);
                 timer = null;
             }
-            if (canRotate && timer === null) timer = window.setInterval(() => show(active + 1), 7000);
+            if (canRotate && timer === null) timer = window.setInterval(() => show(active + 1), 4000);
         }
 
         function show(index, manual = false) {

@@ -26,3 +26,5 @@ Testes automatizados incluem concorrência real em PostgreSQL isolado, rejeiçõ
 Suíte completa: **708 testes aprovados, zero falhas e zero ignorados**, com `RUN_DB_TESTS=1`. Links das **40 páginas** aprovados. A migração122 foi aplicada no localhost. Antes de afirmar que está publicado, conferir GitHub verify e Railway SUCCESS para o commit desta atualização. O processo normal de pre-deploy aplica a migração122. O pedido fictício da atualização31 não foi concluído nem duplicado para testar a interface.
 
 Preservar `.env`, credenciais e contas, produtos Répteis/Jardinagem e pagamentos desativados. Google Maps externo e compartilhamento manual continuam; não restaurar simuladores antigos. Railway é demonstração, futura produção prevista na Vixpi.
+
+Atualização posterior: por solicitação do usuário, o carrossel de avisos/cupons da inicial passou de 7 para **4 segundos** entre slides automáticos. Cache do script `promo-carousel.js` em `20261025-6`; os oito testes existentes do carrossel passaram com a nova duração.
