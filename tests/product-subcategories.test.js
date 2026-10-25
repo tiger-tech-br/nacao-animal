@@ -29,3 +29,15 @@ test("edição legada preserva classificação omitida, limpa ao trocar categori
     }
     assert.equal(resolveProductSubcategory({}, { id: "legada", nome: "Categoria antiga" }), null);
 });
+
+test("Répteis aceita somente rações, inclusive quando o nome é informado no singular", () => {
+    for (const nome of ["Répteis", "Réptil", "repteis", "reptil"]) {
+        const category = { id: "repteis", nome };
+        for (const subcategoria of ["racoes", "Rações"]) {
+            assert.equal(resolveProductSubcategory({ subcategoria }, category), "racoes");
+        }
+        for (const subcategoria of ["acessorios", "racoes-umidas", "terras-fertilizantes"]) {
+            assert.throws(() => resolveProductSubcategory({ subcategoria }, category), { status: 400 });
+        }
+    }
+});

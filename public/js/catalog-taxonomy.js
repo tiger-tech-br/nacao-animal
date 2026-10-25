@@ -45,6 +45,12 @@
             image: "/images/categories/rodents-v2.jpg", subcategories: smallPetTypes,
             keywords: ["roedor", "roedores", "hamster", "coelho", "porquinho"]
         },
+        repteis: {
+            slug: "repteis", label: "Répteis", title: "Rações para tartarugas e jabutis",
+            description: "Rações para tartarugas e jabutis. Nesta categoria, a loja trabalha somente com alimentação.",
+            image: "/images/categories/reptiles.jpg", subcategories: [types.racoes],
+            keywords: ["reptil", "repteis", "tartaruga", "tartarugas", "jabuti", "jabutis"]
+        },
         jardinagem: {
             slug: "jardinagem", label: "Jardinagem", title: "Tudo para a sua jardinagem",
             description: "Terras, fertilizantes e acessórios para cuidar das suas plantas.",
@@ -67,6 +73,7 @@
     function getCategory(value) {
         let slug = slugify(value);
         if (["passaros", "passaro", "ave"].includes(slug)) slug = "aves";
+        if (slug === "reptil") slug = "repteis";
         return categories[slug] || null;
     }
     function normalizeSubcategory(value) {
@@ -106,7 +113,8 @@
             ["caes", /\b(cao|caes|cachorros?|canis)\b/],
             ["gatos", /\b(gatos?|felinos?|felis)\b/],
             ["aves", /\b(aves?|passaros?|calopsitas?|periquitos?)\b/],
-            ["roedores", /\b(roedores?|hamsters?|coelhos?|porquinhos?)\b/]
+            ["roedores", /\b(roedores?|hamsters?|coelhos?|porquinhos?)\b/],
+            ["repteis", /\b(reptil|repteis|tartarugas?|jabutis?)\b/]
         ].filter(([, pattern]) => pattern.test(name)).map(([slug]) => slug);
         if (species.length) return species.includes(category.slug);
         const words = normalize([product.nome, product.descricao, product.categoria, product.sku].filter(Boolean).join(" ")).split(/[^a-z0-9]+/);

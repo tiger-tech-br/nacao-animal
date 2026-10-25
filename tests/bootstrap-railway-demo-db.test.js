@@ -169,7 +169,7 @@ test("sem --apply nenhuma conexao, migracao, seed ou alteracao de fotos e execut
     assert.deepEqual(result, { modo: "conferir", destino: "demonstracao-railway", mutacoes: false });
 });
 
-test("primeiro banco vazio recebe migracoes, um admin e os 17 produtos aprovados com fotos e descricoes IA", async () => {
+test("primeiro banco vazio recebe migracoes, um admin e os produtos aprovados com fotos e descricoes IA", async () => {
     const db = fakeDatabase();
     const scripts = [];
     let poolOptions;
@@ -189,7 +189,7 @@ test("primeiro banco vazio recebe migracoes, um admin e os 17 produtos aprovados
     });
     assert.deepEqual(poolOptions.ssl, { rejectUnauthorized: false });
     assert.deepEqual(scripts, ["migrate.js", "seed-admin.js"]);
-    assert.deepEqual(result.contagens, { usuarios: 1, administradores: 1, produtos: 17, fotos: 17, clientes: 0, pedidos: 0 });
+    assert.deepEqual(result.contagens, { usuarios: 1, administradores: 1, produtos: TEST_PRODUCTS.length, fotos: TEST_PRODUCTS.length, clientes: 0, pedidos: 0 });
     assert.equal(PHOTO_FILES.length, TEST_PRODUCTS.length);
     assert.ok(PHOTO_FILES.every(file => typeof file === "string" && !file.includes("undefined")));
     assert.deepEqual(db.state.products.map(item => item.foto), PHOTO_FILES.map(file => `/images/products/${file}`));

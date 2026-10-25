@@ -52,7 +52,7 @@ function page(apiGet) {
 
 const categories = [
     { id: "caes", nome: "Cães" }, { id: "gatos", nome: "Gatos" },
-    { id: "aves", nome: "Aves" }, { id: "jardim", nome: "Jardinagem" }
+    { id: "aves", nome: "Aves" }, { id: "jardim", nome: "Jardinagem" }, { id: "repteis", nome: "Répteis" }
 ];
 
 test("cadastro administrativo adapta subcategorias e limpa escolha incompatível ao trocar categoria", async () => {
@@ -70,6 +70,19 @@ test("cadastro administrativo adapta subcategorias e limpa escolha incompatível
     assert.doesNotMatch(ui.subcategory.innerHTML, /Rações/);
     ui.subcategory.value = "terras-fertilizantes";
     assert.equal(ui.hooks.readForm().subcategoria, "terras-fertilizantes");
+});
+
+test("Répteis no cadastro oferece somente Rações e limpa a escolha da categoria anterior", async () => {
+    const ui = page(async () => ({ data: categories }));
+    await ui.hooks.populateRemoteSelects();
+    ui.changeCategory("caes");
+    ui.subcategory.value = "acessorios";
+    ui.changeCategory("repteis");
+    assert.equal(ui.subcategory.value, "");
+    assert.match(ui.subcategory.innerHTML, /value="racoes"/);
+    assert.doesNotMatch(ui.subcategory.innerHTML, /Acessórios|Rações úmidas|Terras e fertilizantes/);
+    ui.subcategory.value = "racoes";
+    assert.equal(ui.hooks.readForm().subcategoria, "racoes");
 });
 
 test("abrir edição antes da resposta de categorias preserva categoria e subcategoria salvas", async () => {

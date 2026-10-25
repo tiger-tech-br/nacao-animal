@@ -22,7 +22,9 @@ const NEW_TEST_PRODUCTS = Object.freeze([
     { sku: "NA-TESTE-JARDIM-TERRA-01", categoria: "Jardinagem", subcategoria: "terras-fertilizantes", nome: "[TESTE] Terra vegetal para plantas 1 kg", preco: 6, foto: "/images/products/garden-soil.jpg" },
     { sku: "NA-TESTE-JARDIM-FERT-01", categoria: "Jardinagem", subcategoria: "terras-fertilizantes", nome: "[TESTE] Fertilizante para plantas 100 g", preco: 10, foto: "/images/products/garden-fertilizer.jpg" },
     { sku: "NA-TESTE-JARDIM-VASO-01", categoria: "Jardinagem", subcategoria: "acessorios", nome: "[TESTE] Vaso pequeno para plantas", preco: 6, foto: "/images/products/garden-pot.jpg" },
-    { sku: "NA-TESTE-JARDIM-REGADOR-01", categoria: "Jardinagem", subcategoria: "acessorios", nome: "[TESTE] Regador pequeno para jardim", preco: 10, foto: "/images/products/garden-watering-can.jpg" }
+    { sku: "NA-TESTE-JARDIM-REGADOR-01", categoria: "Jardinagem", subcategoria: "acessorios", nome: "[TESTE] Regador pequeno para jardim", preco: 10, foto: "/images/products/garden-watering-can.jpg" },
+    { sku: "NA-TESTE-REPTEIS-TARTARUGA-01", categoria: "Répteis", subcategoria: "racoes", nome: "[TESTE] Ração para tartarugas 100 g", preco: 6, foto: "/images/products/turtle-food.jpg" },
+    { sku: "NA-TESTE-REPTEIS-JABUTI-01", categoria: "Répteis", subcategoria: "racoes", nome: "[TESTE] Ração para jabutis 100 g", preco: 10, foto: "/images/products/tortoise-food.jpg" }
 ].map(item => Object.freeze({ ...item, quantidade: 5, descricao: NEW_TEST_DESCRIPTION })));
 const TEST_PRODUCTS = Object.freeze([...LEGACY_TEST_PRODUCTS, ...NEW_TEST_PRODUCTS]);
 

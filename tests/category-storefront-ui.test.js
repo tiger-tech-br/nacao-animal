@@ -64,6 +64,23 @@ function categoryPage(products, { slug = "caes", pathname = `/categorias/${slug}
     return { context, get, events, documentEvents, saved, cartButtons, favoriteButtons, headerUpdates: () => headerUpdates, requests: () => requests, load: () => context.setupCategoryPage() };
 }
 
+test("categoria Répteis mostra rações para tartarugas e jabutis sem oferecer acessórios ou rações úmidas", async () => {
+    const products = [
+        { id: "tartaruga", nome: "Ração para tartarugas 100 g", categoria: "Répteis", subcategoria: "racoes", preco: 6 },
+        { id: "jabuti", nome: "Ração para jabutis 100 g", categoria: "Répteis", subcategoria: "racoes", preco: 10 },
+        { id: "peixes", nome: "Ração em flocos para peixes", categoria: "Peixes", subcategoria: "racoes", preco: 6 }
+    ];
+    const page = categoryPage(products, { slug: "repteis", search: "?tipo=racoes" });
+    await page.load();
+    assert.match(page.get("categoryProducts").innerHTML, /Ração para tartarugas|Ração para jabutis/);
+    assert.match(page.get("categoryProducts").innerHTML, /data-product-id="tartaruga"/);
+    assert.match(page.get("categoryProducts").innerHTML, /data-product-id="jabuti"/);
+    assert.doesNotMatch(page.get("categoryProducts").innerHTML, /data-product-id="peixes"/);
+    assert.match(page.get("categoryTypes").innerHTML, /tipo=racoes/);
+    assert.doesNotMatch(page.get("categoryTypes").innerHTML, /tipo=acessorios|tipo=racoes-umidas/);
+    assert.equal(page.get("categoryFilter").value, "repteis");
+});
+
 test("categoria filtra por pet, busca sem acentos e ordena preço sem modificar a seleção original", async () => {
     const products = [
         { id: "a", nome: "Ração para cães Premium", preco: 90, foto: "/a.jpg" },

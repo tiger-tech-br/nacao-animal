@@ -76,28 +76,28 @@ test("prévia é padrão, rejeita flags ambíguas e não depende de configuraç�
 test("cadastro cria itens baratos identificados e estoque inicial com movimentação e auditoria", async () => {
     const client = database();
     const rows = await seedTestProducts(client);
-    assert.equal(rows.length, 17);
+    assert.equal(rows.length, TEST_PRODUCTS.length);
     assert.deepEqual(new Set(rows.map(row => row.preco)), new Set([6, 10]));
     assert.ok(rows.every(row => row.nome.startsWith("[TESTE]") && row.estoque === 5 && row.resultado === "cadastrado"));
-    assert.deepEqual(new Set(client.state.categories.map(row => row.nome)), new Set(["Cães", "Gatos", "Aves", "Peixes", "Roedores", "Acessórios", "Jardinagem"]));
-    assert.equal(client.state.products.length, 17);
+    assert.deepEqual(new Set(client.state.categories.map(row => row.nome)), new Set(["Cães", "Gatos", "Aves", "Peixes", "Roedores", "Acessórios", "Jardinagem", "Répteis"]));
+    assert.equal(client.state.products.length, TEST_PRODUCTS.length);
     assert.ok(client.state.products.every(row => row.marca === null));
     assert.ok(client.state.products.slice(0, 6).every(row => row.foto === null && row.subcategoria === null && row.descricao === TEST_DESCRIPTION));
     assert.ok(client.state.products.slice(6).every(row => row.foto.startsWith("/images/products/") && row.subcategoria && row.descricao === NEW_TEST_DESCRIPTION));
-    assert.equal(client.state.stocks.length, 17);
-    assert.equal(client.state.movements.length, 17);
-    assert.equal(client.state.audits.length, 17);
+    assert.equal(client.state.stocks.length, TEST_PRODUCTS.length);
+    assert.equal(client.state.movements.length, TEST_PRODUCTS.length);
+    assert.equal(client.state.audits.length, TEST_PRODUCTS.length);
     assert.equal(client.commands.at(-1), "COMMIT");
     assert.equal(client.commands.filter(sql => sql.includes("pg_advisory_xact_lock")).length, 1);
 });
 
 test("novos itens preenchem todas as divisões vazias com espécie e tipo explícitos", () => {
-    assert.equal(NEW_TEST_PRODUCTS.length, 11);
+    assert.equal(NEW_TEST_PRODUCTS.length, 13);
     assert.equal(new Set(TEST_PRODUCTS.map(item => item.sku)).size, TEST_PRODUCTS.length);
     const expected = new Set([
         "caes/racoes", "caes/racoes-umidas", "gatos/racoes", "gatos/racoes-umidas",
         "aves/racoes", "roedores/racoes", "peixes/racoes",
-        "jardinagem/terras-fertilizantes", "jardinagem/acessorios"
+        "jardinagem/terras-fertilizantes", "jardinagem/acessorios", "repteis/racoes"
     ]);
     const actual = new Set();
     for (const item of NEW_TEST_PRODUCTS) {
@@ -106,11 +106,19 @@ test("novos itens preenchem todas as divisões vazias com espécie e tipo explí
         actual.add(`${category.slug}/${item.subcategoria}`);
         assert.ok(item.nome.startsWith("[TESTE]") && [6, 10].includes(item.preco) && item.quantidade === 5);
         assert.equal(taxonomy.getProductSubcategory(item), item.subcategoria);
-        for (const other of ["caes", "gatos", "aves", "roedores", "peixes", "jardinagem"]) {
+        for (const other of ["caes", "gatos", "aves", "roedores", "peixes", "jardinagem", "repteis"]) {
             assert.equal(taxonomy.matchesCategory(item, other), category.slug === other, `${item.sku} em ${other}`);
         }
     }
     assert.deepEqual(actual, expected);
+});
+
+test("produtos demonstrativos de Répteis são duas rações com fotos diferentes e cinco unidades", () => {
+    const products = NEW_TEST_PRODUCTS.filter(item => item.categoria === "Répteis");
+    assert.deepEqual(products.map(item => item.sku), ["NA-TESTE-REPTEIS-TARTARUGA-01", "NA-TESTE-REPTEIS-JABUTI-01"]);
+    assert.ok(products.every(item => item.subcategoria === "racoes" && item.quantidade === 5));
+    assert.deepEqual(products.map(item => item.preco), [6, 10]);
+    assert.deepEqual(products.map(item => item.foto), ["/images/products/turtle-food.jpg", "/images/products/tortoise-food.jpg"]);
 });
 
 test("adicionar catálogo novo preserva integralmente os seis acessórios já cadastrados", async () => {
@@ -129,9 +137,9 @@ test("adicionar catálogo novo preserva integralmente os seis acessórios já ca
     assert.deepEqual(client.state.products.slice(0, 6), productsBefore);
     assert.deepEqual(client.state.stocks.slice(0, 6), stocksBefore);
     assert.equal(rows.filter(row => row.resultado === "preservado").length, 6);
-    assert.equal(rows.filter(row => row.resultado === "cadastrado").length, 11);
-    assert.equal(client.state.movements.length, 17);
-    assert.equal(client.state.audits.length, 17);
+    assert.equal(rows.filter(row => row.resultado === "cadastrado").length, NEW_TEST_PRODUCTS.length);
+    assert.equal(client.state.movements.length, TEST_PRODUCTS.length);
+    assert.equal(client.state.audits.length, TEST_PRODUCTS.length);
     const after = structuredClone(client.state);
     await seedTestProducts(client);
     assert.deepEqual(client.state, after);
