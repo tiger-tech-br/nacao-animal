@@ -43,10 +43,7 @@ async function handleLogin(event) {
         saveToken(response.data.token);
         saveUser(response.data.user);
 
-        const next = new URLSearchParams(window.location.search || "").get("next");
-        const courierTest = typeof next === "string" && /^\/admin\/testar-gps\?entregador=[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(next);
-        window.location.href = courierTest || ["/admin/testar-gps", "/admin/simular-navegacao"].includes(next)
-            ? next : "/admin/pages/dashboard/dashboard.html";
+        window.location.href = "/admin/pages/dashboard/dashboard.html";
     } catch (error) {
         alert(error.message || "Erro ao realizar login.");
     }

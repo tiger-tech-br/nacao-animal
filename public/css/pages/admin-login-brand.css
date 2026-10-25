@@ -97,8 +97,12 @@ body.admin-login-page {
 }
 
 .admin-login-page .login-brand > p {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
     max-width: 315px;
     margin: 0;
+    color: #253137;
     font-size: 15px;
     line-height: 1.65;
 }
@@ -111,17 +115,7 @@ body.admin-login-page {
     align-self: center;
     display: grid;
     place-items: end center;
-    margin-top: 8px;
-}
-
-.admin-login-page .login-brand-art::before {
-    content: "";
-    position: absolute;
-    bottom: -50px;
-    width: 86%;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: #ffeaa3;
+    margin-top: 16px;
 }
 
 .admin-login-page .login-brand-art img {
@@ -360,7 +354,13 @@ body.admin-login-page {
         letter-spacing: -.8px;
     }
 
-    .admin-login-page .login-brand > p,
+    .admin-login-page .login-brand > p {
+        width: 62%;
+        margin-top: 12px;
+        font-size: 13px;
+        line-height: 1.55;
+    }
+
     .admin-login-page .login-brand-signature {
         display: none;
     }
@@ -372,11 +372,6 @@ body.admin-login-page {
         width: 45%;
         min-height: 0;
         margin: 0;
-    }
-
-    .admin-login-page .login-brand-art::before {
-        bottom: -28px;
-        width: 100%;
     }
 
     .admin-login-page .login-brand-art img {

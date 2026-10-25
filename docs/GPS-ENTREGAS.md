@@ -27,7 +27,7 @@ Atualizado em 25/10/2026 por decisão do usuário após o teste físico da naveg
 
 As rotas HTTP, tokens privados, prazo de 12 horas do link do entregador, autenticação do cliente e do administrador e mudanças de status existentes foram preservados. O compartilhamento externo acrescenta persistência e sua migração deve ser aplicada pelo processo normal de publicação. Não exige mudança na configuração de pagamentos.
 
-Os componentes de GPS/navegação, APIs antigas, simulador e diagnóstico administrativo permanecem no repositório para compatibilidade e histórico. Não são carregados nas telas de entrega ou de acompanhamento atuais e não fazem parte do fluxo recomendado. Testes antigos exclusivamente sobre a navegação do entregador foram substituídos por testes de abertura externa, status, autorização, rede e ciclo de vida; os testes dos componentes legados continuam separados.
+As antigas páginas de teste de GPS e simulação, seus arquivos exclusivos e a API de diagnóstico foram retirados. Componentes legados de mapa/navegação e as APIs antigas de entrega permanecem para compatibilidade; não são carregados nas telas atuais. Os testes dos componentes legados continuam separados, com percursos artificiais internos à pasta de testes. A operação da loja usa somente o fluxo de pedidos e o Google Maps.
 
 ## Conferência no celular
 

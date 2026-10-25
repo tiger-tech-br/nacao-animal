@@ -19,7 +19,7 @@ const morgan = require("morgan");
 
 const rateLimit = require("express-rate-limit");
 const realtimePath = /^\/api\/(?:dashboard(?:\/notificacoes)?|vendas\/[^/]+\/rastreamento|public\/(?:clientes\/notificacoes|pedidos\/[^/]+\/rastreamento|entregas\/(?:localizacao|viagem|rota|mapa-config)))$/;
-const mapPages = ["/entregador", "/acompanhar-entrega", "/admin/acompanhar-entrega", "/admin/testar-gps", "/admin/simular-navegacao"];
+const mapPages = ["/entregador", "/acompanhar-entrega", "/admin/acompanhar-entrega"];
 const realtimeLimiter = rateLimit({ windowMs: 60000, limit: 240, standardHeaders: true, legacyHeaders: false,
     message: { success: false, message: "Muitas atualizações. Aguarde um minuto para tentar novamente." } });
 

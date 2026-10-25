@@ -1,5 +1,5 @@
 "use strict";
-// Percursos inteiramente artificiais para testar a navegação sem sensor ou rede.
+// Fixtures internas do motor legado; não são publicadas como página ou script do site.
 ((root) => {
     const BASE = { latitude: 40.78, longitude: -73.97 };
     const METERS_LAT = 111195, METERS_LNG = METERS_LAT * Math.cos(BASE.latitude * Math.PI / 180);

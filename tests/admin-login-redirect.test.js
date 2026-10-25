@@ -3,9 +3,9 @@ const { test } = require("node:test"), assert = require("node:assert/strict");
 const vm = require("node:vm"), fs = require("node:fs");
 const source = fs.readFileSync("public/js/pages/auth/login.js", "utf8");
 for (const [search, expected] of [
-    ["?next=%2Fadmin%2Ftestar-gps", "/admin/testar-gps"],
-    ["?next=%2Fadmin%2Fsimular-navegacao", "/admin/simular-navegacao"],
-    ["?next=%2Fadmin%2Ftestar-gps%3Fentregador%3D11111111-1111-4111-8111-111111111111", "/admin/testar-gps?entregador=11111111-1111-4111-8111-111111111111"],
+    ["?next=%2Fadmin%2Ftestar-gps", "/admin/pages/dashboard/dashboard.html"],
+    ["?next=%2Fadmin%2Fsimular-navegacao", "/admin/pages/dashboard/dashboard.html"],
+    ["?next=%2Fadmin%2Ftestar-gps%3Fentregador%3D11111111-1111-4111-8111-111111111111", "/admin/pages/dashboard/dashboard.html"],
     ["?next=/admin/testar-gps?entregador=wrong", "/admin/pages/dashboard/dashboard.html"],
     ["?next=%2Fadmin%2Ftestar-gps%3Fentregador%3D11111111-1111-4111-8111-111111111111%26unsafe%3D1", "/admin/pages/dashboard/dashboard.html"],
     ["", "/admin/pages/dashboard/dashboard.html"],
@@ -17,7 +17,7 @@ for (const [search, expected] of [
     ["?next=/admin/simular-navegacao/../other", "/admin/pages/dashboard/dashboard.html"],
     ["?next=%252Fadmin%252Fsimular-navegacao", "/admin/pages/dashboard/dashboard.html"],
     ["?next=%5C%5Cexternal.invalid%5Cadmin%5Csimular-navegacao", "/admin/pages/dashboard/dashboard.html"]
-]) test(`login retorna somente aos testes administrativos autorizados: ${search || "padrao"}`, async () => {
+]) test(`login retorna ao painel inclusive com destinos antigos ou externos: ${search || "padrao"}`, async () => {
     const saved=[];
     const context={URLSearchParams, document:{addEventListener(){},getElementById:id=>({value:id==="email"?"fixture@example.invalid":"fixture-password"})},
         validateRequired:()=>true,validateEmail:()=>true,validatePassword:()=>true,

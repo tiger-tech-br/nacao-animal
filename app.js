@@ -55,7 +55,6 @@ const auditoriaRoutes = require("./routes/auditoriaRoutes");
 const lgpdAdminRoutes = require("./routes/lgpdAdminRoutes");
 const consumerRequestAdminRoutes = require("./routes/consumerRequestAdminRoutes");
 const healthRoutes = require("./routes/healthRoutes");
-const gpsDiagnosticRoutes = require("./routes/gpsDiagnosticRoutes");
 
 const publicCatalogRoutes = require("./routes/publicCatalogRoutes");
 
@@ -209,14 +208,6 @@ app.get("/admin/acompanhar-entrega", (request, response) => {
     response.set("Cache-Control", "no-store");
     response.sendFile(path.join(__dirname, "views", "delivery", "tracking.html"));
 });
-app.get("/admin/testar-gps", (request, response) => {
-    response.set("Cache-Control", "no-store");
-    response.sendFile(path.join(__dirname, "views", "delivery", "gps-test.html"));
-});
-app.get("/admin/simular-navegacao", (request, response) => {
-    response.set("Cache-Control", "no-store");
-    response.sendFile(path.join(__dirname, "views", "delivery", "simulation.html"));
-});
 
 app.get("/politica-de-privacidade", (request, response) => {
 
@@ -273,7 +264,6 @@ app.use("/api", healthRoutes);
 ================================================== */
 
 app.use("/api/auth", authRoutes);
-app.use("/api/gps-diagnostico", gpsDiagnosticRoutes);
 app.use("/api/public/rede-sandbox", redeSandboxRoutes);
 
 app.use("/api/public/pagamentos", publicPaymentRoutes);

@@ -1,6 +1,6 @@
 "use strict";
 const {test}=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),vm=require("node:vm");
-const scenarios=require("../public/js/pages/delivery/simulation-scenarios");
+const scenarios=require("./fixtures/navigation-simulation-scenarios");
 const navigation=require("../public/js/pages/delivery/navigation-engine");
 
 function replay(id,{reroute=true}={}) {
@@ -174,7 +174,7 @@ test("passos pequenos sem rumo nativo exercitam curva e retorno planejado até a
 test("módulo também funciona no navegador sem acessar sensor, rede ou armazenamento",()=>{
     const context={window:{}};
     for(const name of ["navigator","fetch","localStorage","sessionStorage"]) for(const target of [context,context.window]) Object.defineProperty(target,name,{get(){assert.fail(`Simulação não deve acessar ${name}`);}});
-    vm.runInNewContext(fs.readFileSync("public/js/pages/delivery/simulation-scenarios.js","utf8"),context);
+    vm.runInNewContext(fs.readFileSync("tests/fixtures/navigation-simulation-scenarios.js","utf8"),context);
     const api=context.window.PetFlowDeliveryScenarios;
     assert.equal(api.list().length,8);
     const scenario=api.create("desvio-recalculo");

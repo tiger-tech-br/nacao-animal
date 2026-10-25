@@ -135,19 +135,17 @@ Uma operação completa pode ser explicada assim: cadastre a categoria, o fornec
 
    O site tem avisos por sino e e-mails. Há mensagens específicas de pagamento aprovado, saída, entrega e cancelamento; não existe um e-mail diferente para toda situação. O envio também depende do serviço de e-mail configurado.
 
-9. **GPS da entrega e teste sem pedidos**
+9. **Navegação e localização da entrega pelo Google Maps**
 
    No pedido em Saiu para entrega, o dono pode gerar o link da viagem diretamente. Não há cadastro de entregador. O transporte das entregas é o carro da loja.
 
-   O link é privado e vale12horas. Gerar outro invalida o anterior. O dono abre no celular, toca em iniciar e permite a localização. O cliente acompanha a própria entrega pela conta; o administrador também pode acompanhar.
+   O link é privado e vale 12 horas. Gerar outro invalida o anterior. O dono abre no celular e toca em **Navegar no Google Maps**. O destino do pedido já vai preenchido; a navegação fica no aplicativo Google Maps, que pode pedir confirmação no aparelho.
 
-   A seta acompanha a posição recebida do aparelho e o sistema recalcula o trajeto quando confirma um desvio, respeitando o intervalo entre consultas. O transporte define as vias da rota, não a velocidade da seta. É necessário manter o celular com localização, internet e a página visível; o navegador pode suspender a localização em segundo plano.
+   Para o cliente e o administrador acompanharem a localização, o entregador ativa o compartilhamento no próprio Maps, copia o link e o cola na página da entrega. O site envia o aviso pelo sino e tenta enviar o e-mail ao cliente. Ambos abrem **Acompanhar localização no Google Maps**, que mostra o acompanhamento fora do site enquanto o compartilhamento estiver ativo.
 
    Chegar ao destino não marca o pedido como Entregue automaticamente. A loja precisa confirmar isso. Fechar a página também não conclui o pedido.
 
-   Para a demonstração sem compra ou pedido, use https://nacao-animal-production.up.railway.app/admin/testar-gps . Esse teste usa a localização real e calcula um trajeto até a loja. Não é um pedido comercial, não compartilha a posição com um cliente e não grava as coordenadas do teste no banco.
-
-   O simulador de navegação usa posições artificiais e serve para conferir o comportamento do mapa. Ele é diferente do teste físico feito com o celular.
+   Concluir o pedido ou remover o link retira o acesso pelo site. O entregador também precisa parar o compartilhamento no Google Maps. As antigas páginas de simulação e teste da navegação própria foram retiradas; os testes da entrega usam o fluxo atual de pedidos e Maps.
 
 10. **Financeiro: acompanhar valores e compromissos**
 
