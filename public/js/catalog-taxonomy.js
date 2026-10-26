@@ -18,50 +18,50 @@
         caes: {
             slug: "caes", label: "Cães", title: "Produtos para cães",
             description: "Rações, rações úmidas e acessórios para cuidar do seu cachorro.",
-            image: "/images/categories/dogs-v2.jpg", subcategories: petTypes,
+            image: "/images/categories/dogs-cutout-v1.png", subcategories: petTypes,
             keywords: ["cao", "caes", "cachorro", "cachorros", "canis", "bifinho", "coleira"]
         },
         gatos: {
             slug: "gatos", label: "Gatos", title: "Produtos para gatos",
             description: "Rações, rações úmidas e acessórios para o dia a dia dos felinos.",
-            image: "/images/categories/cats-v2.jpg", subcategories: petTypes,
+            image: "/images/categories/cats-cutout-v1.png", subcategories: petTypes,
             keywords: ["gato", "gatos", "felis", "castrados", "felino", "felinos"]
         },
         aves: {
             slug: "aves", label: "Pássaros", title: "Produtos para pássaros",
             description: "Rações e acessórios para os seus pássaros de estimação.",
-            image: "/images/categories/birds-v2.jpg", subcategories: smallPetTypes,
+            image: "/images/categories/birds-cutout-v1.png", subcategories: smallPetTypes,
             keywords: ["ave", "aves", "passaro", "passaros", "calopsita", "periquito"]
         },
         peixes: {
             slug: "peixes", label: "Peixes", title: "Produtos para peixes",
             description: "Rações e acessórios para os peixes e o seu aquário.",
-            image: "/images/categories/fish-v2.jpg", subcategories: smallPetTypes,
+            image: "/images/categories/fish-cutout-v1.png", subcategories: smallPetTypes,
             keywords: ["peixe", "peixes", "aquario", "aquarios"]
         },
         roedores: {
             slug: "roedores", label: "Roedores", title: "Produtos para roedores",
             description: "Rações e acessórios para hamster e outros pequenos pets.",
-            image: "/images/categories/rodents-v2.jpg", subcategories: smallPetTypes,
+            image: "/images/categories/rodents-cutout-v1.png", subcategories: smallPetTypes,
             keywords: ["roedor", "roedores", "hamster", "coelho", "porquinho"]
         },
         repteis: {
             slug: "repteis", label: "Répteis", title: "Rações para tartarugas e jabutis",
             description: "Rações para tartarugas e jabutis. Nesta categoria, a loja trabalha somente com alimentação.",
-            image: "/images/categories/reptiles.jpg", subcategories: [types.racoes],
+            image: "/images/categories/reptiles-cutout-v1.png", subcategories: [types.racoes],
             keywords: ["reptil", "repteis", "tartaruga", "tartarugas", "jabuti", "jabutis"]
         },
         jardinagem: {
             slug: "jardinagem", label: "Jardinagem", title: "Tudo para a sua jardinagem",
             description: "Terras, fertilizantes e acessórios para cuidar das suas plantas.",
-            image: "/images/categories/gardening-v2.jpg",
+            image: "/images/categories/gardening-cutout-v1.png",
             subcategories: [types["terras-fertilizantes"], types.acessorios],
             keywords: ["jardinagem", "jardim", "terra", "terras", "fertilizante", "fertilizantes", "adubo", "substrato", "plantas"]
         },
         acessorios: {
             slug: "acessorios", label: "Acessórios", title: "Acessórios para pets",
             description: "Coleiras, brinquedos, camas e acessórios para a rotina do pet.",
-            image: "/images/categories/accessories-v2.jpg", subcategories: [],
+            image: "/images/categories/accessories-cutout-v1.png", subcategories: [],
             keywords: ["acessorio", "acessorios", "coleira", "brinquedo", "cama", "mordedor"]
         }
     };

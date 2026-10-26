@@ -7,13 +7,13 @@ const CATEGORY_CONFIG = {
     favoritos: {
         title: "Meus favoritos",
         description: "Reencontre os produtos que você gostou. Seus favoritos ficam salvos durante esta sessão de navegação.",
-        image: "/images/categories/accessories-v2.jpg",
+        image: "/images/categories/accessories-cutout-v1.png",
         favoritesOnly: true
     },
     todas: {
         title: "Todos os produtos",
         description: "Explore o catálogo da Nação Animal e encontre o que seu melhor amigo precisa.",
-        image: "/images/categories/accessories-v2.jpg",
+        image: "/images/categories/accessories-cutout-v1.png",
         all: true
     },
     ...TAXONOMY.categories
