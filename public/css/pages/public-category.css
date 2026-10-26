@@ -9,7 +9,7 @@
 .category-storefront .category-hero-link { display: inline-flex; align-items: center; gap: 12px; margin-top: 24px; color: #bb4200; font-size: 13px; font-weight: 600; }
 .category-storefront .category-hero-link:hover { gap: 17px; }
 .category-storefront .category-hero-media { position: relative; display: grid; place-items: center; min-width: 0; padding: 22px 28px 22px 0; }
-.category-storefront .category-hero-media img { position: relative; width: 100%; max-height: 282px; border-radius: 47% 42% 44% 43%; aspect-ratio: 1.35; object-fit: cover; }
+.category-storefront .category-hero-media img { position: relative; display: block; width: 100%; height: auto; max-height: 282px; border-radius: 0; aspect-ratio: 3 / 2; object-fit: contain; }
 .category-storefront .category-paw { position: absolute; z-index: 1; left: -15px; bottom: 23px; display: grid; place-items: center; width: 65px; height: 65px; border: 4px solid #ffe493; border-radius: 50%; color: #ff8b00; background: #fff5d6; font-size: 28px; transform: rotate(-16deg); }
 .category-storefront .category-quick-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 24px 0 46px; }
 .category-storefront .category-quick-links a { padding: 10px 23px; border: 1px solid #efe3c9; border-radius: 999px; color: #72654d; background: #fff; font-size: 12px; font-weight: 500; transition: color .2s, border-color .2s, background-color .2s; }
@@ -93,8 +93,8 @@
     .category-storefront .category-copy h1 { margin-bottom: 13px; font-size: 31px; }
     .category-storefront .category-copy p { max-width: none; }
     .category-storefront .category-hero-link { margin-top: 17px; font-size: 12px; }
-    .category-storefront .category-hero-media { height: 180px; padding: 17px 40px 20px; }
-    .category-storefront .category-hero-media img { width: 190px; height: 155px; aspect-ratio: auto; }
+    .category-storefront .category-hero-media { padding: 17px 25px 20px; }
+    .category-storefront .category-hero-media img { width: min(100%, 300px); max-height: 200px; }
     .category-storefront .category-paw { left: 21px; bottom: 28px; }
     .category-storefront .section-heading { display: block; margin-bottom: 18px; }
     .category-storefront .section-heading h2 { font-size: 23px; }

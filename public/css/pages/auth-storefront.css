@@ -55,13 +55,12 @@
 /* Login: imagem decorativa independente dos formulários. */
 .storefront-page.auth-login .login-container { display: grid; grid-template-columns: .95fr 1.05fr; gap: 22px; width: min(1080px, calc(100% - 48px)); }
 .auth-login .auth-visual { position: relative; min-height: 570px; padding: 38px 32px; overflow: hidden; border: 1px solid #ffdc81; border-radius: 24px; background: linear-gradient(135deg, #ffe997, #ffd557); }
-.auth-login .auth-visual::before { content: ""; position: absolute; right: -65px; bottom: -10px; width: 370px; height: 340px; border-radius: 50%; background: #ffbd2b; }
 .auth-login .auth-visual-copy { position: relative; z-index: 2; }
 .auth-login .auth-visual-copy > span { display: block; margin-bottom: 16px; color: #a4640d; font-size: 10px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; }
 .auth-login .auth-visual h2 { margin: 0 0 16px; color: var(--store-ink); font-size: clamp(30px, 3.3vw, 43px); font-weight: 800; line-height: 1.08; letter-spacing: -1.5px; }
 .auth-login .auth-visual h2 em { color: var(--store-orange); font-style: normal; }
 .auth-login .auth-visual p { max-width: 330px; color: #7c5c2a; font-size: 12px; line-height: 1.8; }
-.auth-login .auth-visual img { position: absolute; z-index: 1; right: -5%; bottom: -1px; width: 109%; max-width: none; height: auto; }
+.auth-login .auth-visual img { position: absolute; z-index: 1; right: 0; bottom: 0; width: 100%; max-width: 100%; height: auto; object-fit: contain; }
 .auth-login .login-card { padding: 36px 36px 30px; }
 .auth-login .login-header h1 { font-size: 30px; }
 .auth-login .login-form .btn { width: 100%; }

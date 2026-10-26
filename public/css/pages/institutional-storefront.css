@@ -5,9 +5,8 @@
 .institutional-page .institutional-hero h1, .institutional-page .institutional-page-heading h1 { margin: 0 0 20px; font-size: clamp(33px, 4vw, 52px); font-weight: 800; letter-spacing: -1.8px; }
 .institutional-page .institutional-hero h1 span, .institutional-page .institutional-page-heading h1 span { color: #e55000; }
 .institutional-page .institutional-hero-copy > p { max-width: 520px; margin-bottom: 25px; color: #635431; font-size: 14px; line-height: 1.8; }
-.institutional-page .about-hero-image { position: relative; align-self: stretch; display: flex; align-items: end; padding-top: 25px; }
-.institutional-page .about-hero-image::before { content: ""; position: absolute; inset: 22% -6% -30% 8%; border-radius: 50%; background: #ffc22f; }
-.institutional-page .about-hero-image img { position: relative; width: 112%; max-width: none; height: auto; margin: 0 0 -20px -3%; }
+.institutional-page .about-hero-image { position: relative; align-self: stretch; display: flex; align-items: end; min-width: 0; padding: 25px 25px 0; }
+.institutional-page .about-hero-image img { position: relative; display: block; width: 100%; max-width: 100%; height: auto; margin: 0; object-fit: contain; }
 .institutional-page .about-hero-paw { position: absolute; top: 7%; right: 12%; color: #ff9700; font-size: 50px; transform: rotate(17deg); }
 .institutional-page .institutional-section { padding: 55px 0; }
 .institutional-page .institutional-section-heading { max-width: 670px; margin: 0 auto 30px; text-align: center; }
