@@ -118,6 +118,7 @@ async function loadDashboard() {
         renderSummary(dashboard.resumo || {});
         renderSales(dashboard.ultimasVendas || []);
         renderSuppliers(dashboard.estoqueBaixo || [], dashboard.ultimasCompras || []);
+        renderBestSellers(dashboard.produtosMaisVendidos || []);
         updateProfileName();
     } catch (error) {
         if (String(error.message).includes("401")) {
@@ -183,12 +184,80 @@ function renderSales(items) {
         return;
     }
 
-    list.innerHTML = items.slice(0, 5).map(item => `
-        <article>
-            <span>Pedido #${escapeHtml(shortId(item.id))} - ${escapeHtml(item.cliente || "Cliente avulso")}</span>
-            <strong>${currency(item.valor_total)}</strong>
-        </article>
-    `).join("");
+    list.innerHTML = items.slice(0, 5).map(item => {
+        const status = dashboardSaleStatus(item.status);
+        return `
+            <article class="dashboard-sale-item">
+                <i class="fa-solid fa-box-open dashboard-sale-icon" aria-hidden="true"></i>
+                <div class="dashboard-sale-copy">
+                    <strong>Pedido #${escapeHtml(shortId(item.id))}</strong>
+                    <span>${escapeHtml(item.cliente || "Cliente avulso")}</span>
+                    <small>${escapeHtml(dashboardSaleDate(item.data_venda))}</small>
+                </div>
+                <div class="dashboard-sale-value">
+                    <strong>${currency(item.valor_total)}</strong>
+                    <span class="dashboard-order-status dashboard-status-${status.tone}">${status.label}</span>
+                </div>
+            </article>
+        `;
+    }).join("");
+}
+
+function dashboardSaleStatus(value) {
+    const statuses = {
+        AGUARDANDO_PAGAMENTO: { label: "Aguardando pagamento", tone: "waiting" },
+        PAGAMENTO_APROVADO: { label: "Pedido recebido", tone: "received" },
+        EM_SEPARACAO: { label: "Preparando", tone: "preparing" },
+        SAIU_PARA_ENTREGA: { label: "Saiu para entrega", tone: "delivery" },
+        ENTREGUE: { label: "Entregue", tone: "delivered" },
+        FINALIZADA: { label: "Finalizado", tone: "delivered" },
+        CANCELADA: { label: "Cancelado", tone: "cancelled" }
+    };
+    return statuses[String(value || "").trim().toUpperCase()]
+        || { label: "Status não informado", tone: "neutral" };
+}
+
+function dashboardSaleDate(value) {
+    if (!value) return "Data não informada";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Data não informada";
+    return new Intl.DateTimeFormat("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+        day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"
+    }).format(date);
+}
+
+function renderBestSellers(items) {
+    const list = document.querySelector(".best-sellers-list");
+    if (!list) return;
+
+    if (!items.length) {
+        list.innerHTML = emptyState("Os produtos aparecem aqui quando houver vendas confirmadas.");
+        return;
+    }
+
+    const ranking = items.slice(0, 5);
+    const quantity = item => {
+        const value = Number(item.quantidade);
+        return Number.isFinite(value) ? Math.max(0, value) : 0;
+    };
+    const highest = Math.max(1, ...ranking.map(quantity));
+    list.innerHTML = ranking.map((item, index) => {
+        const count = quantity(item);
+        const barSize = Math.min(100, Math.max(0, Math.round(count / highest * 100)));
+        return `
+            <article class="dashboard-ranking-item">
+                <span class="dashboard-rank" aria-label="${index + 1}º lugar">${index + 1}</span>
+                <div class="dashboard-ranking-copy">
+                    <div class="dashboard-ranking-heading">
+                        <strong>${escapeHtml(item.nome || "Produto")}</strong>
+                        <span>${number(count)} ${count === 1 ? "unidade vendida" : "unidades vendidas"}</span>
+                    </div>
+                    <div class="dashboard-ranking-meter" style="--dashboard-bar-size: ${barSize}%" aria-hidden="true"><span></span></div>
+                </div>
+            </article>
+        `;
+    }).join("");
 }
 
 function renderSuppliers(lowStock, purchases) {
@@ -227,7 +296,7 @@ function renderSuppliers(lowStock, purchases) {
 
     list.innerHTML = cards.map(card => `
         <article>
-            <i class="fa-solid ${card.icon}"></i>
+            <i class="fa-solid ${card.icon}" aria-hidden="true"></i>
             <div>
                 <strong>${escapeHtml(card.title || "Item")}</strong>
                 <span>${escapeHtml(card.text)}</span>
@@ -262,7 +331,7 @@ function renderDashboardError(message) {
         item.textContent = "-";
     });
 
-    const lists = document.querySelectorAll(".sales-list, .supplier-list");
+    const lists = document.querySelectorAll(".sales-list, .supplier-list, .best-sellers-list");
     lists.forEach(list => {
         list.innerHTML = emptyState(message);
     });

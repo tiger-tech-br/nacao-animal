@@ -10,7 +10,8 @@
     <link rel="stylesheet" href="/css/pages/dashboard/dashboard.css?v=20260808-3">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 <link rel="stylesheet" href="/css/layout/notifications.css?v=20261025-5">
-<link rel="stylesheet" href="/css/layout/admin-theme.css?v=20261026-2">
+<link rel="stylesheet" href="/css/layout/admin-theme.css?v=20261027-1">
+    <link rel="stylesheet" href="/css/pages/dashboard/dashboard-refresh.css?v=20261027-1">
 </head>
 <body class="admin-brand">
     <div class="admin-layout">
@@ -47,7 +48,7 @@
         <a class="sidebar-store-link" href="/" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-store" aria-hidden="true"></i>Ver a loja <span class="sr-only">(abre em outra aba)</span></a></aside>
 
         <main class="main-content">
-            <header class="topbar">
+            <header class="topbar dashboard-topbar">
                 <div class="topbar-left">
                     <button class="admin-menu-toggle" type="button" aria-label="Abrir menu administrativo" aria-expanded="false">
                         <i class="fa-solid fa-bars"></i>
@@ -96,15 +97,16 @@
 
             <section class="page-content dashboard-page">
                 <header class="dashboard-hero">
-                    <div>
+                    <div class="dashboard-welcome">
                         <span class="dashboard-kicker">Hoje na Nação Animal</span>
-                        <h2>Resumo da loja</h2>
-                        <p>Pedidos, entregas, estoque, financeiro e fornecedores em uma visão simples do dia.</p>
+                        <h2>Olá, Admin!</h2>
+                        <p>Aqui está o resumo da sua loja. Acompanhe os pedidos, cuide do estoque e organize as entregas.</p>
+                        <div class="dashboard-date">
+                            <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                            <span id="dashboardDate">Hoje</span>
+                        </div>
                     </div>
-                    <div class="dashboard-date">
-                        <i class="fa-regular fa-calendar"></i>
-                        <span id="dashboardDate">Hoje</span>
-                    </div>
+                    <img class="dashboard-hero-pets" src="/images/hero/nacao-animal-dog-cat.png" alt="" width="1477" height="1065" decoding="async">
                 </header>
 
                 <section class="metric-grid" aria-label="Indicadores principais">
@@ -128,10 +130,10 @@
 
                     <article class="metric-card">
                         <div>
-                            <span>Entregas hoje</span>
+                            <span>Produtos cadastrados</span>
                             <strong>—</strong>
                         </div>
-                        <i class="fa-solid fa-truck-fast"></i>
+                        <i class="fa-solid fa-box"></i>
                         <small>Carregando dados reais...</small>
                     </article>
 
@@ -146,28 +148,36 @@
                 </section>
 
                 <div class="dashboard-grid">
-
-
-                    <section class="panel dashboard-panel">
+                    <section class="panel dashboard-panel dashboard-orders-panel" aria-labelledby="recent-orders-title">
                         <div class="panel-header">
-                            <h3>Pedidos recentes</h3>
-                            <a href="/admin/pages/vendas/vendas.html">Ver pedidos</a>
+                            <div><span class="dashboard-panel-kicker">Acompanhe sua loja</span><h3 id="recent-orders-title">Pedidos recentes</h3></div>
+                            <a href="/admin/pages/vendas/vendas.html">Ver pedidos <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
                         </div>
                         <div class="sales-list">
                             <div class="dashboard-empty">Carregando pedidos...</div>
                         </div>
                     </section>
-                </div>
 
-                <section class="panel dashboard-panel">
-                    <div class="panel-header">
-                        <h3>Fornecedores e abastecimento</h3>
-                        <a href="/admin/pages/fornecedores/fornecedores.html">Ver fornecedores</a>
-                    </div>
-                    <div class="supplier-list">
-                        <div class="dashboard-empty">Carregando estoque e compras...</div>
-                    </div>
-                </section>
+                    <section class="panel dashboard-panel dashboard-ranking-panel" aria-labelledby="best-sellers-title">
+                        <div class="panel-header">
+                            <div><span class="dashboard-panel-kicker">Vendas confirmadas</span><h3 id="best-sellers-title">Produtos mais vendidos</h3></div>
+                            <a href="/admin/pages/produtos/produtos.html">Ver produtos <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        </div>
+                        <div class="best-sellers-list">
+                            <div class="dashboard-empty">Carregando produtos...</div>
+                        </div>
+                    </section>
+
+                    <section class="panel dashboard-panel dashboard-supply-panel" aria-labelledby="supply-title">
+                        <div class="panel-header">
+                            <div><span class="dashboard-panel-kicker">Estoque em dia</span><h3 id="supply-title">Fornecedores e abastecimento</h3></div>
+                            <a href="/admin/pages/fornecedores/fornecedores.html">Ver fornecedores <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                        </div>
+                        <div class="supplier-list">
+                            <div class="dashboard-empty">Carregando estoque e compras...</div>
+                        </div>
+                    </section>
+                </div>
 
                 <section class="panel dashboard-panel">
                     <div class="panel-header">
@@ -175,17 +185,17 @@
                         <span class="muted">Acesse os fluxos mais usados</span>
                     </div>
                     <div class="quick-actions">
-                        <a href="/admin/pages/vendas/vendas.html"><i class="fa-solid fa-box-open"></i>Pedidos recebidos</a>
-                        <a href="/admin/pages/fornecedores/fornecedores.html"><i class="fa-solid fa-truck-field"></i>Fornecedores</a>
-                        <a href="/admin/pages/compras/compras.html"><i class="fa-solid fa-clipboard-list"></i>Compras</a>
-                        <a href="/admin/pages/financeiro/financeiro.html"><i class="fa-solid fa-chart-line"></i>Financeiro</a>
+                        <a href="/admin/pages/vendas/vendas.html"><i class="fa-solid fa-box-open" aria-hidden="true"></i><span><strong>Pedidos recebidos</strong><small>Acompanhe as entregas</small></span></a>
+                        <a href="/admin/pages/fornecedores/fornecedores.html"><i class="fa-solid fa-truck-field" aria-hidden="true"></i><span><strong>Fornecedores</strong><small>Contatos da sua loja</small></span></a>
+                        <a href="/admin/pages/compras/compras.html"><i class="fa-solid fa-clipboard-list" aria-hidden="true"></i><span><strong>Compras</strong><small>Organize a reposição</small></span></a>
+                        <a href="/admin/pages/financeiro/financeiro.html"><i class="fa-solid fa-chart-line" aria-hidden="true"></i><span><strong>Financeiro</strong><small>Contas e movimentações</small></span></a>
                     </div>
                 </section>
             </section>
         </main>
     </div>
 
-    <script src="/js/pages/dashboard/dashboard.js?v=20261021-1"></script>
+    <script src="/js/pages/dashboard/dashboard.js?v=20261027-1"></script>
 <script src="/js/layout/notifications.js?v=20261025-5"></script>
 </body>
 </html>
