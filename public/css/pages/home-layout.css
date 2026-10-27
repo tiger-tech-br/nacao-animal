@@ -130,7 +130,7 @@
 .home-page .categories-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
 .home-page .category-card { display: flex; min-width: 0; flex-direction: column; overflow: hidden; border: 1px solid #f3e8d9; border-radius: 20px; box-shadow: none; background: #fffcf7; }
 .home-page .category-card[hidden] { display: none; }
-.home-page .category-card img { width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: contain; background: #fff3dc; }
+.home-page .category-card img { width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: contain; background: var(--category-image-bg, #fff3dc); }
 .home-page .category-card h3 { margin: 17px 10px; text-align: center; font-size: 16px; }
 .home-page .category-card-main { display: block; color: inherit; }
 .home-page .category-card-main:hover { color: #c14a00; }
