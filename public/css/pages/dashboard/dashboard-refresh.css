@@ -653,6 +653,45 @@
     }
 }
 
+/* Os indicadores usam o mesmo alinhamento central das demais páginas no responsivo. */
+@media (max-width: 1024px) {
+    .admin-brand .dashboard-page .dashboard-welcome { text-align: center; }
+    .admin-brand .dashboard-page .dashboard-hero p { margin-inline: auto; }
+    .admin-brand .dashboard-page .dashboard-date { justify-content: center; }
+
+    .admin-brand .dashboard-page .metric-card {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto auto auto;
+        justify-items: center;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .admin-brand .dashboard-page .metric-card > i { grid-column: 1; grid-row: 1; }
+    .admin-brand .dashboard-page .metric-card > div > span { grid-column: 1; grid-row: 2; }
+    .admin-brand .dashboard-page .metric-card > div > strong { grid-column: 1; grid-row: 3; }
+    .admin-brand .dashboard-page .metric-card > small { grid-column: 1; grid-row: 4; }
+
+    .admin-brand .dashboard-page .panel-header {
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .admin-brand .dashboard-page .quick-actions a {
+        grid-template-columns: minmax(0, 1fr);
+        justify-items: center;
+        text-align: center;
+    }
+
+    .admin-brand .dashboard-page .quick-actions a > span { justify-items: center; }
+}
+
+@media (max-width: 720px) {
+    .admin-brand .dashboard-page .dashboard-hero { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* Duas linhas mantêm todas as ações acessíveis sem ocupar o topo do celular. */
 @media (max-width: 720px) {
     .admin-brand .dashboard-topbar {
